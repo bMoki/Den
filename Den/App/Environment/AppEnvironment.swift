@@ -5,6 +5,7 @@ protocol AppEnvironment {
     var attachmentsRoot: URL { get }
     var worktreesFile: URL { get }
     var ghOverride: String? { get }
+    var nsOverride: String? { get }
     var defaults: UserDefaults { get }
     var registry: HarnessRegistry { get }
     var workingDirectory: URL { get }
@@ -12,6 +13,7 @@ protocol AppEnvironment {
 
 extension AppEnvironment {
     var ghOverride: String? { nil }
+    var nsOverride: String? { nil }
 }
 
 protocol RootedEnvironment: AppEnvironment {

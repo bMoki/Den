@@ -3,10 +3,11 @@ import SwiftUI
 
 struct NewSessionRow: View {
     let workspace: WorkspaceModel
+    var directory: URL?
 
     var body: some View {
         Button {
-            Task { await workspace.newSession() }
+            Task { await workspace.newSession(in: directory) }
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: "plus")
@@ -26,7 +27,7 @@ struct NewSessionRow: View {
             DenMenuItem(id: harness.rawValue,
                         title: "Nova sessão com \(HarnessBadge.name(for: harness))",
                         icon: .image(HarnessBadge.menuIcon(for: harness))) {
-                Task { await workspace.newSession(harness: harness) }
+                Task { await workspace.newSession(in: directory, harness: harness) }
             }
         })])
         .help("Iniciar uma sessão nova")

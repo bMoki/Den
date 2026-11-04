@@ -8,7 +8,6 @@ struct SessionRow: View {
     var isSelected = false
     var select: () -> Void
     var rename: (String) -> Void
-    var unfile: (() -> Void)?
     var delete: () -> Void = {}
 
     @State private var isEditing = false
@@ -64,12 +63,10 @@ struct SessionRow: View {
     }
 
     private var menuSections: [DenMenuSection] {
-        var edit = [DenMenuItem(id: "rename", title: "Renomear") { isEditing = true }]
-        if let unfile {
-            edit.append(DenMenuItem(id: "unfile", title: "Remover da pasta", action: unfile))
-        }
-        return [
-            DenMenuSection(id: "edit", items: edit),
+        [
+            DenMenuSection(id: "edit", items: [
+                DenMenuItem(id: "rename", title: "Renomear") { isEditing = true },
+            ]),
             DenMenuSection(id: "danger", items: [
                 DenMenuItem(id: "delete", title: "Apagar sessão…",
                             isDestructive: true, action: delete),

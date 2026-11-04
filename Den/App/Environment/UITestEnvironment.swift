@@ -7,16 +7,19 @@ struct UITestEnvironment: RootedEnvironment {
     static let projectSetupKey = "DEN_PROJECT_SETUP"
     static let defaultsSuite = "Den.UITests"
     static let ghKey = "DEN_GH"
+    static let nsKey = "DEN_NS"
 
     let root: URL
     let defaults: UserDefaults
     let registry: HarnessRegistry
     let ghOverride: String?
+    let nsOverride: String?
 
     init?(_ variables: [String: String]) {
         guard let rootPath = variables[Self.rootKey] else { return nil }
         root = URL(fileURLWithPath: rootPath)
         ghOverride = variables[Self.ghKey]
+        nsOverride = variables[Self.nsKey] ?? ""
 
         let pinned = Dictionary(uniqueKeysWithValues: HarnessRegistry.standard.ids.compactMap { id in
             variables[Self.cliKeyPrefix + id.rawValue].map { (id, $0) }

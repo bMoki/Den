@@ -40,12 +40,7 @@ struct LocationChip: View {
     }
 
     private func chooseSessionFolder() {
-        let panel = NSOpenPanel()
-        panel.canChooseDirectories = true
-        panel.canChooseFiles = false
-        panel.prompt = "Usar"
-        panel.directoryURL = chat.workingDirectory
-        guard panel.runModal() == .OK, let url = panel.url else { return }
+        guard let url = FolderPicker.choose(prompt: "Usar", from: chat.workingDirectory) else { return }
         Task { await chat.choose(directory: url) }
     }
 }

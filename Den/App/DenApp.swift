@@ -5,12 +5,14 @@ struct DenApp: App {
     private let environment: any AppEnvironment
     @State private var worktrees: WorktreeModel
     @State private var monitor: PullRequestMonitor
+    @State private var ns: NsWorkspace
 
     init() {
         let environment = resolveEnvironment(ProcessInfo.processInfo.environment)
         self.environment = environment
         let ledger = TaskLedger(store: TaskWorktreeStore(url: environment.worktreesFile))
         _worktrees = State(initialValue: WorktreeModel(ledger: ledger))
+        _ns = State(initialValue: NsWorkspace.live(environment))
         _monitor = State(initialValue: PullRequestMonitor(
             ledger: ledger,
             fetcher: GitHubCLI(override: environment.ghOverride,
@@ -22,8 +24,10 @@ struct DenApp: App {
             ContentView(environment: environment)
                 .environment(worktrees)
                 .environment(monitor)
+                .environment(ns)
                 .defaultAppStorage(environment.defaults)
                 .task { monitor.start() }
+                .task { await ns.watch() }
         }
 
         .commands { HarnessCommands() }

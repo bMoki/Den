@@ -162,15 +162,15 @@ final class ConversationUITests: XCTestCase {
         require(popover, in: app)
         let menu = popover.scrollViews["den-menu"]
         require(menu.buttons["Nova sessão"], in: app)
-        XCTAssertTrue(menu.buttons["Nova pasta"].exists)
+        XCTAssertTrue(menu.buttons["Abrir pasta…"].exists)
 
         menu.buttons["Nova sessão com"].click()
         require(popover.buttons["Voltar"], in: app)
-        XCTAssertFalse(menu.buttons["Nova pasta"].exists)
+        XCTAssertFalse(menu.buttons["Abrir pasta…"].exists)
         XCTAssertTrue(menu.buttons["Claude Code"].exists)
 
         popover.buttons["Voltar"].click()
-        require(menu.buttons["Nova pasta"], in: app)
+        require(menu.buttons["Abrir pasta…"], in: app)
     }
 
     // MARK: - Mentions

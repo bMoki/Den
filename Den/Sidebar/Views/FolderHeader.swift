@@ -1,16 +1,18 @@
 import SwiftUI
 
 struct FolderHeader: View {
-    let name: String
-    let count: Int
-    let isOpen: Bool
-    let isDropTarget: Bool
-    var toggle: () -> Void
-    var rename: (String) -> Void
-    var newSession: () -> Void
-    var remove: () -> Void
+    enum Kind {
+        case branch, folder
+    }
 
-    @State private var isEditing = false
+    let kind: Kind
+    let name: String
+    var detail: String?
+    let sessionCount: Int
+    let isOpen: Bool
+    var toggle: () -> Void
+    var newSession: () -> Void
+
     @State private var hovering = false
 
     var body: some View {
@@ -20,57 +22,49 @@ struct FolderHeader: View {
                 .foregroundStyle(Theme.textTertiary)
                 .rotationEffect(.degrees(isOpen ? 90 : 0))
                 .frame(width: 12)
-            Image(systemName: isOpen ? "folder.fill" : "folder")
-                .font(.system(size: 13))
-                .foregroundStyle(isOpen ? Theme.accent : Theme.textTertiary)
-                .frame(width: 16)
-            if isEditing {
-                InlineRenameField(initial: name, commit: rename) { isEditing = false }
-                    .font(.system(size: 13, weight: .medium))
-            } else {
-                Text(name)
-                    .font(.system(size: 13, weight: .medium))
+                .opacity(sessionCount == 0 && kind == .folder ? 0 : 1)
+            if kind == .folder {
+                Image(systemName: sessionCount > 0 ? "folder.fill" : "folder")
+                    .font(.system(size: 13))
+                    .foregroundStyle(sessionCount > 0 ? Theme.accent : Theme.textTertiary)
+                    .frame(width: 16)
+            }
+            Text(name)
+                .font(kind == .branch ? .system(size: 12.5, weight: .medium, design: .monospaced)
+                                      : .system(size: 13, weight: .medium))
+                .lineLimit(1)
+                .truncationMode(.middle)
+            Spacer(minLength: 4)
+            if let detail {
+                Text(detail)
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundStyle(Theme.textTertiary)
                     .lineLimit(1)
-                    .truncationMode(.middle)
-                Spacer(minLength: 4)
-                Text("\(count)")
+                    .truncationMode(.head)
+            }
+            if sessionCount > 0 {
+                Text("\(sessionCount)")
                     .font(.system(size: 11))
                     .monospacedDigit()
                     .foregroundStyle(Theme.textTertiary)
-                    .accessibilityLabel(count == 1 ? "1 conversa" : "\(count) conversas")
+                    .accessibilityLabel(sessionCount == 1 ? "1 sessão" : "\(sessionCount) sessões")
             }
         }
         .padding(.horizontal, 10)
         .frame(height: 32)
-        .background(
-            isDropTarget ? Theme.accent.opacity(0.16)
-                         : hovering ? Theme.hover.opacity(0.7) : .clear,
-            in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .overlay {
-            if isDropTarget {
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .strokeBorder(Theme.accent.opacity(0.5), lineWidth: 1)
-            }
-        }
-        .animation(.easeOut(duration: 0.12), value: isDropTarget)
+        .background(hovering ? Theme.hover.opacity(0.7) : .clear,
+                    in: RoundedRectangle(cornerRadius: 8, style: .continuous))
         .animation(.easeInOut(duration: 0.2), value: isOpen)
         .contentShape(Rectangle())
         .onHover { hovering = $0 }
-        .simultaneousGesture(TapGesture().onEnded {
-            guard !isEditing else { return }
-            toggle()
-        })
-        .simultaneousGesture(TapGesture(count: 2).onEnded {
-            Task { @MainActor in isEditing = true }
-        })
+        .onTapGesture(perform: toggle)
         .denContextMenu([
-            DenMenuSection(id: "edit", items: [
-                DenMenuItem(id: "rename", title: "Renomear") { isEditing = true },
+            DenMenuSection(id: "new", items: [
                 DenMenuItem(id: "new-session", title: "Nova sessão aqui", action: newSession),
             ]),
-            DenMenuSection(id: "danger", items: [
-                DenMenuItem(id: "remove", title: "Remover pasta", action: remove),
-            ]),
         ])
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityValue(isOpen ? "aberta" : "fechada")
     }
 }
