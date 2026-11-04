@@ -46,7 +46,7 @@ nonisolated private final class CallCounter: @unchecked Sendable {
     }
     let first = await environment.resolve()
     let second = await environment.resolve()
-    #expect(first == ShellEnvironment.Resolved(shell: "/bin/zsh", variables: ["PATH": "/nvm/bin"], warning: nil))
+    #expect(first == ShellEnvironment.Resolved(variables: ["PATH": "/nvm/bin"], warning: nil))
     #expect(second == first)
     #expect(calls.count == 1)
 }
@@ -76,40 +76,4 @@ nonisolated private final class CallCounter: @unchecked Sendable {
     let data = await ShellProbe.run(shell: "/bin/sh", arguments: ["-c", "sleep 30"],
                                     timeout: .milliseconds(300))
     #expect(data == nil)
-}
-
-private func resolved(_ variables: [String: String]) -> ShellEnvironment.Resolved {
-    ShellEnvironment.Resolved(shell: "/bin/zsh", variables: variables, warning: nil)
-}
-
-@Test func theProcessEnvironmentAddsTerminalVariablesAndLetsTheConfigurationWin() {
-    let environment = resolved(["PATH": "/bin", "TERM": "dumb"]).processEnvironment(
-        overrides: [EnvVar(key: "PORT", value: "3000"), EnvVar(key: " ", value: "x"),
-                    EnvVar(key: "A=B", value: "y")],
-        locale: "pt_BR.UTF-8")
-    #expect(environment["PATH"] == "/bin")
-    #expect(environment["TERM"] == "xterm-256color")
-    #expect(environment["COLORTERM"] == "truecolor")
-    #expect(environment["PORT"] == "3000")
-    #expect(environment[" "] == nil)
-    #expect(environment["A=B"] == nil)
-}
-
-@Test func aMissingLocaleDefaultsToUTF8() {
-    func lang(_ variables: [String: String]) -> String? {
-        resolved(variables).processEnvironment(overrides: [], locale: "pt_BR.UTF-8")["LANG"]
-    }
-    #expect(lang(["PATH": "/bin"]) == "pt_BR.UTF-8")
-    #expect(lang(["LANG": "C.UTF-8"]) == "C.UTF-8")
-    #expect(lang(["LC_ALL": "en_US.UTF-8"]) == nil)
-    #expect(lang(["LC_CTYPE": "UTF-8"]) == nil)
-    #expect(resolved([:]).processEnvironment(overrides: [EnvVar(key: "LANG", value: "C")],
-                                             locale: "pt_BR.UTF-8")["LANG"] == "C")
-}
-
-@Test func theDefaultLocaleFollowsTheSystemWhenItExists() {
-    let installed: Set<String> = ["pt_BR.UTF-8", "en_US.UTF-8"]
-    #expect(ShellEnvironment.defaultLocale(identifier: "pt_BR", isInstalled: installed.contains) == "pt_BR.UTF-8")
-    #expect(ShellEnvironment.defaultLocale(identifier: "pt_BR@rg=uszzzz", isInstalled: installed.contains) == "pt_BR.UTF-8")
-    #expect(ShellEnvironment.defaultLocale(identifier: "en_BR", isInstalled: installed.contains) == "en_US.UTF-8")
 }

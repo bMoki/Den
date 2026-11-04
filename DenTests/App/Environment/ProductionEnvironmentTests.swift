@@ -9,9 +9,6 @@ import Foundation
     #expect(environment.sessionsRoot
             == URL.applicationSupportDirectory.appending(path: "Den/sessions"))
     #expect(environment.attachmentsRoot == ChatModel.standardAttachmentsRoot)
-    #expect(environment.runConfigurationsFile
-            == URL.applicationSupportDirectory.appending(path: "Den/run-configurations.json"))
-    #expect(environment.worktreesRoot.path == NSHomeDirectory() + "/.den/worktrees")
     #expect(environment.worktreesFile
             == URL.applicationSupportDirectory.appending(path: "Den/task-worktrees.json"))
     #expect(environment.workingDirectory.path == NSHomeDirectory())

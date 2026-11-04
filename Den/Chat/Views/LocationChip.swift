@@ -11,7 +11,7 @@ struct LocationChip: View {
         if let worktree = worktrees.worktree(for: chat.sessionID) {
             BranchBadge(worktree: worktree, compact: compact)
         } else {
-            folderChip.disabled(worktrees.isCreating(chat.sessionID))
+            folderChip
         }
     }
 

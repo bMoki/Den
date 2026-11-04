@@ -21,7 +21,6 @@ enum Theme {
     static let hover = Color(hex: 0x222631)
     static let hoverRaised = Color(hex: 0x282D39)
     static let terminal = Color(hex: 0x0A0C0F)
-    static let terminalBar = Color(hex: 0x1B1F27)
 
     static let border = Color(hex: 0x242833)
     static let borderCard = Color(hex: 0x272C38)

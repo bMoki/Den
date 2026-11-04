@@ -15,8 +15,6 @@ struct ChatView: View {
 
     @AppStorage(InspectorPane.storageKey) private var pane: InspectorPane = .closed
     @AppStorage("Den.inspectorWidth") private var inspectorWidth: Double = 480
-    @Environment(RunManager.self) private var runs
-    @Environment(RunConfigurationsModel.self) private var runConfigurations
     let gitChanges: GitChangesModel
 
     private static let minimumChatWidth: CGFloat = 420
@@ -36,7 +34,7 @@ struct ChatView: View {
             let docked = room >= Self.minimumInspectorWidth
             HStack(spacing: 0) {
                 VStack(spacing: 0) {
-                    ChatHeader(chat: chat, runActive: runActive)
+                    ChatHeader(chat: chat)
                     transcript
                     ChatComposer(chat: chat, slash: slash, mentions: mentions,
                                  keys: keys) { nearBottom = true }
@@ -116,15 +114,7 @@ struct ChatView: View {
     }
 
     private var inspector: some View {
-        InspectorView(pane: $pane, gitChanges: gitChanges,
-                      directory: chat.workingDirectory, runRoot: runRoot,
-                      runActive: runActive)
-    }
-
-    private var runRoot: URL { runConfigurations.root(for: chat.workingDirectory) }
-
-    private var runActive: Bool {
-        runConfigurations.configurations(in: runRoot).contains { runs.isActive($0.id) }
+        InspectorView(pane: $pane, gitChanges: gitChanges, directory: chat.workingDirectory)
     }
 
     private func zoom(_ data: Data) {

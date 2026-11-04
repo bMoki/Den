@@ -20,7 +20,6 @@ struct TaskLifecycle: ViewModifier {
             }
             .onChange(of: chat.isBusy) {
                 guard !chat.isBusy else { return }
-                worktrees.clearWarning(chat.sessionID)
                 Task { @MainActor in
                     await worktrees.reconcile(chat)
                     monitor.turnEnded(chat.sessionID)

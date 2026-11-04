@@ -5,12 +5,6 @@ struct GitCommandFailed: Error, CustomStringConvertible {
     let description: String
 }
 
-struct TestRepository {
-    let checkout: URL
-    let origin: URL
-    let seed: URL
-}
-
 @discardableResult
 func runGit(_ arguments: [String], in directory: URL) async throws -> String {
     let outcome = await TimedProcess.run("/usr/bin/git", [
@@ -24,14 +18,9 @@ func runGit(_ arguments: [String], in directory: URL) async throws -> String {
     return outcome.output
 }
 
-func gitSucceeds(_ arguments: [String], in directory: URL) async -> Bool {
-    await TimedProcess.run("/usr/bin/git", ["-C", directory.path] + arguments,
-                           timeout: .seconds(30))?.succeeded == true
-}
-
 @discardableResult
 func makeRepository(at checkout: URL, scratch: URL,
-                    defaultBranch: String = "main") async throws -> TestRepository {
+                    defaultBranch: String = "main") async throws -> URL {
     let tag = String(UUID().uuidString.prefix(6))
     let seed = scratch.appending(path: "seed-\(checkout.lastPathComponent)-\(tag)")
     let origin = scratch.appending(path: "\(checkout.lastPathComponent)-\(tag).git")
@@ -44,5 +33,5 @@ func makeRepository(at checkout: URL, scratch: URL,
     try await runGit(["commit", "-q", "-m", "initial"], in: seed)
     try await runGit(["clone", "-q", "--bare", seed.path, origin.path], in: scratch)
     try await runGit(["clone", "-q", origin.path, checkout.path], in: scratch)
-    return TestRepository(checkout: checkout, origin: origin, seed: seed)
+    return checkout
 }

@@ -3,7 +3,6 @@ import Foundation
 
 actor ShellEnvironment {
     nonisolated struct Resolved: Equatable, Sendable {
-        var shell: String
         var variables: [String: String]
         var warning: String?
     }
@@ -38,9 +37,9 @@ actor ShellEnvironment {
             let arguments = ["-l", "-i", "-c", "echo \(Self.marker); /usr/bin/env -0"]
             if let output = await probe(shell, arguments, timeout),
                let variables = Self.parse(output), variables["PATH"] != nil {
-                return Resolved(shell: shell, variables: variables, warning: nil)
+                return Resolved(variables: variables, warning: nil)
             }
-            return Resolved(shell: shell, variables: Self.fallback(from: base),
+            return Resolved(variables: Self.fallback(from: base),
                             warning: Self.fallbackWarning)
         }
         resolution = task
@@ -69,39 +68,12 @@ actor ShellEnvironment {
         return result
     }
 
-    nonisolated static func defaultLocale(
-        identifier: String = Locale.current.identifier,
-        isInstalled: (String) -> Bool = { FileManager.default.fileExists(atPath: "/usr/share/locale/\($0)") }
-    ) -> String {
-        let base = identifier.split(separator: "@").first.map(String.init) ?? identifier
-        let candidate = base + ".UTF-8"
-        return isInstalled(candidate) ? candidate : "en_US.UTF-8"
-    }
-
     nonisolated static func loginShell() -> String {
         if let entry = getpwuid(getuid()), let raw = entry.pointee.pw_shell {
             let path = String(cString: raw)
             if FileManager.default.isExecutableFile(atPath: path) { return path }
         }
         return "/bin/zsh"
-    }
-}
-
-extension ShellEnvironment.Resolved {
-    nonisolated func processEnvironment(overrides: [EnvVar],
-                                        locale: String = ShellEnvironment.defaultLocale()) -> [String: String] {
-        var result = variables
-        result["TERM"] = "xterm-256color"
-        result["COLORTERM"] = "truecolor"
-        if result["LANG"] == nil, result["LC_ALL"] == nil, result["LC_CTYPE"] == nil {
-            result["LANG"] = locale
-        }
-        for variable in overrides {
-            let key = variable.key.trimmingCharacters(in: .whitespaces)
-            guard !key.isEmpty, !key.contains("=") else { continue }
-            result[key] = variable.value
-        }
-        return result
     }
 }
 

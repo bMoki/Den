@@ -10,7 +10,6 @@ struct ChatComposer: View {
     var stickToBottom: () -> Void
 
     @State private var focusRequested = false
-    @Environment(WorktreeModel.self) private var worktrees
 
     private static let placeholder = "Peça uma alteração…"
 
@@ -47,7 +46,6 @@ struct ChatComposer: View {
         .padding(.bottom, 20)
         .frame(maxWidth: 784)
         .frame(maxWidth: .infinity)
-        .task(id: chat.workingDirectory) { await worktrees.prepare(chat) }
     }
 
     enum Density { case full, medium, compact }
@@ -55,9 +53,6 @@ struct ChatComposer: View {
     private func controls(_ density: Density) -> some View {
         HStack(spacing: 6) {
             LocationChip(chat: chat, compact: density == .compact)
-            if worktrees.isOffered(chat), !worktrees.isCreating(chat.sessionID) {
-                WorktreeChip(chat: chat, compact: density == .compact)
-            }
             ForEach(chat.knobs.filter { $0.category == .mode }) {
                 KnobBadge(knob: $0, chat: chat, compact: density != .full)
             }
@@ -100,10 +95,9 @@ struct ChatComposer: View {
         }
         .buttonStyle(DenButtonStyle(kind: .primary, radius: 10))
         .disabled(!chat.isBusy
-                  && (chat.prompt.trimmingCharacters(in: .whitespaces).isEmpty
-                      && chat.pendingAttachments.isEmpty
-                      && chat.pendingPastes.isEmpty
-                      || !worktrees.canSend(chat)))
+                  && chat.prompt.trimmingCharacters(in: .whitespaces).isEmpty
+                  && chat.pendingAttachments.isEmpty
+                  && chat.pendingPastes.isEmpty)
         .help(chat.isBusy ? "Parar o que está rodando" : "Enviar mensagem")
         .accessibilityLabel(chat.isBusy ? "Parar" : "Enviar mensagem")
     }
@@ -158,11 +152,10 @@ struct ChatComposer: View {
     }
 
     private func submit() {
-        guard worktrees.canSend(chat) else { return }
         let text = chat.prompt
         chat.prompt = ""
         stickToBottom()
-        Task { await worktrees.launch(chat, text: text) }
+        Task { await chat.send(text: text) }
     }
 
     private var pendingAttachmentRow: some View {

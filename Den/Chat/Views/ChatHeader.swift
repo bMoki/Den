@@ -2,10 +2,8 @@ import SwiftUI
 
 struct ChatHeader: View {
     let chat: ChatModel
-    var runActive: Bool
 
     @AppStorage(InspectorPane.storageKey) private var pane: InspectorPane = .closed
-    @State private var lastOpenPane: InspectorPane = .changes
     @Environment(\.chrome) private var chrome
 
     var body: some View {
@@ -20,11 +18,7 @@ struct ChatHeader: View {
             HarnessSwitcher(chat: chat)
             panelToggle
         }
-        .onKeyboardShortcut("0", modifiers: [.option, .command]) { toggle(.changes) }
-        .onKeyboardShortcut("9", modifiers: [.option, .command]) { toggle(.run) }
-        .onChange(of: pane) {
-            if pane != .closed { lastOpenPane = pane }
-        }
+        .onKeyboardShortcut("0", modifiers: [.option, .command]) { toggle() }
     }
 
     private func breadcrumb(folder: Bool, branch: Bool) -> some View {
@@ -49,38 +43,21 @@ struct ChatHeader: View {
     }
 
     private var panelToggle: some View {
-        Button {
-            withAnimation(.easeInOut(duration: 0.2)) {
-                pane = pane == .closed ? lastOpenPane : .closed
-            }
-        } label: {
+        Button(action: toggle) {
             Image(systemName: "sidebar.right")
                 .font(.system(size: 14))
                 .foregroundStyle(pane == .closed ? Theme.textSecondary : Theme.text)
                 .iconLabel(size: 32)
-                .overlay(alignment: .topTrailing) {
-                    if runActive {
-                        Circle()
-                            .fill(Theme.added)
-                            .frame(width: 7, height: 7)
-                            .offset(x: -5, y: 5)
-                    }
-                }
         }
         .buttonStyle(DenButtonStyle(kind: .secondary))
-        .help(pane == .closed ? "Mostrar alterações e execução (⌥⌘0 / ⌥⌘9)"
+        .help(pane == .closed ? "Mostrar alterações (⌥⌘0)"
                               : "Ocultar painel")
         .accessibilityLabel(pane == .closed ? "Mostrar painel" : "Ocultar painel")
     }
 
-    private func toggle(_ target: InspectorPane) {
+    private func toggle() {
         withAnimation(.easeInOut(duration: 0.2)) {
-            if pane == target {
-                pane = .closed
-            } else {
-                pane = target
-                lastOpenPane = target
-            }
+            pane = pane == .closed ? .changes : .closed
         }
     }
 }

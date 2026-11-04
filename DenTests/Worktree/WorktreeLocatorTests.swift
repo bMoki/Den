@@ -4,22 +4,22 @@ import Testing
 
 private struct Fixture {
     let scratch: URL
-    let repo: TestRepository
+    let checkout: URL
     let folder: URL
     var record: TaskWorktree
 
-    var admin: URL { repo.checkout.appending(path: ".git/worktrees/feat-login") }
+    var admin: URL { checkout.appending(path: ".git/worktrees/feat-login") }
     var moved: URL { scratch.appending(path: "worktrees/api/feat-sign-in") }
     var current: TaskWorktree { WorktreeLocator.current(record) }
 
     func rename() async throws {
-        try await runGit(["branch", "-m", "feat/login", "feat/sign-in"], in: repo.checkout)
+        try await runGit(["branch", "-m", "feat/login", "feat/sign-in"], in: checkout)
     }
 
     func move(to destination: URL) async throws {
         try FileManager.default.createDirectory(at: destination.deletingLastPathComponent(),
                                                 withIntermediateDirectories: true)
-        try await runGit(["worktree", "move", folder.path, destination.path], in: repo.checkout)
+        try await runGit(["worktree", "move", folder.path, destination.path], in: checkout)
     }
 
     func remove() {
@@ -30,17 +30,17 @@ private struct Fixture {
 private func makeFixture(subpath: String? = nil, recordsGitDirectory: Bool = true) async throws -> Fixture {
     let scratch = try makeTree(["Área de trabalho"]).appending(path: "Área de trabalho")
         .resolvingSymlinksInPath()
-    let repo = try await makeRepository(at: scratch.appending(path: "api"), scratch: scratch)
+    let checkout = try await makeRepository(at: scratch.appending(path: "api"), scratch: scratch)
     let folder = scratch.appending(path: "worktrees/api/feat-login")
     try await runGit(["worktree", "add", "-q", "--no-track", "-b", "feat/login", folder.path, "origin/main"],
-                     in: repo.checkout)
-    let admin = recordsGitDirectory ? repo.checkout.appending(path: ".git/worktrees/feat-login") : nil
+                     in: checkout)
+    let admin = recordsGitDirectory ? checkout.appending(path: ".git/worktrees/feat-login") : nil
     let record = TaskWorktree(
         branch: "feat/login", sessionDirectory: subpath.map { folder.appending(path: $0) } ?? folder,
         mirrorRoot: nil,
-        repos: [TaskWorktree.Repo(name: "api", original: repo.checkout, worktree: folder,
+        repos: [TaskWorktree.Repo(name: "api", original: checkout, worktree: folder,
                                   base: "origin/main", remote: nil, gitDirectory: admin)])
-    return Fixture(scratch: scratch, repo: repo, folder: folder, record: record)
+    return Fixture(scratch: scratch, checkout: checkout, folder: folder, record: record)
 }
 
 private func resolved(_ url: URL?) -> String? { url?.resolvingSymlinksInPath().path }
@@ -113,7 +113,7 @@ private func folders(of task: TaskWorktree) -> [String?] { task.repos.map { reso
 @Test func aRemovedWorktreeLeavesTheRecordAlone() async throws {
     let task = try await makeFixture()
     defer { task.remove() }
-    try await runGit(["worktree", "remove", "--force", task.folder.path], in: task.repo.checkout)
+    try await runGit(["worktree", "remove", "--force", task.folder.path], in: task.checkout)
 
     #expect(task.current == task.record)
 }
