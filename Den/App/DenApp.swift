@@ -6,6 +6,7 @@ struct DenApp: App {
     @State private var worktrees: WorktreeModel
     @State private var monitor: PullRequestMonitor
     @State private var ns: NsWorkspace
+    @State private var terminals = FreeTerminals()
 
     init() {
         let environment = resolveEnvironment(ProcessInfo.processInfo.environment)
@@ -25,6 +26,7 @@ struct DenApp: App {
                 .environment(worktrees)
                 .environment(monitor)
                 .environment(ns)
+                .environment(terminals)
                 .defaultAppStorage(environment.defaults)
                 .task { monitor.start() }
                 .task { await ns.watch() }

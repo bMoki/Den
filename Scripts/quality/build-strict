@@ -10,7 +10,8 @@
 # the Den project; the `swift build` line is what holds HarnessKit to it.
 #
 # Arguments are passed on to xcodebuild as build settings; CI uses them to sign
-# ad hoc.
+# ad hoc. SwiftTerm runs a build plugin that only writes its version info, so
+# it is trusted without asking.
 set -eu
 cd "$(dirname "$0")/../.."
 
@@ -22,6 +23,7 @@ for scheme in Den DenUITests; do
         -project Den.xcodeproj -scheme "$scheme" \
         -destination 'platform=macOS' \
         -derivedDataPath build/DerivedData \
+        -skipPackagePluginValidation \
         'SWIFT_TREAT_WARNINGS_AS_ERRORS=$(STRICT_$(PROJECT_NAME):default=NO)' STRICT_Den=YES \
         COMPILER_INDEX_STORE_ENABLE=YES INDEX_ENABLE_DATA_STORE=YES \
         "$@"

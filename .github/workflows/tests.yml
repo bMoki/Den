@@ -43,6 +43,7 @@ jobs:
           xcodebuild test \
             -project Den.xcodeproj -scheme Den \
             -destination 'platform=macOS' \
+            -skipPackagePluginValidation \
             -enableCodeCoverage YES \
             -resultBundlePath build/app.xcresult \
             $SIGNING
@@ -72,6 +73,7 @@ jobs:
           xcodebuild test \
             -project Den.xcodeproj -scheme Den \
             -destination 'platform=macOS' \
+            -skipPackagePluginValidation \
             -enableThreadSanitizer YES \
             -resultBundlePath build/tsan.xcresult \
             $SIGNING

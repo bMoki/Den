@@ -269,4 +269,26 @@ final class ConversationUITests: XCTestCase {
         require(app.staticTexts["Nenhuma conversa aberta"], in: app)
         XCTAssertFalse(sidebarRow("Saudação curta", in: app).exists)
     }
+
+    @MainActor
+    func testFreeTerminalsRunAShellInTheSessionFolder() throws {
+        let app = launch()
+        _ = openComposer(in: app)
+
+        app.buttons["Mostrar Terminais livres"].click()
+        require(app.buttons["Novo Terminal livre"], in: app)
+        app.typeText("pwd -P > terminal.txt\r")
+
+        let written = root.appending(path: "project/terminal.txt")
+        let deadline = Date().addingTimeInterval(patience)
+        while Date() < deadline, (try? String(contentsOf: written, encoding: .utf8))?.isEmpty != false {
+            RunLoop.current.run(until: Date().addingTimeInterval(0.2))
+        }
+        let reported = try String(contentsOf: written, encoding: .utf8)
+        XCTAssertEqual(reported.trimmingCharacters(in: .whitespacesAndNewlines), root.path + "/project")
+
+        app.buttons["Novo Terminal livre"].click()
+        let tabs = app.staticTexts.matching(NSPredicate(format: "value BEGINSWITH %@", "Terminal livre ·"))
+        XCTAssertEqual(tabs.count, 2)
+    }
 }

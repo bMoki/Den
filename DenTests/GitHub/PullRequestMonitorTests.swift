@@ -51,14 +51,6 @@ private func makeRig(sessions: Int = 1, host: String = "github.com", limit: Int 
     return Rig(monitor: monitor, ledger: ledger, fetcher: fetcher, clock: clock, ids: ids, file: file)
 }
 
-private func eventually(_ condition: () async -> Bool) async -> Bool {
-    for _ in 0..<1_000 {
-        if await condition() { return true }
-        try? await Task.sleep(for: .milliseconds(5))
-    }
-    return false
-}
-
 @MainActor
 @Test func aVisibleSessionIsCheckedEveryTwentySeconds() async {
     let rig = makeRig()

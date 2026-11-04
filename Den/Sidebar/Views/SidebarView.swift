@@ -6,6 +6,7 @@ struct SidebarView: View {
     @Environment(WorktreeModel.self) private var worktrees
     @Environment(PullRequestMonitor.self) private var monitor
     @Environment(NsWorkspace.self) private var ns
+    @Environment(FreeTerminals.self) private var terminals
     var lightsInset: CGFloat = 0
     var collapse: () -> Void = {}
 
@@ -33,6 +34,7 @@ struct SidebarView: View {
                 if let summary = pendingDelete {
                     Task { await workspace.deleteSession(summary.id) }
                     worktrees.forget(summary.id)
+                    terminals.close(sessionID: summary.id)
                 }
                 pendingDelete = nil
             }

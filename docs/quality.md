@@ -98,7 +98,7 @@ swift test --package-path Packages/HarnessKit --enable-code-coverage
 Scripts/quality/coverage package
 
 rm -rf build/app.xcresult
-xcodebuild test -project Den.xcodeproj -scheme Den -destination 'platform=macOS' \
+xcodebuild test -project Den.xcodeproj -scheme Den -destination 'platform=macOS' -skipPackagePluginValidation \
   -enableCodeCoverage YES -resultBundlePath build/app.xcresult
 Scripts/quality/coverage app build/app.xcresult
 ```
@@ -117,7 +117,7 @@ número que o job imprime antes de gravar um piso novo.
 
 ```sh
 swift test --package-path Packages/HarnessKit --sanitize=thread
-xcodebuild test -project Den.xcodeproj -scheme Den -destination 'platform=macOS' \
+xcodebuild test -project Den.xcodeproj -scheme Den -destination 'platform=macOS' -skipPackagePluginValidation \
   -enableThreadSanitizer YES
 ```
 

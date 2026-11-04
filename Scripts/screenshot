@@ -65,6 +65,7 @@ if [ "$build" = yes ]; then
         -project Den.xcodeproj -scheme Den -configuration Debug \
         -destination 'platform=macOS' \
         -derivedDataPath build/DerivedData \
+        -skipPackagePluginValidation \
         CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= PROVISIONING_PROFILE_SPECIFIER=
 fi
 [ -d "$app" ] || { echo "screenshot: $app not found; run without --no-build" >&2; exit 1; }

@@ -38,6 +38,7 @@ struct ChatView: View {
                     transcript
                     ChatComposer(chat: chat, slash: slash, mentions: mentions,
                                  keys: keys) { nearBottom = true }
+                    TerminalPanel(sessionID: chat.sessionID, directory: chat.workingDirectory)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Theme.canvas)

@@ -116,29 +116,43 @@ struct WindowChrome: NSViewRepresentable {
 }
 
 struct ResizeHandle: View {
-    @Binding var width: Double
-    let range: ClosedRange<Double>
-    var growsTowardTrailing = true
+    @Binding private var size: Double
+    private let range: ClosedRange<Double>
+    private let axis: Axis
+    private let growsTowardTrailing: Bool
 
     @State private var origin: Double?
+
+    init(width: Binding<Double>, range: ClosedRange<Double>, growsTowardTrailing: Bool = true) {
+        _size = width
+        self.range = range
+        axis = .horizontal
+        self.growsTowardTrailing = growsTowardTrailing
+    }
+
+    init(height: Binding<Double>, range: ClosedRange<Double>) {
+        _size = height
+        self.range = range
+        axis = .vertical
+        growsTowardTrailing = false
+    }
 
     var body: some View {
         Rectangle()
             .fill(Theme.border)
-            .frame(width: 1)
+            .frame(width: axis == .horizontal ? 1 : nil, height: axis == .vertical ? 1 : nil)
             .overlay {
                 Color.clear
-                    .frame(width: 9)
+                    .frame(width: axis == .horizontal ? 9 : nil, height: axis == .vertical ? 9 : nil)
                     .contentShape(Rectangle())
-                    .pointerStyle(.columnResize)
+                    .pointerStyle(axis == .horizontal ? .columnResize : .rowResize)
                     .gesture(
                         DragGesture(minimumDistance: 1, coordinateSpace: .global)
                             .onChanged { value in
-                                let base = origin ?? width
-                                if origin == nil { origin = width }
-                                let delta = growsTowardTrailing ? value.translation.width
-                                                                : -value.translation.width
-                                width = min(max(base + delta, range.lowerBound), range.upperBound)
+                                let base = origin ?? size
+                                if origin == nil { origin = size }
+                                let moved = axis == .horizontal ? value.translation.width : value.translation.height
+                                size = min(max(base + (growsTowardTrailing ? moved : -moved), range.lowerBound), range.upperBound)
                             }
                             .onEnded { _ in origin = nil }
                     )

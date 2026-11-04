@@ -5,6 +5,7 @@ struct ChatHeader: View {
 
     @AppStorage(InspectorPane.storageKey) private var pane: InspectorPane = .closed
     @Environment(\.chrome) private var chrome
+    @Environment(FreeTerminals.self) private var terminals
 
     var body: some View {
         TopBar(leadingInset: chrome.leadingInset + (chrome.sidebarHidden ? 8 : 20)) {
@@ -16,9 +17,29 @@ struct ChatHeader: View {
             }
             Spacer(minLength: 12)
             HarnessSwitcher(chat: chat)
+            terminalToggle
             panelToggle
         }
         .onKeyboardShortcut("0", modifiers: [.option, .command]) { toggle() }
+        .onKeyboardShortcut("`", modifiers: .control) { toggleTerminals() }
+    }
+
+    private var terminalsShown: Bool { terminals.isPanelShown(for: chat.sessionID) }
+
+    private var terminalToggle: some View {
+        Button(action: toggleTerminals) {
+            Image(systemName: "rectangle.bottomthird.inset.filled")
+                .font(.system(size: 14))
+                .foregroundStyle(terminalsShown ? Theme.text : Theme.textSecondary)
+                .iconLabel(size: 32)
+        }
+        .buttonStyle(DenButtonStyle(kind: .secondary))
+        .help(terminalsShown ? "Ocultar Terminais livres (⌃`)" : "Terminal livre (⌃`)")
+        .accessibilityLabel(terminalsShown ? "Ocultar Terminais livres" : "Mostrar Terminais livres")
+    }
+
+    private func toggleTerminals() {
+        terminals.togglePanel(for: chat.sessionID, in: chat.workingDirectory)
     }
 
     private func breadcrumb(folder: Bool, branch: Bool) -> some View {

@@ -167,5 +167,6 @@ private struct EmptyHeader: View {
     ContentView(environment: environment)
         .environment(WorktreeModel(ledger: ledger))
         .environment(PullRequestMonitor(ledger: ledger, fetcher: GitHubCLI()))
+        .environment(FreeTerminals())
         .defaultAppStorage(environment.defaults)
 }

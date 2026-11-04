@@ -19,7 +19,7 @@ struct ZoomedImage: Identifiable, Equatable {
                  stickToBottom: @escaping () -> Void) {
         remove()
         monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            guard let self else { return event }
+            guard let self, !event.isForFreeTerminal else { return event }
             let slashMatches = slash.matches(prompt: chat.prompt,
                                                   catalog: chat.catalog)
             if !slashMatches.isEmpty {
