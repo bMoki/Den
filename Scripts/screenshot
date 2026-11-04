@@ -1,0 +1,147 @@
+#!/bin/sh
+# Builds the app, opens it on a throwaway data root with the fake CLIs (the
+# same isolation the UI tests use, so no real session, preference or CLI is
+# touched), captures its window to a PNG and quits it. It is how an agent sees
+# a screen it changed.
+#
+#   Scripts/screenshot [options] [output.png]
+#
+#   --no-build     reuse the app already in build/DerivedData
+#   --setup CMD    shell command run once in the project folder before launch,
+#                  like DEN_PROJECT_SETUP in the UI tests
+#   --seed CMD     shell command run in the data root before launch, to plant
+#                  sessions under sessions/<id>/session.json
+#   --ns FILE      the status the fake `ns rpc` answers with (a JSON file, read
+#                  on every request); without it every request fails as if the
+#                  workspace were not set up
+#   --wait SECS    how long to let the window settle before capturing (2)
+#   --size WxH     window size in points (1440x900)
+#   --keep         leave the app open and the data root in place
+#
+# The output defaults to build/screenshots/<timestamp>.png. Capturing a
+# window's contents needs Screen Recording permission for the terminal that
+# runs this; without it the PNG comes out with only the desktop behind.
+set -eu
+cd "$(dirname "$0")/.."
+repo=$(pwd -P)
+
+build=yes
+setup=
+seed=
+ns_status=
+wait=2
+size=1440x900
+keep=no
+output=
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --no-build) build=no ;;
+        --setup) setup=$2; shift ;;
+        --seed) seed=$2; shift ;;
+        --ns) ns_status=$2; shift ;;
+        --wait) wait=$2; shift ;;
+        --size) size=$2; shift ;;
+        --keep) keep=yes ;;
+        -h|--help) sed -n '2,23p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        -*) echo "screenshot: unknown option $1" >&2; exit 2 ;;
+        *) output=$1 ;;
+    esac
+    shift
+done
+
+if [ -z "$output" ]; then
+    mkdir -p build/screenshots
+    output=build/screenshots/$(date +%Y%m%d-%H%M%S).png
+fi
+case "$output" in
+    /*) ;;
+    *) output=$repo/$output ;;
+esac
+
+app=build/DerivedData/Build/Products/Debug/Den.app
+if [ "$build" = yes ]; then
+    xcodebuild build -quiet \
+        -project Den.xcodeproj -scheme Den -configuration Debug \
+        -destination 'platform=macOS' \
+        -derivedDataPath build/DerivedData \
+        CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= PROVISIONING_PROFILE_SPECIFIER=
+fi
+[ -d "$app" ] || { echo "screenshot: $app not found; run without --no-build" >&2; exit 1; }
+
+# The UI tests keep their roots under /private/tmp too: the app removes its
+# stored preferences whenever the root has no sessions yet.
+root=$(mktemp -d /private/tmp/DenScreenshot-XXXXXX)
+# A seeded root already has sessions, so the app would keep the preferences of
+# the last run; start them over here instead.
+defaults delete Den.UITests >/dev/null 2>&1 || true
+[ -z "$seed" ] || (cd "$root" && sh -c "$seed")
+case "$ns_status" in
+    ''|/*) ;;
+    *) ns_status=$repo/$ns_status ;;
+esac
+
+env "DEN_UI_TEST_ROOT=$root" \
+    "DEN_PROJECT_SETUP=$setup" \
+    "DEN_NS=$repo/Scripts/fake-cli/ns" \
+    "FAKE_NS_STATUS=$ns_status" \
+    "DEN_CLI_claude-code=$repo/Scripts/fake-cli/claude-code" \
+    "DEN_CLI_opencode=$repo/Scripts/fake-cli/opencode" \
+    "$app/Contents/MacOS/Den" >"$root/app.log" 2>&1 &
+pid=$!
+
+cleanup() {
+    [ "$keep" = yes ] && return
+    kill "$pid" 2>/dev/null || true
+    wait "$pid" 2>/dev/null || true
+    rm -rf "$root"
+}
+trap cleanup EXIT
+
+# Prints "<window id>" for the largest on-screen window of the process, once it
+# exists, after resizing it to the requested size.
+window=$(swift - "$pid" "$size" <<'SWIFT'
+import AppKit
+import CoreGraphics
+
+let pid = pid_t(CommandLine.arguments[1])!
+let size = CommandLine.arguments[2].split(separator: "x").compactMap { Double($0) }
+
+func largestWindow() -> (id: CGWindowID, bounds: CGRect)? {
+    let list = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID)
+        as? [[String: Any]] ?? []
+    return list
+        .filter { ($0[kCGWindowOwnerPID as String] as? pid_t) == pid && ($0[kCGWindowLayer as String] as? Int) == 0 }
+        .compactMap { info -> (CGWindowID, CGRect)? in
+            guard let id = info[kCGWindowNumber as String] as? CGWindowID,
+                  let bounds = info[kCGWindowBounds as String] as? NSDictionary,
+                  let rect = CGRect(dictionaryRepresentation: bounds) else { return nil }
+            return (id, rect)
+        }
+        .max { $0.1.width * $0.1.height < $1.1.width * $1.1.height }
+}
+
+for _ in 0..<150 {
+    if let window = largestWindow() {
+        if size.count == 2, let app = NSRunningApplication(processIdentifier: pid) {
+            app.activate()
+            let script = """
+            tell application "System Events" to tell (first process whose unix id is \(pid))
+                set size of front window to {\(Int(size[0])), \(Int(size[1]))}
+                set position of front window to {40, 40}
+            end tell
+            """
+            NSAppleScript(source: script)?.executeAndReturnError(nil)
+        }
+        print(window.id)
+        exit(0)
+    }
+    usleep(100_000)
+}
+exit(1)
+SWIFT
+) || { echo "screenshot: the app opened no window; log in $root/app.log" >&2; keep=yes; exit 1; }
+
+sleep "$wait"
+screencapture -x -o -l "$window" "$output"
+echo "$output"
