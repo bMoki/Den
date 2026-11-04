@@ -13,7 +13,7 @@ protocol AppEnvironment {
 
 extension AppEnvironment {
     var ghOverride: String? { nil }
-    var nsOverride: String? { nil }
+    var nsOverride: String? { defaults.string(forKey: NsClient.pathKey).flatMap { $0.isEmpty ? nil : $0 } }
 }
 
 protocol RootedEnvironment: AppEnvironment {

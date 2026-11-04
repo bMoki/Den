@@ -123,6 +123,8 @@ actor NsClient {
 }
 
 extension NsClient {
+    nonisolated static let pathKey = "Den.nsPath"
+
     static func locating(override: String?, shell: ShellEnvironment = .shared) -> NsClient {
         NsClient {
             let variables = await shell.resolve().variables

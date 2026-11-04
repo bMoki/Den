@@ -134,5 +134,16 @@ private func scratchRoot() -> URL {
 
     #expect(pinned.nsOverride == "/fake/ns")
     #expect(plain.nsOverride == "")
-    #expect(ProductionEnvironment().nsOverride == nil)
+}
+
+@Test func anNsPathInThePreferencesPointsTheAppAtThatBinary() {
+    let scratch = ScratchDefaults()
+    defer { scratch.remove() }
+    let environment = TestEnvironment(root: scratchRoot(), defaults: scratch.defaults)
+
+    #expect(environment.nsOverride == nil)
+    scratch.defaults.set("", forKey: NsClient.pathKey)
+    #expect(environment.nsOverride == nil)
+    scratch.defaults.set("/Users/me/.local/bin/ns-nucleo", forKey: NsClient.pathKey)
+    #expect(environment.nsOverride == "/Users/me/.local/bin/ns-nucleo")
 }
