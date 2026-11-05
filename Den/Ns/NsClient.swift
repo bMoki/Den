@@ -83,7 +83,23 @@ actor NsClient {
 
     nonisolated struct SnapshotGroup: Decodable, Equatable, Sendable {
         let branch: String
+        let orphan: Bool
         let snapshots: [Snapshot]
+
+        init(branch: String, orphan: Bool, snapshots: [Snapshot]) {
+            self.branch = branch
+            self.orphan = orphan
+            self.snapshots = snapshots
+        }
+
+        init(from decoder: any Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            branch = try container.decode(String.self, forKey: .branch)
+            orphan = try container.decodeIfPresent(Bool.self, forKey: .orphan) ?? false
+            snapshots = try container.decode([Snapshot].self, forKey: .snapshots)
+        }
+
+        private enum CodingKeys: String, CodingKey { case branch, orphan, snapshots }
     }
 
     private nonisolated struct Request<Input: Encodable>: Encodable {
@@ -124,6 +140,12 @@ actor NsClient {
     private nonisolated struct SnapshotInput: Encodable {
         let branch: String
         let name: String
+    }
+
+    private nonisolated struct TakeSnapshotInput: Encodable {
+        let branch: String
+        let name: String
+        let replace: Bool
     }
 
     private nonisolated struct RestoreInput: Encodable {
@@ -234,8 +256,8 @@ actor NsClient {
         try await call("dbSnapshots", input: NoInput(), timeout: .seconds(60))
     }
 
-    func takeSnapshot(branch: String, name: String, progress: @escaping Progress) async throws {
-        let _: Ignored = try await call("dbSnapshot", input: SnapshotInput(branch: branch, name: name),
+    func takeSnapshot(branch: String, name: String, replace: Bool, progress: @escaping Progress) async throws {
+        let _: Ignored = try await call("dbSnapshot", input: TakeSnapshotInput(branch: branch, name: name, replace: replace),
                                         timeout: .seconds(900), progress: progress)
     }
 

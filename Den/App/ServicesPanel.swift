@@ -69,10 +69,11 @@ struct ServicesPanel: View {
         .scrollIndicators(.never)
         .task(id: branch) { await ns.loadSnapshots() }
         .sheet(isPresented: $takingSnapshot) {
-            TakeSnapshotSheet(branch: branch, cancel: { takingSnapshot = false }, take: { name in
-                takingSnapshot = false
-                Task { await ns.takeSnapshot(branch, name: name) }
-            })
+            TakeSnapshotSheet(branch: branch, taken: Set(ns.snapshots(of: branch).map(\.name)),
+                              cancel: { takingSnapshot = false }, take: { name, replacing in
+                                  takingSnapshot = false
+                                  Task { await ns.takeSnapshot(branch, name: name, replacing: replacing) }
+                              })
         }
         .sheet(item: $restoring) { request in
             RestoreSnapshotSheet(branch: branch, sources: ns.restoreSources(for: branch), running: runningServices,

@@ -2,8 +2,9 @@ import SwiftUI
 
 struct TakeSnapshotSheet: View {
     let branch: String
+    let taken: Set<String>
     var cancel: () -> Void
-    var take: (_ name: String) -> Void
+    var take: (_ name: String, _ replacing: Bool) -> Void
 
     @State private var name = ""
 
@@ -16,12 +17,16 @@ struct TakeSnapshotSheet: View {
                 Text(note)
                     .font(.system(size: 12, design: .monospaced))
                     .foregroundStyle(problem == nil ? Theme.textTertiary : Theme.alertText)
+                if replacing {
+                    DialogWarning(title: "Já existe um Snapshot com esse nome.",
+                                  detail: "Substituir apaga o Snapshot anterior de \(branch).")
+                }
             }
             .padding(EdgeInsets(top: 14, leading: 20, bottom: 4, trailing: 20))
             DialogFooter {
                 Spacer(minLength: 0)
                 DialogCancelButton(action: cancel)
-                Button(action: submit) { Text("Tirar snapshot").pillLabel() }
+                Button(action: submit) { Text(replacing ? "Substituir" : "Tirar snapshot").pillLabel() }
                     .buttonStyle(.denPrimary)
                     .keyboardShortcut(.defaultAction)
                     .disabled(!isValid)
@@ -43,12 +48,14 @@ struct TakeSnapshotSheet: View {
 
     private var isValid: Bool { !trimmed.isEmpty && problem == nil }
 
+    private var replacing: Bool { isValid && taken.contains { $0.lowercased() == trimmed.lowercased() } }
+
     private var note: String {
         problem ?? "Referência: \(branch):\(trimmed.isEmpty ? "nome" : trimmed)"
     }
 
     private func submit() {
-        if isValid { take(trimmed) }
+        if isValid { take(trimmed, replacing) }
     }
 }
 
@@ -86,8 +93,15 @@ struct RestoreSnapshotSheet: View {
                             .frame(maxWidth: .infinity, minHeight: 60)
                     }
                     ForEach(sources, id: \.branch) { group in
+                        if group.branch == firstOrphan {
+                            Text("Órfãos")
+                                .font(.system(size: 11.5, weight: .semibold))
+                                .foregroundStyle(Theme.textSecondary)
+                                .padding(.top, 4)
+                                .accessibilityAddTraits(.isHeader)
+                        }
                         VStack(alignment: .leading, spacing: 2) {
-                            groupTitle(group.branch)
+                            groupTitle(group)
                             ForEach(group.snapshots) { snapshot in
                                 SnapshotChoice(snapshot: snapshot, isSelected: selected == snapshot.ref) {
                                     selected = snapshot.ref
@@ -130,10 +144,16 @@ struct RestoreSnapshotSheet: View {
         running.count == 1 ? "1 Serviço está Rodando" : "\(running.count) Serviços estão Rodando"
     }
 
-    private func groupTitle(_ source: String) -> some View {
+    private var firstOrphan: String? {
+        sources.first(where: \.orphan)?.branch
+    }
+
+    private func groupTitle(_ source: NsClient.SnapshotGroup) -> some View {
         HStack(spacing: 5) {
-            Text(source).font(.system(size: 11.5, weight: .semibold, design: .monospaced))
-            if source == branch {
+            Text(source.branch).font(.system(size: 11.5, weight: .semibold, design: .monospaced))
+            if source.orphan {
+                Text("· branch removida").font(.system(size: 11.5))
+            } else if source.branch == branch {
                 Text("· esta branch").font(.system(size: 11.5))
             }
         }

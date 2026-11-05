@@ -15,14 +15,14 @@ final class NsWorkspace {
 
     nonisolated struct SnapshotOperations: Sendable {
         var list: @Sendable () async throws -> [NsClient.SnapshotGroup]
-        var take: @Sendable (_ branch: String, _ name: String, _ progress: @escaping NsClient.Progress) async throws -> Void
+        var take: @Sendable (_ branch: String, _ name: String, _ replace: Bool, _ progress: @escaping NsClient.Progress) async throws -> Void
         var restore: @Sendable (_ branch: String, _ ref: String, _ progress: @escaping NsClient.Progress) async throws -> Void
         var remove: @Sendable (_ branch: String, _ name: String) async throws -> Void
 
         static let unavailable: SnapshotOperations = {
             let failure = NsFailure(message: "ns indisponível")
             return SnapshotOperations(list: { throw failure },
-                                      take: { _, _, _ in throw failure },
+                                      take: { _, _, _, _ in throw failure },
                                       restore: { _, _, _ in throw failure },
                                       remove: { _, _ in throw failure })
         }()
@@ -109,7 +109,7 @@ final class NsWorkspace {
                            openDatabase: { try await client.openDatabase(branch: $0) },
                            snapshots: SnapshotOperations(
                                list: { try await client.snapshots() },
-                               take: { try await client.takeSnapshot(branch: $0, name: $1, progress: $2) },
+                               take: { try await client.takeSnapshot(branch: $0, name: $1, replace: $2, progress: $3) },
                                restore: { try await client.restore(branch: $0, ref: $1, progress: $2) },
                                remove: { try await client.removeSnapshot(branch: $0, name: $1) }))
     }
@@ -222,7 +222,9 @@ final class NsWorkspace {
     }
 
     func restoreSources(for branch: String) -> [NsClient.SnapshotGroup] {
-        let rank = { (group: NsClient.SnapshotGroup) in group.branch == branch ? 0 : group.branch == Self.mainBranch ? 1 : 2 }
+        let rank = { (group: NsClient.SnapshotGroup) in
+            group.orphan ? 3 : group.branch == branch ? 0 : group.branch == Self.mainBranch ? 1 : 2
+        }
         return snapshotGroups.filter { !$0.snapshots.isEmpty }
             .enumerated()
             .sorted { (rank($0.element), $0.offset) < (rank($1.element), $1.offset) }
@@ -239,10 +241,10 @@ final class NsWorkspace {
         }
     }
 
-    func takeSnapshot(_ branch: String, name: String) async {
+    func takeSnapshot(_ branch: String, name: String, replacing: Bool = false) async {
         let take = snapshotOperations.take
         await run(Activity(kind: .snapshot, label: "Tirando snapshot..."), on: branch) {
-            try await take(branch, name, $0)
+            try await take(branch, name, replacing, $0)
         }
         await loadSnapshots()
     }

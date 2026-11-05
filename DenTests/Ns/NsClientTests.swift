@@ -342,7 +342,8 @@ private let answersStatus = #"""
         read -r line
         printf '%s\n' "$line" > "$0.request"
         snapshot='{"branch":"master","name":"seed","ref":"master:seed","createdAt":"2026-11-05T10:42:00.123Z","volume":"v"}'
-        echo '{"type":"result","id":"1","result":[{"branch":"master","snapshots":['"$snapshot"']}]}'
+        groups='{"branch":"master","snapshots":['"$snapshot"']},{"branch":"NS-0","orphan":true,"snapshots":[]}'
+        echo '{"type":"result","id":"1","result":['"$groups"']}'
         cat >/dev/null
         """#)
     defer { try? FileManager.default.removeItem(at: folder) }
@@ -351,7 +352,8 @@ private let answersStatus = #"""
 
     let request = try String(contentsOf: folder.appending(path: "ns.request"), encoding: .utf8)
     #expect(request.contains(#""op":"dbSnapshots""#))
-    #expect(groups.map(\.branch) == ["master"])
+    #expect(groups.map(\.branch) == ["master", "NS-0"])
+    #expect(groups.map(\.orphan) == [false, true])
     #expect(groups.first?.snapshots.first?.ref == "master:seed")
     #expect(abs((groups.first?.snapshots.first?.created?.timeIntervalSince1970 ?? 0) - 1_793_875_320.123) < 0.001)
 }
@@ -367,7 +369,7 @@ private let answersStatus = #"""
         """#)
     defer { try? FileManager.default.removeItem(at: folder) }
 
-    try await client.takeSnapshot(branch: "NS-1", name: "antes", progress: { _ in })
+    try await client.takeSnapshot(branch: "NS-1", name: "antes", replace: true, progress: { _ in })
     try await client.restore(branch: "NS-1", ref: "master:seed", progress: { _ in })
     try await client.removeSnapshot(branch: "NS-1", name: "antes")
 
@@ -375,11 +377,12 @@ private let answersStatus = #"""
         .split(separator: "\n").map(String.init)
     let inputs = try requests.map { line in
         let request = try #require(JSONSerialization.jsonObject(with: Data(line.utf8)) as? [String: Any])
-        return "\(request["op"] ?? "") \((request["input"] as? [String: String] ?? [:]).sorted { $0.key < $1.key })"
+        let input = (request["input"] as? [String: Any] ?? [:]).map { "\($0.key)=\($0.value)" }.sorted()
+        return "\(request["op"] ?? "") \(input.joined(separator: " "))"
     }
     #expect(inputs == [
-        #"dbSnapshot [(key: "branch", value: "NS-1"), (key: "name", value: "antes")]"#,
-        #"dbRestore [(key: "branch", value: "NS-1"), (key: "ref", value: "master:seed")]"#,
-        #"dbRmSnapshot [(key: "branch", value: "NS-1"), (key: "name", value: "antes")]"#,
+        "dbSnapshot branch=NS-1 name=antes replace=1",
+        "dbRestore branch=NS-1 ref=master:seed",
+        "dbRmSnapshot branch=NS-1 name=antes",
     ])
 }
