@@ -191,7 +191,7 @@ nonisolated private final class Replies: @unchecked Sendable {
     #expect(ns.updateReports.map(\.branch) == [shown == "NS-12" ? "NS-13" : "NS-12"])
 }
 
-private let cleanPreview = NsClient.RemovalPreview(volume: "ns_db_ns-12", uncommitted: [])
+nonisolated private let cleanPreview = NsClient.RemovalPreview(volume: "ns_db_ns-12", uncommitted: [])
 
 @Test func removingAsksWithThePreviewAndArchivesTheSessionsOfTheBranch() async {
     let gone = NsStatus(worktreesDir: "/dev/worktrees", baseRepos: [],

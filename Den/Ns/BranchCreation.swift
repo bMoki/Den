@@ -158,15 +158,13 @@ final class BranchCreation {
     }
 
     private func asker() -> NsClient.Ask {
-        { [weak self] question in
-            await withCheckedContinuation { continuation in
-                Task { @MainActor in
-                    guard let self else { return continuation.resume(returning: question.default) }
-                    self.settleQuestion()
-                    self.pendingAnswer = continuation
-                    self.question = question
-                    self.isPresented = true
-                }
+        { @MainActor [weak self] question in
+            guard let self else { return question.default }
+            return await withCheckedContinuation { continuation in
+                self.settleQuestion()
+                self.pendingAnswer = continuation
+                self.question = question
+                self.isPresented = true
             }
         }
     }

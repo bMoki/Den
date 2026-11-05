@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import Den
 
-let sampleStatus = NsStatus(
+nonisolated let sampleStatus = NsStatus(
     worktreesDir: "/dev/worktrees",
     baseRepos: [.init(repo: "backend", path: "/dev/scalemed-backend"),
                 .init(repo: "frontend", path: "/dev/frontend")],

@@ -237,3 +237,21 @@ private func operations(
     #expect(creation.phase == .notPrepared(repo: "parents", NsFailure(message: "docker parado")))
     #expect(refreshes.all == ["refresh", "refresh"])
 }
+
+@MainActor
+@Test(.timeLimit(.minutes(1))) func aQuestionAfterTheCreationIsGoneTakesItsDefault() async {
+    let kept = AsyncStream<NsClient.Ask>.makeStream()
+    var creation: BranchCreation? = BranchCreation(operations: operations(create: { _, _, _, ask in
+        kept.continuation.yield(ask)
+        return created
+    }))
+    creation?.name = "NS-1"
+    await creation?.create { _ in }
+    creation = nil
+
+    for await ask in kept.stream {
+        #expect(await ask(NsQuestion(message: "?", default: true)))
+        #expect(await ask(NsQuestion(message: "?", default: false)) == false)
+        break
+    }
+}

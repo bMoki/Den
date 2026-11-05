@@ -1,9 +1,10 @@
 #!/bin/sh
 # Every static gate, the way CI runs them: the commit hooks on all files, the
 # builds with warnings as errors, then the unused-code scan over that build.
+# Arguments go to the build as settings (CI and local runs use them to sign ad hoc).
 set -eu
 cd "$(dirname "$0")/../.."
 
 pre-commit run --all-files
-Scripts/quality/build-strict
+Scripts/quality/build-strict "$@"
 Scripts/quality/unused-code --skip-build
