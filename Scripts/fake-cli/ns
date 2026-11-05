@@ -1,16 +1,23 @@
 #!/bin/sh
 # A stand-in for `ns rpc`: says it is ready, then answers every operation with
 # the JSON in the file $FAKE_NS_STATUS, read again on each request so a test
-# can change the workspace while the app runs. Anything but `rpc` fails the
-# way an ns without the adapter does.
+# can change the workspace while the app runs. An operation with a script
+# beside it, $FAKE_NS_STATUS.<op>, prints that script's lines instead, with
+# ID replaced by the request id; a script without a result line leaves the
+# operation running. Answers to the questions of a script are ignored. Anything
+# but `rpc` fails the way an ns without the adapter does.
 if [ "$1" != rpc ]; then
     echo "error: unknown command '$1'" >&2
     exit 1
 fi
 printf '{"type":"ready","protocol":1,"ops":["status"]}\n'
 while IFS= read -r line; do
+    case "$line" in *'"type":"answer"'*) continue ;; esac
     id=$(printf '%s\n' "$line" | sed -n 's/.*"id":"\([^"]*\)".*/\1/p')
-    if [ -r "$FAKE_NS_STATUS" ]; then
+    op=$(printf '%s\n' "$line" | sed -n 's/.*"op":"\([^"]*\)".*/\1/p')
+    if [ -r "$FAKE_NS_STATUS.$op" ]; then
+        sed "s/\"ID\"/\"$id\"/g" "$FAKE_NS_STATUS.$op"
+    elif [ -r "$FAKE_NS_STATUS" ]; then
         printf '{"type":"result","id":"%s","result":%s}\n' "$id" "$(tr -d '\n' <"$FAKE_NS_STATUS")"
     else
         printf '{"type":"error","id":"%s","error":{"category":"pre-condicao","message":"workspace não configurado"}}\n' "$id"

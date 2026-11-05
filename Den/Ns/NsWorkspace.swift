@@ -18,24 +18,40 @@ final class NsWorkspace {
     private(set) var problem: String?
     private(set) var activity: [String: Activity] = [:]
     private(set) var actionProblems: [String: String] = [:]
+    private(set) var creation: BranchCreation?
 
     @ObservationIgnored private let fetch: @Sendable () async throws -> NsStatus
     @ObservationIgnored private let startBranch: BranchAction
     @ObservationIgnored private let stopBranch: BranchAction
+    @ObservationIgnored private let creationOperations: BranchCreation.Operations
 
     init(fetch: @escaping @Sendable () async throws -> NsStatus,
          start: @escaping BranchAction = { _, _, _ in },
-         stop: @escaping BranchAction = { _, _, _ in }) {
+         stop: @escaping BranchAction = { _, _, _ in },
+         create: BranchCreation.Operations = .unavailable) {
         self.fetch = fetch
         startBranch = start
         stopBranch = stop
+        creationOperations = create
     }
 
     static func live(_ environment: any AppEnvironment) -> NsWorkspace {
         let client = NsClient.locating(override: environment.nsOverride)
         return NsWorkspace(fetch: { try await client.status() },
                            start: { try await client.start(branch: $0, service: $1, progress: $2) },
-                           stop: { try await client.stop(branch: $0, service: $1, progress: $2) })
+                           stop: { try await client.stop(branch: $0, service: $1, progress: $2) },
+                           create: BranchCreation.Operations(
+                               create: { try await client.new(branch: $0, repos: $1, steps: $2, ask: $3) },
+                               addRepo: { try await client.addRepo(branch: $0, repo: $1, steps: $2) },
+                               prepare: { try await client.prepare(branch: $0, steps: $1, ask: $2) }))
+    }
+
+    func newBranch() {
+        if let creation, creation.isRunning {
+            creation.isPresented = true
+        } else {
+            creation = BranchCreation(operations: creationOperations) { [weak self] in await self?.refresh() }
+        }
     }
 
     func place(of directory: URL) -> SessionPlace {
@@ -90,7 +106,7 @@ final class NsWorkspace {
     }
 
     private var isBusy: Bool {
-        !activity.isEmpty || status?.branches.contains { $0.services.contains { $0.state == .iniciando } } == true
+        !activity.isEmpty || creation?.isRunning == true || status?.branches.contains { $0.services.contains { $0.state == .iniciando } } == true
     }
 
     private func run(_ started: Activity, on branch: String,

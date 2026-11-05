@@ -3,12 +3,39 @@ import HarnessCore
 
 nonisolated struct NsFailure: Error, Equatable, Sendable {
     let message: String
+    var hint: String?
+}
+
+nonisolated struct NsQuestion: Decodable, Equatable, Sendable {
+    let message: String
+    let `default`: Bool
+}
+
+nonisolated struct NsEvent: Decodable, Equatable, Sendable {
+    let step: String
+    let label: String
 }
 
 actor NsClient {
     typealias Locate = @Sendable () async throws -> ProcessTransport.Launch
 
     typealias Progress = @Sendable (String) -> Void
+    typealias Steps = @Sendable (NsEvent) -> Void
+    typealias Ask = @Sendable (NsQuestion) async -> Bool
+
+    nonisolated struct Created: Decodable, Equatable, Sendable {
+        nonisolated struct Paths: Decodable, Equatable, Sendable {
+            let root: String
+        }
+
+        nonisolated struct MissingRepo: Decodable, Equatable, Sendable {
+            let repo: String
+            let message: String
+        }
+
+        let paths: Paths
+        let missingRepos: [MissingRepo]
+    }
 
     private nonisolated struct Request<Input: Encodable>: Encodable {
         let type = "op"
@@ -30,21 +57,43 @@ actor NsClient {
         let installMissingDeps = "always"
     }
 
+    private nonisolated struct NewInput: Encodable {
+        let branch: String
+        let repos: [String]
+        let installMissingDeps = "ask"
+    }
+
+    private nonisolated struct AddRepoInput: Encodable {
+        let branch: String
+        let repo: String
+    }
+
+    private nonisolated struct PrepareInput: Encodable {
+        let branch: String
+        let installMissingDeps = "ask"
+    }
+
+    private nonisolated struct Answer: Encodable {
+        let type = "answer"
+        let id: String
+        let ask: String
+        let value: Bool
+    }
+
     private nonisolated struct Ignored: Decodable {}
 
     private nonisolated struct Header: Decodable {
         nonisolated struct Body: Decodable {
             let message: String
-        }
-
-        nonisolated struct Event: Decodable {
-            let label: String
+            let hint: String?
         }
 
         let type: String
         let id: String?
         let error: Body?
-        let event: Event?
+        let event: NsEvent?
+        let ask: String?
+        let question: NsQuestion?
     }
 
     private nonisolated struct Reply<Value: Decodable>: Decodable {
@@ -57,7 +106,9 @@ actor NsClient {
     private var connecting: Task<ProcessTransport, any Error>?
     private var pending: [String: CheckedContinuation<Data, any Error>] = [:]
     private var deadlines: [String: Task<Void, Never>] = [:]
-    private var progress: [String: Progress] = [:]
+    private var timeouts: [String: Duration] = [:]
+    private var steps: [String: Steps] = [:]
+    private var asks: [String: Ask] = [:]
     private var nextID = 0
 
     init(timeout: Duration = .seconds(30), locate: @escaping Locate) {
@@ -79,9 +130,29 @@ actor NsClient {
                                         timeout: .seconds(120), progress: progress)
     }
 
+    func new(branch: String, repos: [String], steps: @escaping Steps, ask: @escaping Ask) async throws -> Created {
+        try await call("new", input: NewInput(branch: branch, repos: repos),
+                       timeout: .seconds(1800), steps: steps, ask: ask)
+    }
+
+    func addRepo(branch: String, repo: String, steps: @escaping Steps) async throws {
+        let _: Ignored = try await call("addRepo", input: AddRepoInput(branch: branch, repo: repo),
+                                        timeout: .seconds(600), steps: steps)
+    }
+
+    func prepare(branch: String, steps: @escaping Steps, ask: @escaping Ask) async throws {
+        let _: Ignored = try await call("prepare", input: PrepareInput(branch: branch),
+                                        timeout: .seconds(900), steps: steps, ask: ask)
+    }
+
+    private func call<Value: Decodable>(_ op: String, input: some Encodable, timeout: Duration? = nil,
+                                        progress: @escaping Progress) async throws -> Value {
+        try await call(op, input: input, timeout: timeout, steps: { progress($0.label) })
+    }
+
     private func call<Value: Decodable>(_ op: String, input: some Encodable,
                                         timeout: Duration? = nil,
-                                        progress: Progress? = nil) async throws -> Value {
+                                        steps: Steps? = nil, ask: Ask? = nil) async throws -> Value {
         let transport = try await connected()
         nextID += 1
         let id = String(nextID)
@@ -89,14 +160,21 @@ actor NsClient {
         let timeout = timeout ?? self.timeout
         let line = try await withCheckedThrowingContinuation { continuation in
             pending[id] = continuation
-            self.progress[id] = progress
+            self.steps[id] = steps
+            asks[id] = ask
+            timeouts[id] = timeout
             try? transport.writeSync(request)
-            deadlines[id] = Task {
-                guard (try? await Task.sleep(for: timeout)) != nil else { return }
-                await self.expire(id, on: transport)
-            }
+            arm(id, on: transport)
         }
         return try JSONDecoder().decode(Reply<Value>.self, from: line).result
+    }
+
+    private func arm(_ id: String, on transport: ProcessTransport) {
+        guard let timeout = timeouts[id] else { return }
+        deadlines[id] = Task {
+            guard (try? await Task.sleep(for: timeout)) != nil else { return }
+            await self.expire(id, on: transport)
+        }
     }
 
     private func connected() async throws -> ProcessTransport {
@@ -133,10 +211,28 @@ actor NsClient {
         guard let header = try? JSONDecoder().decode(Header.self, from: line), let id = header.id else { return }
         switch header.type {
         case "result": finish(id, with: .success(line))
-        case "error": finish(id, with: .failure(NsFailure(message: header.error?.message ?? "erro no ns")))
-        case "event": if let label = header.event?.label { progress[id]?(label) }
+        case "error":
+            finish(id, with: .failure(NsFailure(message: header.error?.message ?? "erro no ns",
+                                                hint: header.error?.hint)))
+        case "event": if let event = header.event { steps[id]?(event) }
+        case "ask": if let ask = header.ask, let question = header.question { reply(to: question, ask: ask, of: id) }
         default: break
         }
+    }
+
+    private func reply(to question: NsQuestion, ask: String, of id: String) {
+        let asker = asks[id]
+        deadlines.removeValue(forKey: id)?.cancel()
+        Task {
+            let value = await asker?(question) ?? question.default
+            answer(Answer(id: id, ask: ask, value: value))
+        }
+    }
+
+    private func answer(_ answer: Answer) {
+        guard pending[answer.id] != nil, let transport, let line = try? JSONEncoder().encode(answer) else { return }
+        try? transport.writeSync(line)
+        arm(answer.id, on: transport)
     }
 
     private func expire(_ id: String, on stuck: ProcessTransport) async {
@@ -149,7 +245,9 @@ actor NsClient {
 
     private func finish(_ id: String, with result: Result<Data, any Error>) {
         deadlines.removeValue(forKey: id)?.cancel()
-        progress.removeValue(forKey: id)
+        timeouts.removeValue(forKey: id)
+        steps.removeValue(forKey: id)
+        asks.removeValue(forKey: id)
         pending.removeValue(forKey: id)?.resume(with: result)
     }
 

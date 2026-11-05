@@ -42,6 +42,22 @@ struct SidebarView: View {
         } message: {
             Text(deleteMessage)
         }
+        .sheet(isPresented: Binding(
+            get: { ns.creation?.isPresented == true },
+            set: { if !$0 { ns.creation?.isPresented = false } }
+        )) {
+            if let creation = ns.creation {
+                NewBranchSheet(creation: creation) { create(with: creation) }
+            }
+        }
+    }
+
+    private func create(with creation: BranchCreation) {
+        Task {
+            await creation.create { root in
+                await workspace.newSession(in: root, harness: HarnessRegistry.branchSessionHarness)
+            }
+        }
     }
 
     // MARK: - List
@@ -59,7 +75,22 @@ struct SidebarView: View {
                 }
 
                 if ns.status != nil {
-                    sectionTitle("Branches de workspace") { EmptyView() }
+                    sectionTitle("Branches de workspace") {
+                        Button(action: ns.newBranch) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "plus")
+                                    .font(.system(size: 10, weight: .semibold))
+                                Text("Branch")
+                                    .font(.system(size: 12))
+                            }
+                            .foregroundStyle(Theme.textMuted)
+                            .padding(.horizontal, 8)
+                            .frame(height: 24)
+                        }
+                        .buttonStyle(.denGhost(radius: 6))
+                        .help("Nova Branch de workspace")
+                        .accessibilityLabel("Nova Branch de workspace")
+                    }
                     ForEach(groups.branches) { folder($0, isBranch: true) }
                 }
 

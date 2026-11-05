@@ -175,3 +175,87 @@ private let answersStatus = #"""
     let client = NsClient.locating(override: "/nonexistent/ns")
     await #expect(throws: NsFailure(message: "ns não encontrado no PATH")) { try await client.status() }
 }
+
+@Test func newAsksTheQuestionAndSendsTheAnswerBack() async throws {
+    let (client, folder) = try fakeNs(#"""
+        read -r line
+        printf '%s\n' "$line" > "$0.request"
+        echo '{"type":"event","id":"1","event":{"step":"new:validate","label":"Validando repositórios..."}}'
+        printf '%s' '{"type":"ask","id":"1","ask":"a1",'
+        echo '"question":{"id":"q","message":"Instalar dependências agora?","default":true,"whenUnavailable":"default"}}'
+        read -r answer
+        printf '%s\n' "$answer" > "$0.answer"
+        printf '%s' '{"type":"result","id":"1","result":{"branch":"NS-1","paths":{"root":"/w/NS-1"},'
+        echo '"missingRepos":[{"repo":"parents","category":"nao-encontrado","message":"sem main"}]}}'
+        cat >/dev/null
+        """#)
+    defer { try? FileManager.default.removeItem(at: folder) }
+
+    let steps = Recorder()
+    let questions = Recorder()
+    let created = try await client.new(branch: "NS-1", repos: ["manager", "parents"],
+                                       steps: { steps.append($0.step) },
+                                       ask: { questions.append($0.message); return false })
+
+    #expect(created == NsClient.Created(paths: .init(root: "/w/NS-1"),
+                                        missingRepos: [.init(repo: "parents", message: "sem main")]))
+    #expect(steps.all == ["new:validate"])
+    #expect(questions.all == ["Instalar dependências agora?"])
+    let request = try String(contentsOf: folder.appending(path: "ns.request"), encoding: .utf8)
+    #expect(request.contains(#""op":"new""#))
+    #expect(request.contains(#""repos":["manager","parents"]"#))
+    #expect(request.contains(#""installMissingDeps":"ask""#))
+    let answer = try String(contentsOf: folder.appending(path: "ns.answer"), encoding: .utf8)
+    #expect(answer.contains(#""type":"answer""#))
+    #expect(answer.contains(#""ask":"a1""#))
+    #expect(answer.contains(#""id":"1""#))
+    #expect(answer.contains(#""value":false"#))
+}
+
+@Test func aQuestionWithoutSomeoneToAnswerTakesItsDefault() async throws {
+    let (client, folder) = try fakeNs(#"""
+        read -r line
+        echo '{"type":"ask","id":"1","ask":"a1","question":{"id":"q","message":"?","default":true,"whenUnavailable":"default"}}'
+        read -r answer
+        printf '%s\n' "$answer" > "$0.answer"
+        echo '{"type":"result","id":"1","result":{"branch":"NS-1"}}'
+        cat >/dev/null
+        """#)
+    defer { try? FileManager.default.removeItem(at: folder) }
+
+    try await client.addRepo(branch: "NS-1", repo: "parents") { _ in }
+
+    let answer = try String(contentsOf: folder.appending(path: "ns.answer"), encoding: .utf8)
+    #expect(answer.contains(#""value":true"#))
+}
+
+@Test func anErrorKeepsTheHintOfTheNs() async throws {
+    let (client, folder) = try fakeNs(#"""
+        read -r line
+        printf '%s' '{"type":"error","id":"1","error":{"category":"ferramenta-externa","message":"docker parado",'
+        echo '"hint":"A branch foi criada. Para preparar de novo: ns prepare NS-1"}}'
+        cat >/dev/null
+        """#)
+    defer { try? FileManager.default.removeItem(at: folder) }
+
+    await #expect(throws: NsFailure(message: "docker parado",
+                                    hint: "A branch foi criada. Para preparar de novo: ns prepare NS-1")) {
+        try await client.prepare(branch: "NS-1", steps: { _ in }, ask: { _ in true })
+    }
+}
+
+@Test func aQuestionWaitingForTheUserDoesNotExpireTheRequest() async throws {
+    let (client, folder) = try fakeNs(#"""
+        read -r line
+        echo '{"type":"ask","id":"1","ask":"a1","question":{"id":"q","message":"?","default":true,"whenUnavailable":"default"}}'
+        read -r answer
+        echo '{"type":"result","id":"1","result":{"branch":"NS-1"}}'
+        cat >/dev/null
+        """#)
+    defer { try? FileManager.default.removeItem(at: folder) }
+
+    try await client.prepare(branch: "NS-1", steps: { _ in }, ask: { _ in
+        try? await Task.sleep(for: .seconds(3))
+        return true
+    })
+}
