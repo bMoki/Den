@@ -9,7 +9,7 @@ struct DevEnvironment: AppEnvironment {
 
     var sessionsRoot: URL { support.appending(path: "sessions") }
     var attachmentsRoot: URL { support.appending(path: "attachments") }
-    var worktreesFile: URL { support.appending(path: "task-worktrees.json") }
+    var pullRequestsFile: URL { support.appending(path: "pull-requests.json") }
     var registry: HarnessRegistry { .standard }
     var workingDirectory: URL { URL(fileURLWithPath: NSHomeDirectory()) }
 }

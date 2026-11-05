@@ -7,6 +7,7 @@ struct ServicesPanel: View {
 
     @Environment(NsWorkspace.self) private var ns
     @Environment(PanelTerminals.self) private var terminals
+    @Environment(PullRequestMonitor.self) private var monitor
 
     @State private var takingSnapshot = false
     @State private var restoring: RestoreRequest?
@@ -49,6 +50,11 @@ struct ServicesPanel: View {
                             }
                             .denContextMenu(databaseMenu)
                         }
+                    }
+                    let repos = monitor.repos(of: branch)
+                    if !repos.isEmpty {
+                        sectionTitle("Pull requests")
+                        card { BranchPullRequestRows(repos: repos) }
                     }
                 } else {
                     Text("O ns não informou esta branch.")

@@ -116,7 +116,7 @@ struct ChatView: View {
             }
         }
         .overlay { Lightbox(zoomed: $zoomed) }
-        .followsTask(of: chat)
+        .followsPullRequests(of: branch, busy: chat.isBusy)
     }
 
     private var branch: String? { ns.branchName(of: chat.workingDirectory) }
@@ -210,7 +210,7 @@ struct ChatView: View {
             }
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 VStack(spacing: 0) {
-                    TaskBars(chat: chat)
+                    if let branch { PullRequestBars(branch: branch) }
                     TransientCards(chat: chat) { nearBottom = true }
                 }
             }

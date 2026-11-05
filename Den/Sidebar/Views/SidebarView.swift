@@ -3,7 +3,6 @@ import HarnessCore
 
 struct SidebarView: View {
     @Bindable var workspace: WorkspaceModel
-    @Environment(WorktreeModel.self) private var worktrees
     @Environment(PullRequestMonitor.self) private var monitor
     @Environment(NsWorkspace.self) private var ns
     @Environment(PanelTerminals.self) private var terminals
@@ -34,14 +33,13 @@ struct SidebarView: View {
             Button("Apagar", role: .destructive) {
                 if let summary = pendingDelete {
                     Task { await workspace.deleteSession(summary.id) }
-                    worktrees.forget(summary.id)
                     terminals.close(sessionID: summary.id)
                 }
                 pendingDelete = nil
             }
             Button("Cancelar", role: .cancel) { pendingDelete = nil }
         } message: {
-            Text(deleteMessage)
+            Text("A conversa e o histórico dela serão removidos permanentemente.")
         }
         .sheet(isPresented: Binding(
             get: { ns.creation?.isPresented == true },
@@ -136,8 +134,9 @@ struct SidebarView: View {
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("Sidebar")
         .onChange(of: workspace.summaries, initial: true) {
-            monitor.noteActivity(Dictionary(workspace.summaries.map { ($0.id, $0.updatedAt) },
-                                            uniquingKeysWith: { max($0, $1) }))
+            monitor.noteActivity(Dictionary(workspace.summaries.compactMap { summary in
+                ns.branchName(of: summary.workingDirectory).map { ($0, summary.updatedAt) }
+            }, uniquingKeysWith: { max($0, $1) }))
         }
     }
 
@@ -196,6 +195,7 @@ struct SidebarView: View {
                     branch: ns.branch(named: folder.name),
                     activity: ns.activity[folder.name],
                     problem: ns.actionProblems[folder.name],
+                    pullRequests: monitor.pullRequests(for: folder.name).map(\.pullRequest),
                     sessionCount: folder.sessions.count,
                     isOpen: isOpen,
                     toggle: { toggle(folder) },
@@ -219,7 +219,8 @@ struct SidebarView: View {
         .hoverTip({ anchor in
             PaneTip(title: folder.name,
                     detail: tipDetail(for: folder, isBranch: isBranch),
-                    indicator: nil, anchor: anchor)
+                    indicator: nil, anchor: anchor,
+                    lines: isBranch ? PaneTip.Line.pullRequests(monitor.pullRequests(for: folder.name)) : [])
         }, update: { scheduleTip($0) })
 
         if isOpen, isBranch || !folder.sessions.isEmpty {
@@ -260,31 +261,10 @@ struct SidebarView: View {
         }
     }
 
-    private func badge(for summary: SessionSummary) -> TaskBadge? {
-        worktrees.worktree(for: summary.id).map {
-            TaskBadge.make(worktree: $0, pullRequests: monitor.pullRequests(for: summary.id).map(\.pullRequest))
-        }
-    }
-
-    private func hoverLines(for summary: SessionSummary) -> [PaneTip.Line] {
-        worktrees.worktree(for: summary.id).map {
-            PaneTip.Line.task($0, bars: monitor.pullRequests(for: summary.id))
-        } ?? []
-    }
-
-    private var deleteMessage: String {
-        var text = "A conversa e o histórico dela serão removidos permanentemente."
-        if let summary = pendingDelete, let worktree = worktrees.worktree(for: summary.id) {
-            text += " As worktrees em \(worktree.displayLocation) continuam no disco."
-        }
-        return text
-    }
-
     private func row(for summary: SessionSummary) -> some View {
         SessionRow(
             summary: summary,
             indicator: workspace.indicator(for: summary.id),
-            task: badge(for: summary),
             isSelected: workspace.selectedID == summary.id,
             select: { Task { await workspace.select(summary.id) } },
             rename: { name in
@@ -301,8 +281,7 @@ struct SidebarView: View {
             return PaneTip(title: summary.title,
                            detail: detail.joined(separator: " · "),
                            indicator: workspace.indicator(for: summary.id),
-                           anchor: anchor,
-                           lines: hoverLines(for: summary))
+                           anchor: anchor)
         }, update: { scheduleTip($0) })
     }
 

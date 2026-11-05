@@ -5,17 +5,7 @@ struct LocationChip: View {
     let chat: ChatModel
     var compact: Bool
 
-    @Environment(WorktreeModel.self) private var worktrees
-
     var body: some View {
-        if let worktree = worktrees.worktree(for: chat.sessionID) {
-            BranchBadge(worktree: worktree, compact: compact)
-        } else {
-            folderChip
-        }
-    }
-
-    private var folderChip: some View {
         Button(action: chooseSessionFolder) {
             HStack(spacing: 6) {
                 Image(systemName: "folder")

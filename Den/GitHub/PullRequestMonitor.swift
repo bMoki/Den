@@ -4,20 +4,16 @@ import Observation
 @MainActor
 @Observable
 final class PullRequestMonitor {
-    nonisolated struct Target: Hashable, Sendable {
-        let session: UUID
-        let path: String
-    }
+    typealias Target = BranchRepo.Key
 
     struct Bar: Identifiable, Equatable {
-        let repo: TaskWorktree.Repo
+        let repo: BranchRepo
         let pullRequest: PullRequest
-        var id: String { repo.id }
+        var id: BranchRepo.Key { repo.id }
     }
 
     nonisolated private struct Item: Sendable {
         let target: Target
-        let branch: String
         let directory: URL
         let host: String
     }
@@ -30,14 +26,15 @@ final class PullRequestMonitor {
 
     private(set) var cli: GitHubCLIState = .unknown
     private(set) var checked: [Target: Date] = [:]
-    private(set) var hiddenSetup: Set<UUID> = []
+    private(set) var hiddenSetup: Set<String> = []
+    private(set) var repos: [BranchRepo] = []
 
-    @ObservationIgnored private let ledger: TaskLedger
+    @ObservationIgnored private let ledger: PullRequestLedger
     @ObservationIgnored private let fetcher: any PullRequestFetching
     @ObservationIgnored private let now: () -> Date
     @ObservationIgnored private let limit: Int
-    @ObservationIgnored private var visible: [UUID: Int] = [:]
-    @ObservationIgnored private var activity: [UUID: Date] = [:]
+    @ObservationIgnored private var visible: [String: Int] = [:]
+    @ObservationIgnored private var activity: [String: Date] = [:]
     @ObservationIgnored private var due: [Target: Date] = [:]
     @ObservationIgnored private var followUps: [Target: Date] = [:]
     @ObservationIgnored private var inFlight: Set<Target> = []
@@ -48,12 +45,24 @@ final class PullRequestMonitor {
     @ObservationIgnored private var penalty: Double = 1
     @ObservationIgnored private var loop: Task<Void, Never>?
 
-    init(ledger: TaskLedger, fetcher: any PullRequestFetching,
+    init(ledger: PullRequestLedger, fetcher: any PullRequestFetching,
          now: @escaping () -> Date = Date.init, limit: Int = 3) {
         self.ledger = ledger
         self.fetcher = fetcher
         self.now = now
         self.limit = limit
+    }
+
+    func track(_ repos: [BranchRepo], branches: Set<String>) {
+        if repos != self.repos { self.repos = repos }
+        ledger.keep(only: branches)
+        let current = Set(repos.map(\.id))
+        for target in Set(due.keys).union(checked.keys).union(followUps.keys) where !current.contains(target) {
+            due[target] = nil
+            checked[target] = nil
+            followUps[target] = nil
+        }
+        hiddenSetup.formIntersection(branches)
     }
 
     func start() {
@@ -94,33 +103,33 @@ final class PullRequestMonitor {
         await withTaskGroup(of: Void.self) { group in
             for item in ready {
                 group.addTask {
-                    let result = await fetcher.pullRequest(branch: item.branch, in: item.directory)
+                    let result = await fetcher.pullRequest(branch: item.target.branch, in: item.directory)
                     await self.finish(item, with: result)
                 }
             }
         }
     }
 
-    func appear(_ id: UUID) {
-        visible[id, default: 0] += 1
-        scheduleNow(id)
+    func appear(_ branch: String) {
+        visible[branch, default: 0] += 1
+        scheduleNow(branch)
     }
 
-    func disappear(_ id: UUID) {
-        guard let count = visible[id] else { return }
+    func disappear(_ branch: String) {
+        guard let count = visible[branch] else { return }
         guard count == 1 else {
-            visible[id] = count - 1
+            visible[branch] = count - 1
             return
         }
-        visible[id] = nil
-        for target in targets(of: id) {
+        visible[branch] = nil
+        for target in targets(of: branch) {
             due[target] = interval(for: target).map { (checked[target] ?? now()).addingTimeInterval($0) }
         }
     }
 
-    func turnEnded(_ id: UUID) {
+    func turnEnded(_ branch: String) {
         let moment = now()
-        for target in targets(of: id) {
+        for target in targets(of: branch) {
             due[target] = moment
             followUps[target] = moment.addingTimeInterval(Self.followUpDelay)
         }
@@ -134,12 +143,12 @@ final class PullRequestMonitor {
         for id in visible.keys { scheduleNow(id) }
     }
 
-    func noteActivity(_ dates: [UUID: Date]) {
+    func noteActivity(_ dates: [String: Date]) {
         activity.merge(dates) { max($0, $1) }
     }
 
-    func refresh(_ id: UUID, repo: TaskWorktree.Repo) {
-        due[Target(session: id, path: repo.worktree.path)] = now()
+    func refresh(_ repo: BranchRepo) {
+        due[repo.id] = now()
     }
 
     func reconfigure(path: String?) async {
@@ -154,33 +163,38 @@ final class PullRequestMonitor {
         apply(await fetcher.status(hosts: hosts), asked: hosts)
     }
 
-    func pullRequests(for id: UUID) -> [Bar] {
-        guard let worktree = ledger.worktree(for: id) else { return [] }
-        let found = ledger.pullRequests(for: id)
-        return worktree.repos.compactMap { repo in
-            found[repo.worktree.path].map { Bar(repo: repo, pullRequest: $0) }
+    func repos(of branch: String) -> [BranchRepo] {
+        repos.filter { $0.branch == branch }
+    }
+
+    func pullRequest(for repo: BranchRepo) -> PullRequest? {
+        ledger.pullRequest(for: repo.id)
+    }
+
+    func pullRequests(for branch: String) -> [Bar] {
+        repos(of: branch).compactMap { repo in
+            ledger.pullRequest(for: repo.id).map { Bar(repo: repo, pullRequest: $0) }
         }
     }
 
-    func bars(for id: UUID) -> [Bar] {
-        pullRequests(for: id).filter { bar in
-            ledger.dismissedSignature(for: id, worktree: bar.repo.worktree.path)
-                != PullRequestStatus.signature(bar.pullRequest)
+    func bars(for branch: String) -> [Bar] {
+        pullRequests(for: branch).filter { bar in
+            ledger.dismissedSignature(for: bar.id) != PullRequestStatus.signature(bar.pullRequest)
         }
     }
 
-    func dismiss(_ id: UUID, repo: TaskWorktree.Repo) {
-        guard let pr = ledger.pullRequests(for: id)[repo.worktree.path] else { return }
-        ledger.dismiss(id, worktree: repo.worktree.path, signature: PullRequestStatus.signature(pr))
+    func dismiss(_ repo: BranchRepo) {
+        guard let pr = ledger.pullRequest(for: repo.id) else { return }
+        ledger.dismiss(repo.id, signature: PullRequestStatus.signature(pr))
     }
 
-    func checkedAt(_ id: UUID, repo: TaskWorktree.Repo) -> Date? {
-        checked[Target(session: id, path: repo.worktree.path)]
+    func checkedAt(_ repo: BranchRepo) -> Date? {
+        checked[repo.id]
     }
 
-    func setupNeeded(for id: UUID) -> GitHubCLIState? {
-        guard !hiddenSetup.contains(id),
-              ledger.worktree(for: id)?.repos.contains(where: { $0.remote?.host == "github.com" }) == true
+    func setupNeeded(for branch: String) -> GitHubCLIState? {
+        guard !hiddenSetup.contains(branch),
+              repos(of: branch).contains(where: { $0.remote?.host == "github.com" })
         else { return nil }
         switch cli {
         case .missing, .notLoggedIn: return cli
@@ -188,7 +202,7 @@ final class PullRequestMonitor {
         }
     }
 
-    func hideSetup(for id: UUID) { hiddenSetup.insert(id) }
+    func hideSetup(for branch: String) { hiddenSetup.insert(branch) }
 
     private var isReady: Bool {
         if case .ready = cli { return true }
@@ -196,23 +210,18 @@ final class PullRequestMonitor {
     }
 
     private var items: [Item] {
-        ledger.entries.flatMap { id, entry in
-            entry.worktree.repos.compactMap { repo in
-                repo.remote.map {
-                    Item(target: Target(session: id, path: repo.worktree.path),
-                         branch: entry.worktree.branch, directory: repo.worktree, host: $0.host)
-                }
-            }
+        repos.compactMap { repo in
+            repo.remote.map { Item(target: repo.id, directory: repo.folder, host: $0.host) }
         }
     }
 
-    private func targets(of id: UUID) -> [Target] {
-        items.map(\.target).filter { $0.session == id }
+    private func targets(of branch: String) -> [Target] {
+        items.map(\.target).filter { $0.branch == branch }
     }
 
-    private func scheduleNow(_ id: UUID) {
+    private func scheduleNow(_ branch: String) {
         let moment = now()
-        for target in targets(of: id) { due[target] = moment }
+        for target in targets(of: branch) { due[target] = moment }
     }
 
     private func apply(_ status: GitHubCLIStatus, asked hosts: Set<String>) {
@@ -228,11 +237,11 @@ final class PullRequestMonitor {
     }
 
     private func interval(for target: Target) -> TimeInterval? {
-        let pr = ledger.pullRequests(for: target.session)[target.path]
+        let pr = ledger.pullRequest(for: target)
         if let pr, pr.state != .open { return nil }
-        if visible[target.session] != nil { return Self.visibleInterval }
+        if visible[target.branch] != nil { return Self.visibleInterval }
         if pr != nil { return Self.backgroundInterval }
-        if let last = activity[target.session], now().timeIntervalSince(last) < Self.recentWindow {
+        if let last = activity[target.branch], now().timeIntervalSince(last) < Self.recentWindow {
             return Self.backgroundInterval
         }
         return nil
@@ -243,7 +252,7 @@ final class PullRequestMonitor {
         let moment = now()
         switch result {
         case .found(let pr):
-            ledger.setPullRequest(pr, for: item.target.session, worktree: item.target.path)
+            ledger.setPullRequest(pr, for: item.target)
             checked[item.target] = moment
             penalty = 1
         case .failed(let rateLimited):

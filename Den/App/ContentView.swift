@@ -167,10 +167,9 @@ private struct EmptyHeader: View {
 
 #Preview {
     let environment = DevEnvironment()
-    let ledger = TaskLedger(store: TaskWorktreeStore(url: environment.worktreesFile))
     ContentView(environment: environment)
-        .environment(WorktreeModel(ledger: ledger))
-        .environment(PullRequestMonitor(ledger: ledger, fetcher: GitHubCLI()))
+        .environment(PullRequestMonitor(ledger: PullRequestLedger(store: PullRequestStore(url: environment.pullRequestsFile)),
+                                        fetcher: GitHubCLI()))
         .environment(PanelTerminals())
         .defaultAppStorage(environment.defaults)
 }

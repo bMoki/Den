@@ -5,6 +5,7 @@ struct BranchHeader: View {
     let branch: NsStatus.Branch?
     let activity: NsWorkspace.Activity?
     var problem: String?
+    var pullRequests: [PullRequest] = []
     let sessionCount: Int
     let isOpen: Bool
     var toggle: () -> Void
@@ -32,11 +33,15 @@ struct BranchHeader: View {
                 }
             }
             .frame(height: 20)
-            if let branch, !branch.services.isEmpty {
+            if let branch, !branch.services.isEmpty || !pullRequests.isEmpty {
                 HStack(spacing: 4) {
-                    ForEach(branch.services) { ServiceDot(state: $0.state) }
-                    ServiceDot(state: branch.database, isDatabase: true)
-                        .padding(.leading, 2)
+                    if !branch.services.isEmpty {
+                        ForEach(branch.services) { ServiceDot(state: $0.state) }
+                        ServiceDot(state: branch.database, isDatabase: true)
+                            .padding(.leading, 2)
+                    }
+                    ForEach(pullRequests, id: \.url) { PullRequestChip(pullRequest: $0) }
+                        .padding(.leading, 4)
                     if let activity {
                         Text(activity.label)
                             .font(.system(size: 11))
@@ -47,7 +52,7 @@ struct BranchHeader: View {
                 }
                 .padding(.leading, 20)
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel(branch.stateSummary)
+                .accessibilityLabel(stateSummary(branch))
             }
             if let problem, activity == nil {
                 Text(problem)
@@ -79,6 +84,12 @@ struct BranchHeader: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel(name)
         .accessibilityValue(isOpen ? "aberta" : "fechada")
+    }
+
+    private func stateSummary(_ branch: NsStatus.Branch) -> String {
+        let parts = (branch.services.isEmpty ? [] : [branch.stateSummary])
+            + pullRequests.map { "PR \(PullRequestStatus.number($0)) \(PullRequestStatus.label($0))" }
+        return parts.joined(separator: ", ")
     }
 
     private var actions: some View {

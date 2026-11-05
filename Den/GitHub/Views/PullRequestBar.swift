@@ -2,8 +2,7 @@ import SwiftUI
 import AppKit
 
 struct PullRequestBar: View {
-    let repo: TaskWorktree.Repo
-    let branch: String
+    let repo: BranchRepo
     let pullRequest: PullRequest
     let checkedAt: Date?
     var refresh: () -> Void
@@ -24,7 +23,7 @@ struct PullRequestBar: View {
                         Image(systemName: tone.symbol)
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundStyle(tone.color)
-                        Text("#\(pullRequest.number)")
+                        Text(PullRequestStatus.number(pullRequest))
                             .font(.system(size: 12.5, weight: .semibold))
                             .monospacedDigit()
                     }
@@ -44,7 +43,7 @@ struct PullRequestBar: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .help("Abrir no GitHub · \(branch)")
+            .help("Abrir no GitHub · \(repo.branch)")
             trailing
             BarDismissButton(action: dismiss)
                 .help("Dispensar até o PR mudar")

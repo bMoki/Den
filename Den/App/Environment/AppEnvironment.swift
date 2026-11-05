@@ -3,7 +3,7 @@ import Foundation
 protocol AppEnvironment {
     var sessionsRoot: URL { get }
     var attachmentsRoot: URL { get }
-    var worktreesFile: URL { get }
+    var pullRequestsFile: URL { get }
     var ghOverride: String? { get }
     var nsOverride: String? { get }
     var defaults: UserDefaults { get }
@@ -23,7 +23,7 @@ protocol RootedEnvironment: AppEnvironment {
 extension RootedEnvironment {
     var sessionsRoot: URL { root.appending(path: "sessions") }
     var attachmentsRoot: URL { root.appending(path: "attachments") }
-    var worktreesFile: URL { root.appending(path: "task-worktrees.json") }
+    var pullRequestsFile: URL { root.appending(path: "pull-requests.json") }
     var workingDirectory: URL { root.appending(path: "project") }
 }
 

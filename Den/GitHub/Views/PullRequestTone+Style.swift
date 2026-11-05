@@ -11,6 +11,8 @@ extension PullRequestTone {
         }
     }
 
+    var fill: Color { color.opacity(0.14) }
+
     var symbol: String {
         self == .merged ? "arrow.triangle.merge" : "arrow.triangle.pull"
     }
