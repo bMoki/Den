@@ -18,8 +18,8 @@ struct NewBranchSheet: View {
 
     private var form: some View {
         Group {
-            heading("Nova Branch de workspace",
-                    "O ns cria a branch em cada Repo e prepara banco, aliases e dependências. Nenhum Serviço é iniciado.")
+            DialogHeading(title: Text("Nova Branch de workspace"),
+                          subtitle: Text("O ns cria a branch em cada Repo e prepara banco, aliases e dependências. Nenhum Serviço é iniciado."))
             VStack(alignment: .leading, spacing: 14) {
                 field("Nome da branch") {
                     TextField("", text: $creation.name)
@@ -64,7 +64,7 @@ struct NewBranchSheet: View {
                 }
             }
             .padding(EdgeInsets(top: 14, leading: 20, bottom: 4, trailing: 20))
-            footer {
+            DialogFooter {
                 Spacer(minLength: 0)
                 Button { creation.isPresented = false } label: { Text("Cancelar").pillLabel() }
                     .buttonStyle(.denSecondary)
@@ -80,8 +80,8 @@ struct NewBranchSheet: View {
 
     @ViewBuilder
     private var progress: some View {
-        heading(Text("Criando \(Text(creation.name).font(.system(size: 14, weight: .semibold, design: .monospaced)))"),
-                    "Pode fechar esta janela; a criação continua e aparece na barra lateral.")
+        DialogHeading(title: Text("Criando \(Text(creation.name).font(.system(size: 14, weight: .semibold, design: .monospaced)))"),
+                      subtitle: Text("Pode fechar esta janela; a criação continua e aparece na barra lateral."))
             VStack(alignment: .leading, spacing: 14) {
                 VStack(alignment: .leading, spacing: 2) {
                     ForEach(creation.steps) { StepRow(step: $0) }
@@ -111,7 +111,7 @@ struct NewBranchSheet: View {
                 }
             }
             .padding(EdgeInsets(top: 14, leading: 20, bottom: 4, trailing: 20))
-            footer {
+            DialogFooter {
                 Text(footerNote)
                     .font(.system(size: 12))
                     .foregroundStyle(Theme.textTertiary)
@@ -140,21 +140,6 @@ struct NewBranchSheet: View {
 
     static let box = RoundedRectangle(cornerRadius: 8, style: .continuous)
 
-    private func heading(_ title: String, _ subtitle: String) -> some View {
-        heading(Text(title), subtitle)
-    }
-
-    private func heading(_ title: Text, _ subtitle: String) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            title.font(.system(size: 15, weight: .semibold))
-            Text(subtitle)
-                .font(.system(size: 12.5))
-                .foregroundStyle(Theme.textTertiary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(EdgeInsets(top: 18, leading: 20, bottom: 4, trailing: 20))
-    }
-
     private func field(_ label: String, @ViewBuilder content: () -> some View) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(label)
@@ -164,12 +149,6 @@ struct NewBranchSheet: View {
         }
     }
 
-    private func footer(@ViewBuilder content: () -> some View) -> some View {
-        HStack(spacing: 8) {
-            content()
-        }
-        .padding(EdgeInsets(top: 14, leading: 20, bottom: 18, trailing: 20))
-    }
 }
 
 private struct RepoCheck: View {

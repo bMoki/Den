@@ -80,6 +80,7 @@ struct ServicesPanel: View {
             HStack(spacing: 6) {
                 action("Iniciar", help: BranchActionTitle.start, symbol: "play.fill") { await ns.start(branch) }
                 action("Parar", help: BranchActionTitle.stop, symbol: "stop.fill") { await ns.stop(branch) }
+                action("Atualizar", help: BranchActionTitle.update, symbol: "arrow.down.to.line") { await ns.update(branch) }
             }
             .disabled(activity != nil)
         }

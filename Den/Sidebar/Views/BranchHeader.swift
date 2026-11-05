@@ -11,6 +11,7 @@ struct BranchHeader: View {
     var newSession: () -> Void
     var start: () -> Void
     var stop: () -> Void
+    var update: () -> Void
 
     @State private var hovering = false
 
@@ -65,7 +66,8 @@ struct BranchHeader: View {
                 DenMenuItem(id: "start", title: BranchActionTitle.start, isEnabled: activity == nil, action: start),
                 DenMenuItem(id: "stop", title: BranchActionTitle.stop, isEnabled: activity == nil, action: stop),
             ]),
-            DenMenuSection(id: "new", items: [
+            DenMenuSection(id: "branch", items: [
+                DenMenuItem(id: "update", title: BranchActionTitle.update, isEnabled: activity == nil, action: update),
                 DenMenuItem(id: "new-session", title: "Nova sessão aqui", action: newSession),
             ]),
         ])

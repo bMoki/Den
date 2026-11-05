@@ -3,6 +3,7 @@ import HarnessCore
 
 struct ContentView: View {
     @State private var workspace: WorkspaceModel
+    @Environment(NsWorkspace.self) private var ns
 
     @State private var gitChanges = GitChangesModel()
 
@@ -39,6 +40,9 @@ struct ContentView: View {
         .preferredColorScheme(.dark)
         .frame(minWidth: 860, minHeight: 560)
         .task { await workspace.refresh() }
+        .sheet(item: Binding(get: { ns.updateReports.first }, set: { if $0 == nil { ns.dismissUpdateReport() } })) { report in
+            BranchUpdateSheet(report: report, close: ns.dismissUpdateReport)
+        }
     }
 
     private var lightsInset: CGFloat { isFullScreen ? 0 : Theme.trafficLightsInset }

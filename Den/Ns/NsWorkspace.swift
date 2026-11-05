@@ -6,12 +6,21 @@ import Observation
 final class NsWorkspace {
     typealias BranchAction = @Sendable (_ branch: String, _ service: String?,
                                         _ progress: @escaping NsClient.Progress) async throws -> Void
+    typealias UpdateBranch = @Sendable (_ branch: String,
+                                        _ progress: @escaping NsClient.Progress) async throws -> NsClient.Pulled
 
     struct Activity: Equatable {
-        enum Kind { case start, stop, restart }
+        enum Kind { case start, stop, restart, update }
 
         var kind: Kind
         var label: String
+    }
+
+    struct UpdateReport: Identifiable, Equatable {
+        let branch: String
+        let repos: [RepoUpdate]
+
+        var id: String { branch }
     }
 
     private(set) var status: NsStatus?
@@ -19,20 +28,24 @@ final class NsWorkspace {
     private(set) var activity: [String: Activity] = [:]
     private(set) var actionProblems: [String: String] = [:]
     private(set) var creation: BranchCreation?
+    private(set) var updateReports: [UpdateReport] = []
 
     @ObservationIgnored private let fetch: @Sendable () async throws -> NsStatus
     @ObservationIgnored private let startBranch: BranchAction
     @ObservationIgnored private let stopBranch: BranchAction
     @ObservationIgnored private let creationOperations: BranchCreation.Operations
+    @ObservationIgnored private let updateBranch: UpdateBranch
 
     init(fetch: @escaping @Sendable () async throws -> NsStatus,
          start: @escaping BranchAction = { _, _, _ in },
          stop: @escaping BranchAction = { _, _, _ in },
-         create: BranchCreation.Operations = .unavailable) {
+         create: BranchCreation.Operations = .unavailable,
+         update: @escaping UpdateBranch = { _, _ in throw NsFailure(message: "ns indisponível") }) {
         self.fetch = fetch
         startBranch = start
         stopBranch = stop
         creationOperations = create
+        updateBranch = update
     }
 
     static func live(_ environment: any AppEnvironment) -> NsWorkspace {
@@ -43,7 +56,8 @@ final class NsWorkspace {
                            create: BranchCreation.Operations(
                                create: { try await client.new(branch: $0, repos: $1, steps: $2, ask: $3) },
                                addRepo: { try await client.addRepo(branch: $0, repo: $1, steps: $2) },
-                               prepare: { try await client.prepare(branch: $0, steps: $1, ask: $2) }))
+                               prepare: { try await client.prepare(branch: $0, steps: $1, ask: $2) }),
+                           update: { try await client.pull(branch: $0, progress: $1) })
     }
 
     func newBranch() {
@@ -98,6 +112,18 @@ final class NsWorkspace {
         }
     }
 
+    func update(_ branch: String) async {
+        let update = updateBranch
+        let updated = await run(Activity(kind: .update, label: "Atualizando com a branch principal..."), on: branch) {
+            try await update(branch, $0)
+        }
+        if let updated { updateReports.append(UpdateReport(branch: branch, repos: updated.repos)) }
+    }
+
+    func dismissUpdateReport() {
+        if !updateReports.isEmpty { updateReports.removeFirst() }
+    }
+
     func watch(every interval: Duration = .seconds(5), whileBusy busyInterval: Duration = .seconds(1.5)) async {
         while !Task.isCancelled {
             await refresh()
@@ -109,17 +135,19 @@ final class NsWorkspace {
         !activity.isEmpty || creation?.isRunning == true || status?.branches.contains { $0.services.contains { $0.state == .iniciando } } == true
     }
 
-    private func run(_ started: Activity, on branch: String,
-                     action: @Sendable (@escaping NsClient.Progress) async throws -> Void) async {
-        guard activity[branch] == nil else { return }
+    @discardableResult
+    private func run<Value: Sendable>(_ started: Activity, on branch: String,
+                                      action: @Sendable (@escaping NsClient.Progress) async throws -> Value) async -> Value? {
+        guard activity[branch] == nil else { return nil }
         activity[branch] = started
         actionProblems[branch] = nil
         let (labels, sink) = AsyncStream<String>.makeStream()
         let follow = Task { @MainActor [weak self] in
             for await label in labels { self?.activity[branch]?.label = label }
         }
+        var value: Value?
         do {
-            try await action { sink.yield($0) }
+            value = try await action { sink.yield($0) }
         } catch let failure as NsFailure {
             actionProblems[branch] = failure.message
         } catch {
@@ -129,6 +157,7 @@ final class NsWorkspace {
         await follow.value
         activity[branch] = nil
         await refresh()
+        return value
     }
 
     private static func label(_ verb: String, _ service: String?) -> String {

@@ -119,6 +119,52 @@ nonisolated private final class Replies: @unchecked Sendable {
     #expect(ns.actionProblems["NS-123"] == "docker fora")
 }
 
+@Test func updatingShowsTheResultOfEachRepo() async {
+    let replies = Replies([.success(sampleStatus)])
+    let repos = [
+        RepoUpdate(repo: "frontend", branch: "master", status: .updated, commits: 3),
+        RepoUpdate(repo: "manager", branch: "master", status: .conflict, conflicts: ["a.ts"]),
+    ]
+    let ns = NsWorkspace(fetch: { try replies.next() }, update: { branch, progress in
+        #expect(branch == "NS-12")
+        progress("Atualizando 2 repos com a branch principal...")
+        return NsClient.Pulled(repos: repos)
+    })
+
+    await ns.update("NS-12")
+
+    #expect(ns.updateReports == [.init(branch: "NS-12", repos: repos)])
+    #expect(ns.activity.isEmpty)
+    #expect(ns.status == sampleStatus)
+}
+
+@Test func anUpdateThatCannotRunIsReportedOnTheBranchWithoutADialog() async {
+    let replies = Replies([.success(sampleStatus)])
+    let ns = NsWorkspace(fetch: { try replies.next() },
+                         update: { _, _ in throw NsFailure(message: "Branch 'NS-12' não encontrada") })
+
+    await ns.update("NS-12")
+
+    #expect(ns.updateReports.isEmpty)
+    #expect(ns.actionProblems["NS-12"] == "Branch 'NS-12' não encontrada")
+}
+
+@Test func twoBranchesUpdatedAtOnceKeepBothReports() async {
+    let replies = Replies([.success(sampleStatus), .success(sampleStatus)])
+    let ns = NsWorkspace(fetch: { try replies.next() }, update: { branch, _ in
+        NsClient.Pulled(repos: [RepoUpdate(repo: branch, status: .upToDate)])
+    })
+
+    async let first: Void = ns.update("NS-12")
+    async let second: Void = ns.update("NS-13")
+    _ = await (first, second)
+
+    #expect(Set(ns.updateReports.map(\.branch)) == ["NS-12", "NS-13"])
+    let shown = ns.updateReports.first?.branch
+    ns.dismissUpdateReport()
+    #expect(ns.updateReports.map(\.branch) == [shown == "NS-12" ? "NS-13" : "NS-12"])
+}
+
 @Test func theInspectorShowsServicesOnlyInABranch() {
     #expect(InspectorPane.services.shown(inBranch: true) == .services)
     #expect(InspectorPane.services.shown(inBranch: false) == .changes)

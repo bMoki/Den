@@ -259,3 +259,28 @@ private let answersStatus = #"""
         return true
     })
 }
+
+@Test func pullReturnsEachRepoWithItsState() async throws {
+    let (client, folder) = try fakeNs(#"""
+        read -r line
+        printf '%s\n' "$line" > "$0.request"
+        echo '{"type":"event","id":"1","event":{"step":"pull:repos","label":"Atualizando 2 repos..."}}'
+        printf '%s' '{"type":"result","id":"1","result":{"branch":"NS-1","repos":['
+        printf '%s' '{"repo":"frontend","path":"/w/f","branch":"master","status":"up-to-date"},'
+        echo '{"repo":"manager","path":"/w/m","branch":"master","status":"conflict","message":"CONFLICT","conflicts":["a.ts"]}]}}'
+        cat >/dev/null
+        """#)
+    defer { try? FileManager.default.removeItem(at: folder) }
+
+    let labels = Recorder()
+    let pulled = try await client.pull(branch: "NS-1") { labels.append($0) }
+
+    #expect(pulled.repos == [
+        .init(repo: "frontend", branch: "master", status: .upToDate),
+        .init(repo: "manager", branch: "master", status: .conflict, message: "CONFLICT", conflicts: ["a.ts"]),
+    ])
+    #expect(labels.all == ["Atualizando 2 repos..."])
+    let request = try String(contentsOf: folder.appending(path: "ns.request"), encoding: .utf8)
+    #expect(request.contains(#""op":"pull""#))
+    #expect(request.contains(#""branch":"NS-1""#))
+}

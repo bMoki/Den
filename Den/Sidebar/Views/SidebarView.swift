@@ -167,7 +167,8 @@ struct SidebarView: View {
                     toggle: { toggle(folder) },
                     newSession: { Task { await workspace.newSession(in: folder.path) } },
                     start: { Task { await ns.start(folder.name) } },
-                    stop: { Task { await ns.stop(folder.name) } }
+                    stop: { Task { await ns.stop(folder.name) } },
+                    update: { Task { await ns.update(folder.name) } }
                 )
             } else {
                 FolderHeader(

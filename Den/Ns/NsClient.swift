@@ -11,6 +11,19 @@ nonisolated struct NsQuestion: Decodable, Equatable, Sendable {
     let `default`: Bool
 }
 
+nonisolated struct RepoUpdate: Decodable, Equatable, Sendable {
+    enum Status: String, Decodable, Sendable {
+        case updated, upToDate = "up-to-date", skipped, failed, conflict
+    }
+
+    let repo: String
+    var branch: String?
+    let status: Status
+    var message: String?
+    var commits: Int?
+    var conflicts: [String]?
+}
+
 nonisolated struct NsEvent: Decodable, Equatable, Sendable {
     let step: String
     let label: String
@@ -35,6 +48,10 @@ actor NsClient {
 
         let paths: Paths
         let missingRepos: [MissingRepo]
+    }
+
+    nonisolated struct Pulled: Decodable, Equatable, Sendable {
+        let repos: [RepoUpdate]
     }
 
     private nonisolated struct Request<Input: Encodable>: Encodable {
@@ -66,6 +83,10 @@ actor NsClient {
     private nonisolated struct AddRepoInput: Encodable {
         let branch: String
         let repo: String
+    }
+
+    private nonisolated struct BranchInput: Encodable {
+        let branch: String
     }
 
     private nonisolated struct PrepareInput: Encodable {
@@ -143,6 +164,10 @@ actor NsClient {
     func prepare(branch: String, steps: @escaping Steps, ask: @escaping Ask) async throws {
         let _: Ignored = try await call("prepare", input: PrepareInput(branch: branch),
                                         timeout: .seconds(900), steps: steps, ask: ask)
+    }
+
+    func pull(branch: String, progress: @escaping Progress) async throws -> Pulled {
+        try await call("pull", input: BranchInput(branch: branch), timeout: .seconds(600), progress: progress)
     }
 
     private func call<Value: Decodable>(_ op: String, input: some Encodable, timeout: Duration? = nil,
