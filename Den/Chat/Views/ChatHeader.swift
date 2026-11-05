@@ -14,7 +14,7 @@ struct ChatHeader: View {
             ViewThatFits(in: .horizontal) {
                 breadcrumb(folder: true, branch: true)
                 breadcrumb(folder: false, branch: true)
-                breadcrumb(folder: false, branch: false)
+                breadcrumb(folder: false, branch: isArchived)
             }
             Spacer(minLength: 12)
             HarnessSwitcher(chat: chat)
@@ -25,7 +25,11 @@ struct ChatHeader: View {
         .onKeyboardShortcut("`", modifiers: .control) { toggleTerminals() }
     }
 
-    private var terminalsShown: Bool { terminals.isPanelShown(for: chat.sessionID) }
+    private var terminalsShown: Bool { terminals.isPanelShown(for: chat.sessionID) && !isArchived }
+
+    private var removedBranch: String? { ns.removedBranch(of: chat.workingDirectory) }
+
+    private var isArchived: Bool { removedBranch != nil }
 
     private var terminalToggle: some View {
         Button(action: toggleTerminals) {
@@ -35,11 +39,21 @@ struct ChatHeader: View {
                 .iconLabel(size: 32)
         }
         .buttonStyle(DenButtonStyle(kind: .secondary))
-        .help(terminalsShown ? "Ocultar Terminais livres (⌃`)" : "Terminal livre (⌃`)")
+        .disabled(isArchived)
+        .help(terminalHelp)
         .accessibilityLabel(terminalsShown ? "Ocultar Terminais livres" : "Mostrar Terminais livres")
+        .accessibilityHint(isArchived ? Self.archivedFolderReason : "")
+    }
+
+    private static let archivedFolderReason = "Sessão arquivada: a pasta desta Sessão não existe mais."
+
+    private var terminalHelp: String {
+        if isArchived { return "Terminal livre indisponível. \(Self.archivedFolderReason)" }
+        return terminalsShown ? "Ocultar Terminais livres (⌃`)" : "Terminal livre (⌃`)"
     }
 
     private func toggleTerminals() {
+        guard !isArchived else { return }
         terminals.togglePanel(for: chat.sessionID, in: chat.workingDirectory)
     }
 
@@ -57,7 +71,9 @@ struct ChatHeader: View {
                 .fontWeight(.medium)
                 .lineLimit(1)
                 .truncationMode(.tail)
-            if branch, let name = chat.branch {
+            if branch, let removedBranch {
+                BranchPill(branch: removedBranch, isRemoved: true)
+            } else if branch, let name = chat.branch {
                 BranchPill(branch: name)
             }
         }
@@ -86,22 +102,26 @@ struct ChatHeader: View {
 
 struct BranchPill: View {
     let branch: String
+    var isRemoved = false
 
     var body: some View {
         HStack(spacing: 5) {
             Image(systemName: "arrow.triangle.branch")
                 .font(.system(size: 10, weight: .semibold))
             Text(branch)
+                .strikethrough(isRemoved)
                 .lineLimit(1)
                 .truncationMode(.middle)
         }
         .font(.system(size: 11.5, design: .monospaced))
-        .foregroundStyle(Theme.textSecondary)
+        .foregroundStyle(isRemoved ? Theme.textTertiary : Theme.textSecondary)
         .padding(.horizontal, 8)
         .frame(height: 22)
-        .frame(maxWidth: 220)
+        .frame(minWidth: isRemoved ? 96 : nil, maxWidth: 220)
         .background(Theme.field, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-        .fixedSize()
-        .help(branch)
+        .fixedSize(horizontal: !isRemoved, vertical: true)
+        .help(isRemoved ? "Branch de workspace removida" : branch)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(isRemoved ? "Branch \(branch), removida" : branch)
     }
 }

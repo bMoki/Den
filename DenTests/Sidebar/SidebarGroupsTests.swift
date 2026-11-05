@@ -74,3 +74,12 @@ import Testing
     #expect(before.otherFolders.map(\.path) == after.branches.prefix(1).map(\.path))
     #expect(before.otherFolders.map(\.id) != after.branches.prefix(1).map(\.id))
 }
+
+@Test func withoutNsARememberedRemovedBranchStillGoesToArchived() {
+    let memory = NsMemory(worktreesDir: "/dev/worktrees")
+    let groups = SidebarGroups(sessions: [summary("gone", in: "/dev/worktrees/NS-99/backend")], status: nil,
+                               place: { memory.place(of: $0, in: nil) })
+
+    #expect(groups.archived.map(\.title) == ["gone"])
+    #expect(groups.otherFolders.isEmpty)
+}

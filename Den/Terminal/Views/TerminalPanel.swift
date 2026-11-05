@@ -10,7 +10,8 @@ struct TerminalPanel: View {
     @AppStorage("Den.terminalPanelHeight") private var height: Double = 220
 
     var body: some View {
-        if terminals.isPanelShown(for: sessionID), let current = terminals.selected(in: sessionID) {
+        if terminals.isPanelShown(for: sessionID), ns.removedBranch(of: directory) == nil,
+           let current = terminals.selected(in: sessionID) {
             VStack(spacing: 0) {
                 ResizeHandle(height: $height, range: 120...640)
                 tabs(terminals.terminals(of: sessionID), current: current)

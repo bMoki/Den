@@ -71,22 +71,22 @@ nonisolated struct NsStatus: Decodable, Equatable, Sendable {
         branches.first { $0.branch == name }
     }
 
-    func place(of directory: URL) -> SessionPlace {
-        let path = directory.standardizedFileURL.path
-        if let branch = branches.first(where: { Self.path(path, isInside: $0.path) }) {
+    func place(of directory: URL, worktreesDir fallback: String? = nil) -> SessionPlace {
+        let path = FolderPath.canonical(directory.path)
+        if let branch = branches.first(where: { FolderPath.path(path, isInside: $0.path) }) {
             return .branch(branch.branch)
         }
-        if let base = baseRepos.first(where: { Self.path(path, isInside: $0.path) }) {
+        if let base = baseRepos.first(where: { FolderPath.path(path, isInside: $0.path) }) {
             return .baseRepo(base.repo)
         }
-        if let worktreesDir, let removed = Self.removedBranch(at: path, under: worktreesDir) {
+        if let worktreesDir = worktreesDir ?? fallback, let removed = Self.removedBranch(at: path, under: worktreesDir) {
             return .archived(removed)
         }
         return .elsewhere
     }
 
     private static func removedBranch(at path: String, under folder: String) -> String? {
-        let root = URL(fileURLWithPath: folder).standardizedFileURL.path
+        let root = FolderPath.canonical(folder)
         guard path.hasPrefix(root + "/") else { return nil }
         var branch = root
         for component in path.dropFirst(root.count + 1).split(separator: "/") {
@@ -96,11 +96,6 @@ nonisolated struct NsStatus: Decodable, Equatable, Sendable {
             }
         }
         return nil
-    }
-
-    private static func path(_ path: String, isInside folder: String) -> Bool {
-        let root = URL(fileURLWithPath: folder).standardizedFileURL.path
-        return path == root || path.hasPrefix(root + "/")
     }
 }
 

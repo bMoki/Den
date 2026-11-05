@@ -67,7 +67,7 @@ struct SidebarView: View {
     // MARK: - List
 
     private var groups: SidebarGroups {
-        SidebarGroups(sessions: workspace.summaries, status: ns.status, search: workspace.search)
+        SidebarGroups(sessions: workspace.summaries, status: ns.status, search: workspace.search, place: ns.place(of:))
     }
 
     private var list: some View {

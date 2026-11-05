@@ -25,7 +25,9 @@ nonisolated struct SidebarGroups: Equatable {
         branches.isEmpty && baseRepos.isEmpty && otherFolders.isEmpty && archived.isEmpty
     }
 
-    init(sessions: [SessionSummary], status: NsStatus?, search: String = "") {
+    init(sessions: [SessionSummary], status: NsStatus?, search: String = "",
+         place: ((URL) -> SessionPlace)? = nil) {
+        let place = place ?? { status?.place(of: $0) ?? .elsewhere }
         let matching = sessions
             .filter { search.isEmpty || Self.session($0, matches: search) }
             .sorted { $0.updatedAt > $1.updatedAt }
@@ -33,7 +35,7 @@ nonisolated struct SidebarGroups: Equatable {
         var baseSessions: [String: [SessionSummary]] = [:]
         var elsewhere: [SessionSummary] = []
         for session in matching {
-            switch status?.place(of: session.workingDirectory) ?? .elsewhere {
+            switch place(session.workingDirectory) {
             case .branch(let name): branchSessions[name, default: []].append(session)
             case .baseRepo(let repo): baseSessions[repo, default: []].append(session)
             case .archived: archived.append(session)

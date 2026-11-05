@@ -63,6 +63,7 @@ final class NsWorkspace {
     private(set) var removal: Removal?
     private(set) var snapshotGroups: [NsClient.SnapshotGroup] = []
     private(set) var snapshotsProblem: String?
+    private(set) var memory: NsMemory
 
     @ObservationIgnored private let fetch: @Sendable () async throws -> NsStatus
     @ObservationIgnored private let startBranch: BranchAction
@@ -73,6 +74,8 @@ final class NsWorkspace {
     @ObservationIgnored private let removeBranch: RemoveBranch
     @ObservationIgnored private let openBranchDatabase: OpenDatabase
     @ObservationIgnored private let snapshotOperations: SnapshotOperations
+    @ObservationIgnored private let defaults: UserDefaults?
+    @ObservationIgnored private var places: [URL: SessionPlace] = [:]
 
     init(fetch: @escaping @Sendable () async throws -> NsStatus,
          start: @escaping BranchAction = { _, _, _ in },
@@ -82,7 +85,8 @@ final class NsWorkspace {
          previewRemoval: @escaping PreviewRemoval = { _ in throw NsFailure(message: "ns indisponível") },
          remove: @escaping RemoveBranch = { _, _, _ in throw NsFailure(message: "ns indisponível") },
          openDatabase: @escaping OpenDatabase = { _ in throw NsFailure(message: "ns indisponível") },
-         snapshots: SnapshotOperations = .unavailable) {
+         snapshots: SnapshotOperations = .unavailable,
+         defaults: UserDefaults? = nil) {
         self.fetch = fetch
         startBranch = start
         stopBranch = stop
@@ -92,6 +96,8 @@ final class NsWorkspace {
         removeBranch = remove
         openBranchDatabase = openDatabase
         snapshotOperations = snapshots
+        self.defaults = defaults
+        memory = NsMemory(defaults: defaults)
     }
 
     static func live(_ environment: any AppEnvironment) -> NsWorkspace {
@@ -111,7 +117,8 @@ final class NsWorkspace {
                                list: { try await client.snapshots() },
                                take: { try await client.takeSnapshot(branch: $0, name: $1, replace: $2, progress: $3) },
                                restore: { try await client.restore(branch: $0, ref: $1, progress: $2) },
-                               remove: { try await client.removeSnapshot(branch: $0, name: $1) }))
+                               remove: { try await client.removeSnapshot(branch: $0, name: $1) }),
+                           defaults: environment.defaults)
     }
 
     func newBranch() {
@@ -123,7 +130,11 @@ final class NsWorkspace {
     }
 
     func place(of directory: URL) -> SessionPlace {
-        status?.place(of: directory) ?? .elsewhere
+        let (status, memory) = (status, memory)
+        if let known = places[directory] { return known }
+        let place = memory.place(of: directory, in: status)
+        places[directory] = place
+        return place
     }
 
     func branch(named name: String) -> NsStatus.Branch? {
@@ -142,10 +153,19 @@ final class NsWorkspace {
         do {
             let latest = try await fetch()
             if latest != status { status = latest }
+            remember(latest)
             problem = nil
         } catch {
             problem = Self.describe(error)
         }
+        places = [:]
+    }
+
+    private func remember(_ status: NsStatus) {
+        let learned = memory.learned(from: status)
+        guard learned != memory else { return }
+        memory = learned
+        learned.save(to: defaults)
     }
 
     func start(_ branch: String, service: String? = nil) async {
