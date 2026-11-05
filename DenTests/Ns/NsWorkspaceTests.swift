@@ -149,6 +149,32 @@ nonisolated private final class Replies: @unchecked Sendable {
     #expect(ns.actionProblems["NS-12"] == "Branch 'NS-12' não encontrada")
 }
 
+@Test func openingTheDatabaseAsksNsForThatBranch() async {
+    let replies = Replies([.success(sampleStatus)])
+    let opened = Recorder()
+    let ns = NsWorkspace(fetch: { try replies.next() }, openDatabase: { opened.append($0) })
+
+    await ns.openDatabase("NS-12")
+
+    #expect(opened.all == ["NS-12"])
+    #expect(ns.actionProblems["NS-12"] == nil)
+    #expect(ns.activity.isEmpty)
+}
+
+@Test func aDatabaseAppNotConfiguredShowsHowToConfigureIt() async {
+    let replies = Replies([.success(sampleStatus)])
+    let ns = NsWorkspace(fetch: { try replies.next() },
+                         openDatabase: { _ in
+                             throw NsFailure(message: "Nenhum app de banco configurado no ns.",
+                                             hint: "Rode 'ns config set databaseApp datagrip'.")
+                         })
+
+    await ns.openDatabase("NS-12")
+
+    #expect(ns.actionProblems["NS-12"] == "Nenhum app de banco configurado no ns. Rode 'ns config set databaseApp datagrip'.")
+    #expect(ns.activity.isEmpty)
+}
+
 @Test func twoBranchesUpdatedAtOnceKeepBothReports() async {
     let replies = Replies([.success(sampleStatus), .success(sampleStatus)])
     let ns = NsWorkspace(fetch: { try replies.next() }, update: { branch, _ in

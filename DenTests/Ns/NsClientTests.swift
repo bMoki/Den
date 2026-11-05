@@ -320,3 +320,19 @@ private let answersStatus = #"""
     #expect(request.contains(#""op":"rm""#))
     #expect(request.contains(#""purge":false"#))
 }
+
+@Test func openingTheDatabaseAsksNsForTheBranchOnly() async throws {
+    let (client, folder) = try fakeNs(#"""
+        read -r line
+        printf '%s\n' "$line" > "$0.request"
+        echo '{"type":"result","id":"1","result":{"branch":"NS-1","app":"DataGrip"}}'
+        cat >/dev/null
+        """#)
+    defer { try? FileManager.default.removeItem(at: folder) }
+
+    try await client.openDatabase(branch: "NS-1")
+
+    let request = try String(contentsOf: folder.appending(path: "ns.request"), encoding: .utf8)
+    #expect(request.contains(#""op":"dbOpen""#))
+    #expect(request.contains(#""input":{"branch":"NS-1"}"#))
+}

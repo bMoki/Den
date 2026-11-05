@@ -11,9 +11,10 @@ final class NsWorkspace {
     typealias PreviewRemoval = @Sendable (_ branch: String) async throws -> NsClient.RemovalPreview
     typealias RemoveBranch = @Sendable (_ branch: String, _ purge: Bool,
                                         _ progress: @escaping NsClient.Progress) async throws -> Void
+    typealias OpenDatabase = @Sendable (_ branch: String) async throws -> Void
 
     struct Activity: Equatable {
-        enum Kind { case start, stop, restart, update, remove }
+        enum Kind { case start, stop, restart, update, remove, openDatabase }
 
         var kind: Kind
         var label: String
@@ -53,6 +54,7 @@ final class NsWorkspace {
     @ObservationIgnored private let updateBranch: UpdateBranch
     @ObservationIgnored private let previewRemoval: PreviewRemoval
     @ObservationIgnored private let removeBranch: RemoveBranch
+    @ObservationIgnored private let openBranchDatabase: OpenDatabase
 
     init(fetch: @escaping @Sendable () async throws -> NsStatus,
          start: @escaping BranchAction = { _, _, _ in },
@@ -60,7 +62,8 @@ final class NsWorkspace {
          create: BranchCreation.Operations = .unavailable,
          update: @escaping UpdateBranch = { _, _ in throw NsFailure(message: "ns indisponível") },
          previewRemoval: @escaping PreviewRemoval = { _ in throw NsFailure(message: "ns indisponível") },
-         remove: @escaping RemoveBranch = { _, _, _ in throw NsFailure(message: "ns indisponível") }) {
+         remove: @escaping RemoveBranch = { _, _, _ in throw NsFailure(message: "ns indisponível") },
+         openDatabase: @escaping OpenDatabase = { _ in throw NsFailure(message: "ns indisponível") }) {
         self.fetch = fetch
         startBranch = start
         stopBranch = stop
@@ -68,6 +71,7 @@ final class NsWorkspace {
         updateBranch = update
         self.previewRemoval = previewRemoval
         removeBranch = remove
+        openBranchDatabase = openDatabase
     }
 
     static func live(_ environment: any AppEnvironment) -> NsWorkspace {
@@ -81,7 +85,8 @@ final class NsWorkspace {
                                prepare: { try await client.prepare(branch: $0, steps: $1, ask: $2) }),
                            update: { try await client.pull(branch: $0, progress: $1) },
                            previewRemoval: { try await client.removalPreview(branch: $0) },
-                           remove: { try await client.remove(branch: $0, purge: $1, progress: $2) })
+                           remove: { try await client.remove(branch: $0, purge: $1, progress: $2) },
+                           openDatabase: { try await client.openDatabase(branch: $0) })
     }
 
     func newBranch() {
@@ -180,6 +185,13 @@ final class NsWorkspace {
         }
     }
 
+    func openDatabase(_ branch: String) async {
+        let open = openBranchDatabase
+        await run(Activity(kind: .openDatabase, label: "Abrindo o banco..."), on: branch) { _ in
+            try await open(branch)
+        }
+    }
+
     func watch(every interval: Duration = .seconds(5), whileBusy busyInterval: Duration = .seconds(1.5)) async {
         while !Task.isCancelled {
             await refresh()
@@ -205,7 +217,7 @@ final class NsWorkspace {
         do {
             value = try await action { sink.yield($0) }
         } catch let failure as NsFailure {
-            actionProblems[branch] = failure.message
+            actionProblems[branch] = [failure.message, failure.hint].compactMap(\.self).joined(separator: " ")
         } catch {
             actionProblems[branch] = error.localizedDescription
         }

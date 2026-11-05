@@ -194,6 +194,10 @@ actor NsClient {
                                         timeout: .seconds(600), progress: progress)
     }
 
+    func openDatabase(branch: String) async throws {
+        let _: Ignored = try await call("dbOpen", input: BranchInput(branch: branch), timeout: .seconds(60))
+    }
+
     private func call<Value: Decodable>(_ op: String, input: some Encodable, timeout: Duration? = nil,
                                         progress: @escaping Progress) async throws -> Value {
         try await call(op, input: input, timeout: timeout, steps: { progress($0.label) })

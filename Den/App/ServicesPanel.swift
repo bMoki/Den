@@ -31,7 +31,16 @@ struct ServicesPanel: View {
                         sectionTitle("Banco")
                         card {
                             row(name: "postgres", detail: status.databasePort.map { ":\($0)" },
-                                state: status.database, isDatabase: true, isFirst: true)
+                                state: status.database, isDatabase: true, isFirst: true) {
+                                iconAction("arrow.up.forward.app", title: BranchActionTitle.openDatabase, perform: openDatabase)
+                                    .disabled(ns.activity[branch] != nil)
+                            }
+                            .denContextMenu([
+                                DenMenuSection(id: "database", items: [
+                                    DenMenuItem(id: "open", title: BranchActionTitle.openDatabase,
+                                                isEnabled: ns.activity[branch] == nil) { Task { await openDatabase() } },
+                                ]),
+                            ])
                         }
                     }
                 } else {
@@ -203,6 +212,10 @@ struct ServicesPanel: View {
         .padding(.leading, 29)
         .padding(.trailing, 8)
         .padding(.bottom, 8)
+    }
+
+    private func openDatabase() async {
+        await ns.openDatabase(branch)
     }
 
     private func openConsole(_ service: NsStatus.Service) async {

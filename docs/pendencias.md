@@ -4,7 +4,7 @@ Decisões em aberto que ainda não viraram ADR.
 
 | Pendência | Impacto | Próximo passo | Status |
 | --- | --- | --- | --- |
-| Atalho "Abrir no app de banco" usa `ns db open`, que ainda não foi migrado para o núcleo | Sem ele, o atalho do banco no Thalamus não passa pelo `ns rpc` | Migrar `db open` para o núcleo quando chegar a vez | aberta |
+| Atalho "Abrir no app de banco" usa `ns db open`, que ainda não foi migrado para o núcleo | Sem ele, o atalho do banco no Thalamus não passa pelo `ns rpc` | Feito: `ns rpc` serve `dbOpen` (abre o app configurado no `ns`; sem app configurado, erro `pre-condicao` com o comando que resolve) | fechada |
 | Criação com Repos opcionais no núcleo: `runNew` aceitar `repos` (manager, report-server, parents) e encadear Preparar, com falha parcial mantendo a Branch de workspace e permitindo repetir o Repo que falhou | Os checkboxes de "+ Branch" do Thalamus dependem disso | Feito: `ns rpc` serve `new` (com `repos`) e `addRepo`, que repete só o Repo que faltou; terminal ganha `ns new <branch> --with ...` | fechada |
 | Migrar `pull` para o núcleo, devolvendo o resultado por Repo (`updated`, `up-to-date`, `skipped`, `failed`) e distinguindo conflito de outras falhas | O botão "Atualizar com a branch principal" do Thalamus depende disso | Feito: `ns rpc` serve `pull` com o estado de cada Repo, e conflito é um estado próprio (`conflict`, com os arquivos) | fechada |
 | Iniciar, parar e reiniciar um Serviço isolado no núcleo (hoje `ns stop` só age sobre a branch inteira) | Botões por Serviço na barra de status do Thalamus | Feito: `ns start <branch> [serviço]` e `ns stop <branch> [serviço]`, servidos pelo `ns rpc` com `service`; Reiniciar é parar e iniciar, no Thalamus | fechada |
