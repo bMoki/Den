@@ -3,9 +3,12 @@ import SwiftUI
 struct InspectorView: View {
     @Binding var pane: InspectorPane
     let gitChanges: GitChangesModel
+    let files: FileTree
     let sessionID: UUID
     let directory: URL
     let branch: String?
+    let removedBranch: String?
+    var mention: (_ path: String, _ isDirectory: Bool) -> Void
 
     var body: some View {
         let shown = pane.shown(inBranch: branch != nil)
@@ -15,6 +18,7 @@ struct InspectorView: View {
                     if branch != nil {
                         tab(.services, title: "Serviços", symbol: "server.rack", shown: shown)
                     }
+                    tab(.files, title: "Arquivos", symbol: "folder", shown: shown)
                     tab(.changes, title: "Alterações", symbol: "plus.forwardslash.minus", shown: shown) {
                         if gitChanges.changeCount > 0 {
                             Text("\(gitChanges.changeCount)")
@@ -44,6 +48,8 @@ struct InspectorView: View {
             Group {
                 if shown == .services, let branch {
                     ServicesPanel(branch: branch, sessionID: sessionID, directory: directory)
+                } else if shown == .files {
+                    FilesPanel(tree: files, directory: directory, removedBranch: removedBranch, mention: mention)
                 } else {
                     GitChangesPanel(model: gitChanges, directory: directory)
                 }
@@ -69,7 +75,7 @@ struct InspectorView: View {
             .foregroundStyle(isOn ? Theme.text : Theme.textTertiary)
             .padding(.horizontal, 12)
             .frame(height: 32)
-            .background(isOn && branch != nil ? Theme.hoverRaised : .clear,
+            .background(isOn ? Theme.hoverRaised : .clear,
                         in: RoundedRectangle(cornerRadius: 8, style: .continuous))
             .contentShape(Rectangle())
         }

@@ -61,7 +61,6 @@ final class GitChangesModel {
     private var lastDirectory: URL?
     private var loadID = 0
 
-    nonisolated private static let maxRepos = 10
     nonisolated private static let maxFilesPerRepo = 60
     nonisolated private static let maxLinesPerFile = 160
 
@@ -114,7 +113,7 @@ final class GitChangesModel {
         }
 
         let roots = await Task.detached(priority: .userInitiated) {
-            Self.discoverRepoRoots(under: directory)
+            GitRepository.repoRoots(under: directory)
         }.value
         guard id == loadID, !Task.isCancelled else { return }
 
@@ -238,42 +237,6 @@ final class GitChangesModel {
     }
 
     // MARK: - Off the main thread
-
-    nonisolated private static let skippedFolders: Set<String> = [
-        "node_modules", ".build", "DerivedData", ".next", "dist", "build",
-        "Pods", ".venv", "vendor",
-    ]
-
-    nonisolated static func discoverRepoRoots(under directory: URL) -> [URL] {
-        let manager = FileManager.default
-        var roots: [URL] = []
-
-        if let toplevel = GitRepository.toplevel(containing: directory) {
-            roots.append(toplevel)
-        }
-
-        func scan(_ dir: URL, depth: Int) {
-            guard roots.count < maxRepos,
-                  let children = try? manager.contentsOfDirectory(
-                    at: dir, includingPropertiesForKeys: [.isDirectoryKey],
-                    options: [.skipsHiddenFiles]) else { return }
-            for child in children.sorted(by: { $0.path < $1.path }) {
-                guard (try? child.resourceValues(forKeys: [.isDirectoryKey]))?
-                    .isDirectory == true,
-                      !skippedFolders.contains(child.lastPathComponent)
-                else { continue }
-                if manager.fileExists(atPath: child.appending(path: ".git").path) {
-                    if roots.count < maxRepos { roots.append(child.standardizedFileURL) }
-                } else if depth < 2 {
-                    scan(child, depth: depth + 1)
-                }
-            }
-        }
-        scan(directory.standardizedFileURL, depth: 1)
-
-        var seen: Set<String> = []
-        return roots.filter { seen.insert($0.path).inserted }
-    }
 
     nonisolated static func untrackedLines(of file: URL, cap: Int = 200) -> [GitDiffLine] {
         guard let handle = try? FileHandle(forReadingFrom: file),

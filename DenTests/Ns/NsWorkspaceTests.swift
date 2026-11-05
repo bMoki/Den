@@ -262,9 +262,9 @@ private let cleanPreview = NsClient.RemovalPreview(volume: "ns_db_ns-12", uncomm
 
 @Test func theInspectorShowsServicesOnlyInABranch() {
     #expect(InspectorPane.services.shown(inBranch: true) == .services)
-    #expect(InspectorPane.services.shown(inBranch: false) == .changes)
+    #expect(InspectorPane.services.shown(inBranch: false) == .files)
     #expect(InspectorPane.opening(inBranch: true) == .services)
-    #expect(InspectorPane.opening(inBranch: false) == .changes)
+    #expect(InspectorPane.opening(inBranch: false) == .files)
 }
 
 private func snapshot(_ branch: String, _ name: String) -> NsClient.Snapshot {

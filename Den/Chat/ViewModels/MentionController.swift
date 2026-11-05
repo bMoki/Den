@@ -40,6 +40,11 @@ import Observation
         }
     }
 
+    func mention(_ path: String, isDirectory: Bool, in chat: ChatModel) {
+        let separator = chat.prompt.last.map { $0.isWhitespace ? "" : " " } ?? ""
+        chat.prompt += separator + "@" + path + (isDirectory ? "/ " : " ")
+    }
+
     func loadIndex(under root: URL) async {
         let root = root
         fileIndex = await Task.detached(priority: .utility) {

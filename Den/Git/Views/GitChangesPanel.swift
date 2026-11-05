@@ -513,30 +513,9 @@ struct GitChangesPanel: View {
     private func badge(for state: GitFileState) -> some View {
         Text(state.badge)
             .font(.system(size: 11, weight: .semibold, design: .monospaced))
-            .foregroundStyle(badgeColor(for: state))
+            .foregroundStyle(state.color)
             .frame(width: 14)
-            .accessibilityLabel(accessibilityName(for: state))
-    }
-
-    private func badgeColor(for state: GitFileState) -> Color {
-        switch state {
-        case .modified: Theme.modified
-        case .added, .untracked: Theme.added
-        case .deleted: Theme.removed
-        case .renamed: Theme.renamed
-        case .conflicted: Theme.accent
-        }
-    }
-
-    private func accessibilityName(for state: GitFileState) -> String {
-        switch state {
-        case .modified: "Modificado"
-        case .added: "Adicionado"
-        case .deleted: "Apagado"
-        case .renamed: "Renomeado"
-        case .untracked: "Não rastreado"
-        case .conflicted: "Em conflito"
-        }
+            .accessibilityLabel(state.accessibilityName)
     }
 
 }

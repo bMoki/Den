@@ -52,6 +52,28 @@ extension View {
     }
 }
 
+struct DialogNameField: View {
+    @Binding var name: String
+    var accessibilityLabel: String
+    var submit: () -> Void
+
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Nome")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(Theme.textSecondary)
+            TextField("", text: $name)
+                .focused($focused)
+                .onSubmit(submit)
+                .dialogField(focused: focused)
+                .accessibilityLabel(accessibilityLabel)
+        }
+        .onAppear { focused = true }
+    }
+}
+
 struct DialogCheckbox: View {
     let title: String
     @Binding var isOn: Bool

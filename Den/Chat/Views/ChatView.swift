@@ -16,6 +16,7 @@ struct ChatView: View {
     @AppStorage(InspectorPane.storageKey) private var pane: InspectorPane = .closed
     @AppStorage("Den.inspectorWidth") private var inspectorWidth: Double = 480
     let gitChanges: GitChangesModel
+    let files: FileTree
     @Environment(NsWorkspace.self) private var ns
 
     private static let minimumChatWidth: CGFloat = 420
@@ -126,8 +127,10 @@ struct ChatView: View {
     private var shownPane: InspectorPane { pane.shown(inBranch: branch != nil) }
 
     private var inspector: some View {
-        InspectorView(pane: $pane, gitChanges: gitChanges, sessionID: chat.sessionID,
-                      directory: chat.workingDirectory, branch: branch)
+        InspectorView(pane: $pane, gitChanges: gitChanges, files: files, sessionID: chat.sessionID,
+                      directory: chat.workingDirectory, branch: branch, removedBranch: removedBranch) { path, isDirectory in
+            mentions.mention(path, isDirectory: isDirectory, in: chat)
+        }
     }
 
     private func zoom(_ data: Data) {

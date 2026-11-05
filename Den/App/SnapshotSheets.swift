@@ -6,21 +6,13 @@ struct TakeSnapshotSheet: View {
     var take: (_ name: String) -> Void
 
     @State private var name = ""
-    @FocusState private var nameFocused: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             DialogHeading(title: Text("Tirar snapshot"),
                           subtitle: Text("Guarda o estado atual do banco de \(Text(branch).font(.system(size: 12.5, design: .monospaced)))."))
             VStack(alignment: .leading, spacing: 8) {
-                Text("Nome")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(Theme.textSecondary)
-                TextField("", text: $name)
-                    .focused($nameFocused)
-                    .onSubmit(submit)
-                    .dialogField(focused: nameFocused)
-                    .accessibilityLabel("Nome do snapshot")
+                DialogNameField(name: $name, accessibilityLabel: "Nome do snapshot", submit: submit)
                 Text(note)
                     .font(.system(size: 12, design: .monospaced))
                     .foregroundStyle(problem == nil ? Theme.textTertiary : Theme.alertText)
@@ -39,7 +31,6 @@ struct TakeSnapshotSheet: View {
         .background(Theme.raised)
         .foregroundStyle(Theme.text)
         .preferredColorScheme(.dark)
-        .onAppear { nameFocused = true }
     }
 
     private var trimmed: String { name.trimmingCharacters(in: .whitespaces) }

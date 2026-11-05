@@ -1,0 +1,97 @@
+import SwiftUI
+
+struct FileNameRequest: Identifiable {
+    enum Kind { case newFile, newFolder, rename(FileNode) }
+
+    let kind: Kind
+    let folder: URL
+    let id = UUID()
+
+    var title: String {
+        switch kind {
+        case .newFile: "Novo arquivo"
+        case .newFolder: "Nova pasta"
+        case .rename: "Renomear"
+        }
+    }
+
+    var initialName: String {
+        if case .rename(let node) = kind { node.name } else { "" }
+    }
+
+    var current: URL? {
+        if case .rename(let node) = kind { node.url } else { nil }
+    }
+}
+
+struct FileNameSheet: View {
+    let request: FileNameRequest
+    let root: URL
+    var cancel: () -> Void
+    var submit: (_ name: String) throws -> Void
+
+    @State private var name: String
+    @State private var failure: String?
+
+    init(request: FileNameRequest, root: URL, cancel: @escaping () -> Void, submit: @escaping (_ name: String) throws -> Void) {
+        self.request = request
+        self.root = root
+        self.cancel = cancel
+        self.submit = submit
+        _name = State(initialValue: request.initialName)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            DialogHeading(title: Text(request.title),
+                          subtitle: Text("Em \(Text(place).font(.system(size: 12.5, design: .monospaced)))."))
+            VStack(alignment: .leading, spacing: 8) {
+                DialogNameField(name: $name, accessibilityLabel: "Nome", submit: confirm)
+                if let note {
+                    Text(note)
+                        .font(.system(size: 12))
+                        .foregroundStyle(Theme.alertText)
+                }
+            }
+            .padding(EdgeInsets(top: 14, leading: 20, bottom: 4, trailing: 20))
+            DialogFooter {
+                Spacer(minLength: 0)
+                DialogCancelButton(action: cancel)
+                Button(action: confirm) { Text(request.title).pillLabel() }
+                    .buttonStyle(.denPrimary)
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(!isValid)
+            }
+        }
+        .frame(width: 420)
+        .background(Theme.raised)
+        .foregroundStyle(Theme.text)
+        .preferredColorScheme(.dark)
+        .onChange(of: name) { failure = nil }
+    }
+
+    private var place: String {
+        let folder = request.folder.path
+        guard folder == root.path || folder.hasPrefix(root.path + "/") else { return folder }
+        return root.lastPathComponent + folder.dropFirst(root.path.count)
+    }
+
+    private var problem: FileTree.Problem? {
+        FileTree.nameProblem(name, in: request.folder, except: request.current)
+    }
+
+    private var isValid: Bool { problem == nil && name != request.initialName }
+
+    private var note: String? {
+        failure ?? (problem == .emptyName ? nil : problem?.errorDescription)
+    }
+
+    private func confirm() {
+        guard isValid else { return }
+        do {
+            try submit(name)
+        } catch {
+            failure = error.localizedDescription
+        }
+    }
+}
