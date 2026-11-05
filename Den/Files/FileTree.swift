@@ -21,6 +21,7 @@ final class FileTree {
         case exists(String)
         case insideItself
         case outsideFolder(String)
+        case fromOutside(String)
         case failed(String)
 
         var errorDescription: String? {
@@ -30,6 +31,7 @@ final class FileTree {
             case .exists(let name): "Já existe \(name) aqui."
             case .insideItself: "Uma pasta não pode ir para dentro dela mesma."
             case .outsideFolder(let folder): "Escolha uma pasta dentro de \(folder)."
+            case .fromOutside(let folder): "Só dá para mover itens de \(folder)."
             case .failed(let reason): reason
             }
         }
@@ -93,6 +95,53 @@ final class FileTree {
         expanded = []
     }
 
+    var selectedNode: FileNode? {
+        let rows = rows
+        return selectedIndex(in: rows).map { rows[$0].node }
+    }
+
+    func selectNext() {
+        let rows = rows
+        guard let index = selectedIndex(in: rows) else {
+            selection = rows.first?.id
+            return
+        }
+        if index + 1 < rows.count { selection = rows[index + 1].id }
+    }
+
+    func selectPrevious() {
+        let rows = rows
+        guard let index = selectedIndex(in: rows) else {
+            selection = rows.last?.id
+            return
+        }
+        if index > 0 { selection = rows[index - 1].id }
+    }
+
+    func openSelection() {
+        let rows = rows
+        guard let index = selectedIndex(in: rows), rows[index].node.isDirectory else { return }
+        if !rows[index].isExpanded {
+            toggle(rows[index].node)
+        } else if index + 1 < rows.count, rows[index + 1].depth > rows[index].depth {
+            selection = rows[index + 1].id
+        }
+    }
+
+    func closeSelection() {
+        let rows = rows
+        guard let index = selectedIndex(in: rows) else { return }
+        if rows[index].isExpanded {
+            toggle(rows[index].node)
+        } else if let parent = rows[..<index].last(where: { $0.depth < rows[index].depth }) {
+            selection = parent.id
+        }
+    }
+
+    private func selectedIndex(in rows: [Row]) -> Int? {
+        rows.firstIndex { $0.id == selection }
+    }
+
     func relativePath(of node: FileNode) -> String {
         guard let root, node.id.hasPrefix(root.path + "/") else { return node.name }
         return String(node.id.dropFirst(root.path.count + 1))
@@ -141,9 +190,23 @@ final class FileTree {
         try relocate(node, to: folder.appending(path: node.name))
     }
 
+    func drop(_ path: String, into folder: URL) throws {
+        guard let root, path.hasPrefix("/"), FileManager.default.fileExists(atPath: path) else { return }
+        let url = URL(fileURLWithPath: path).standardizedFileURL
+        if url.path == folder.standardizedFileURL.path { return }
+        if url.path == root.path { throw Problem.insideItself }
+        guard url.path.hasPrefix(root.path + "/") else { throw Problem.fromOutside(root.lastPathComponent) }
+        try move(FileNode(url: url, isDirectory: url.isExistingDirectory), into: folder)
+    }
+
     func trash(_ node: FileNode) throws {
+        let rows = rows
+        let neighbour = selection == node.id ? selectedIndex(in: rows).flatMap { index in
+            rows[(index + 1)...].first { !$0.id.hasPrefix(node.id + "/") } ?? (index > 0 ? rows[index - 1] : nil)
+        } : nil
         try FileManager.default.trashItem(at: node.url, resultingItemURL: nil)
         forget(node.id)
+        if let neighbour { selection = neighbour.id }
         Task { await reload([node.url.deletingLastPathComponent().path]) }
     }
 

@@ -8,6 +8,8 @@ struct FilesPanel: View {
     var mention: (_ path: String, _ isDirectory: Bool) -> Void
 
     @State private var naming: FileNameRequest?
+    @State private var dropOnRoot = false
+    @FocusState private var focused: Bool
 
     var body: some View {
         Group {
@@ -28,6 +30,7 @@ struct FilesPanel: View {
         .task(id: "\(directory.path)|\(removedBranch ?? "")") {
             if removedBranch == nil { await tree.watch(directory) }
         }
+        .onChange(of: naming == nil) { if naming == nil { focused = true } }
         .sheet(item: $naming) { request in
             FileNameSheet(request: request, root: tree.root ?? directory, cancel: { naming = nil }, submit: { name in
                 try perform(request, name: name)
@@ -44,28 +47,52 @@ struct FilesPanel: View {
                 .lineLimit(1)
                 .truncationMode(.middle)
             Spacer(minLength: 4)
-            headerButton("doc.badge.plus", title: "Novo arquivo") { ask(.newFile, at: selectedNode) }
-            headerButton("folder.badge.plus", title: "Nova pasta") { ask(.newFolder, at: selectedNode) }
+            headerButton("doc.badge.plus", title: "Novo arquivo") { ask(.newFile, at: tree.selectedNode) }
+            headerButton("folder.badge.plus", title: "Nova pasta") { ask(.newFolder, at: tree.selectedNode) }
             headerButton("arrow.down.right.and.arrow.up.left", title: "Recolher tudo", perform: tree.collapseAll)
         }
         .padding(.leading, 6)
         .padding(.trailing, 4)
         .frame(height: 30)
+        .background(dropOnRoot ? Theme.accentFill : .clear, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+        .dropDestination(for: String.self) { paths, _ in
+            drop(paths, into: tree.root ?? directory)
+        } isTargeted: { dropOnRoot = $0 }
     }
 
     private var rows: some View {
-        ScrollView {
-            LazyVStack(spacing: 0) {
-                ForEach(tree.rows) { row in
-                    FileTreeRow(row: row, isSelected: tree.selection == row.id) {
-                        tree.selection = row.id
-                        if row.node.isDirectory { tree.toggle(row.node) } else { open(row.node.url) }
+        ScrollViewReader { proxy in
+            ScrollView {
+                LazyVStack(spacing: 0) {
+                    ForEach(tree.rows) { row in
+                        FileTreeRow(row: row, isSelected: tree.selection == row.id) {
+                            focused = true
+                            tree.selection = row.id
+                            if row.node.isDirectory { tree.toggle(row.node) } else { open(row.node.url) }
+                        } drop: { paths in
+                            drop(paths, into: row.node.url)
+                        }
+                        .id(row.id)
+                        .denContextMenu(menu(for: row.node))
                     }
-                    .denContextMenu(menu(for: row.node))
                 }
+            }
+            .onChange(of: tree.selection) {
+                if let selection = tree.selection { proxy.scrollTo(selection) }
             }
         }
         .frame(maxHeight: .infinity)
+        .focusable()
+        .focused($focused)
+        .focusEffectDisabled()
+        .onKeyPress(phases: .down) { press in
+            guard let shortcut = FileTreeShortcut(key: press.key, characters: press.characters, modifiers: press.modifiers) else {
+                return .ignored
+            }
+            run(shortcut)
+            return .handled
+        }
+        .accessibilityIdentifier("file-tree")
     }
 
     @ViewBuilder
@@ -116,10 +143,6 @@ struct FilesPanel: View {
         .accessibilityLabel(title)
     }
 
-    private var selectedNode: FileNode? {
-        tree.selection.flatMap { selection in tree.rows.first { $0.id == selection }?.node }
-    }
-
     private func menu(for node: FileNode) -> [DenMenuSection] {
         [
             DenMenuSection(id: "mention", items: [
@@ -130,24 +153,46 @@ struct FilesPanel: View {
             DenMenuSection(id: "edit", items: [
                 DenMenuItem(id: "new-file", title: "Novo arquivo", icon: icon("doc.badge.plus")) { ask(.newFile, at: node) },
                 DenMenuItem(id: "new-folder", title: "Nova pasta", icon: icon("folder.badge.plus")) { ask(.newFolder, at: node) },
-                DenMenuItem(id: "rename", title: "Renomear", icon: icon("pencil")) {
-                    naming = FileNameRequest(kind: .rename(node), folder: node.url.deletingLastPathComponent())
+                DenMenuItem(id: "rename", title: "Renomear", icon: icon("pencil"), shortcut: FileTreeShortcut.rename.hint) {
+                    rename(node)
                 },
                 DenMenuItem(id: "move", title: "Mover para…", icon: icon("arrow.right.doc.on.clipboard")) { move(node) },
             ]),
             DenMenuSection(id: "place", items: [
                 DenMenuItem(id: "reveal", title: "Revelar no Finder", icon: icon("magnifyingglass")) { tree.revealInFinder(node) },
-                DenMenuItem(id: "copy-path", title: "Copiar caminho", icon: icon("doc.on.doc")) { tree.copyPath(node) },
+                DenMenuItem(id: "copy-path", title: "Copiar caminho", icon: icon("doc.on.doc"),
+                            shortcut: FileTreeShortcut.copyPath.hint) { tree.copyPath(node) },
             ]),
             DenMenuSection(id: "trash", items: [
                 DenMenuItem(id: "trash", title: "Mover para a lixeira", icon: .symbol("trash", Theme.removed),
-                            isDestructive: true) { attempt { try tree.trash(node) } },
+                            isDestructive: true, shortcut: FileTreeShortcut.trash.hint) { attempt { try tree.trash(node) } },
             ]),
         ]
     }
 
     private func icon(_ symbol: String) -> DenMenuIcon {
         .symbol(symbol, Theme.textTertiary)
+    }
+
+    private func run(_ shortcut: FileTreeShortcut) {
+        switch shortcut {
+        case .next: tree.selectNext()
+        case .previous: tree.selectPrevious()
+        case .open: tree.openSelection()
+        case .close: tree.closeSelection()
+        case .rename: if let node = tree.selectedNode { rename(node) }
+        case .copyPath: if let node = tree.selectedNode { tree.copyPath(node) }
+        case .trash: if let node = tree.selectedNode { attempt { try tree.trash(node) } }
+        }
+    }
+
+    private func rename(_ node: FileNode) {
+        naming = FileNameRequest(kind: .rename(node), folder: node.url.deletingLastPathComponent())
+    }
+
+    private func drop(_ paths: [String], into folder: URL) -> Bool {
+        guard let path = paths.first else { return false }
+        return attempt { try tree.drop(path, into: folder) }
     }
 
     private func ask(_ kind: FileNameRequest.Kind, at node: FileNode?) {
@@ -168,12 +213,15 @@ struct FilesPanel: View {
         attempt { try tree.move(node, into: folder) }
     }
 
-    private func attempt(_ action: () throws -> Void) {
+    @discardableResult
+    private func attempt(_ action: () throws -> Void) -> Bool {
         do {
             try action()
             tree.problem = nil
+            return true
         } catch {
             tree.problem = error.localizedDescription
+            return false
         }
     }
 }
@@ -182,8 +230,10 @@ private struct FileTreeRow: View {
     let row: FileTree.Row
     let isSelected: Bool
     var select: () -> Void
+    var drop: ([String]) -> Bool
 
     @State private var hovering = false
+    @State private var targeted = false
 
     var body: some View {
         Button(action: select) {
@@ -213,12 +263,16 @@ private struct FileTreeRow: View {
             .padding(.leading, CGFloat(row.depth) * 14 + 4)
             .padding(.trailing, 8)
             .frame(height: 26)
-            .background(isSelected ? Theme.accentFill : hovering ? Theme.hover : .clear,
+            .background(isSelected || targeted ? Theme.accentFill : hovering ? Theme.hover : .clear,
                         in: RoundedRectangle(cornerRadius: 6, style: .continuous))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .onHover { hovering = $0 }
+        .draggable(row.node.id)
+        .dropDestination(for: String.self) { paths, _ in
+            row.node.isDirectory && drop(paths)
+        } isTargeted: { targeted = row.node.isDirectory && $0 }
         .accessibilityLabel(row.node.name)
         .accessibilityValue(accessibilitySummary)
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)

@@ -286,3 +286,95 @@ private func row(_ name: String, in tree: FileTree) -> FileTree.Row? {
         #expect(await eventually { row("fresh.txt", in: tree)?.state == .added })
     }
 }
+
+@Test @MainActor func arrowsWalkTheRowsAndOpenAndCloseFolders() async throws {
+    let root = try makeTree(["src/deep"], files: ["src/main.swift", "README.md"])
+    defer { try? FileManager.default.removeItem(at: root) }
+
+    try await watching(root) { tree in
+        let path = { (name: String) in root.appending(path: name).path }
+        tree.selectNext()
+        #expect(tree.selection == path("src"))
+        tree.openSelection()
+        #expect(await eventually { names(tree) == ["src", "  deep", "  main.swift", "README.md"] })
+        tree.openSelection()
+        #expect(tree.selection == path("src/deep"))
+        tree.selectNext()
+        tree.selectNext()
+        #expect(tree.selection == path("README.md"))
+        tree.selectNext()
+        #expect(tree.selection == path("README.md"))
+        tree.selectPrevious()
+        #expect(tree.selection == path("src/main.swift"))
+        tree.openSelection()
+        #expect(tree.selection == path("src/main.swift"))
+        tree.closeSelection()
+        #expect(tree.selection == path("src"))
+        tree.closeSelection()
+        #expect(names(tree) == ["src", "README.md"])
+        tree.selectPrevious()
+        #expect(tree.selection == path("src"))
+    }
+}
+
+@Test @MainActor func droppingAnItemOnAFolderMovesIt() async throws {
+    let root = try makeTree(["archive", "box/inner"], files: ["notes.txt"])
+    defer { try? FileManager.default.removeItem(at: root) }
+    let manager = FileManager.default
+
+    try await watching(root) { tree in
+        try tree.drop(root.appending(path: "notes.txt").path, into: root.appending(path: "archive"))
+        #expect(manager.fileExists(atPath: root.appending(path: "archive/notes.txt").path))
+        #expect(await eventually { names(tree) == ["archive", "  notes.txt", "box"] })
+
+        try tree.drop(root.appending(path: "archive/notes.txt").path, into: root)
+        #expect(manager.fileExists(atPath: root.appending(path: "notes.txt").path))
+
+        try tree.drop(root.appending(path: "box").path, into: root.appending(path: "archive"))
+        #expect(root.appending(path: "archive/box/inner").isExistingDirectory)
+    }
+}
+
+@Test @MainActor func droppingWhereTheMoveIsNotAllowedChangesNothing() async throws {
+    let root = try makeTree(["box/inner"], files: ["a.txt"])
+    let elsewhere = try makeTree([], files: ["outside.txt"])
+    defer {
+        try? FileManager.default.removeItem(at: root)
+        try? FileManager.default.removeItem(at: elsewhere)
+    }
+    let manager = FileManager.default
+
+    try await watching(root) { tree in
+        let folder = root.lastPathComponent
+        #expect(throws: FileTree.Problem.insideItself) {
+            try tree.drop(root.appending(path: "box").path, into: root.appending(path: "box/inner"))
+        }
+        #expect(throws: FileTree.Problem.outsideFolder(folder)) { try tree.drop(root.appending(path: "a.txt").path, into: elsewhere) }
+        #expect(throws: FileTree.Problem.fromOutside(folder)) {
+            try tree.drop(elsewhere.appending(path: "outside.txt").path, into: root.appending(path: "box"))
+        }
+        #expect(throws: FileTree.Problem.insideItself) { try tree.drop(root.path, into: root.appending(path: "box")) }
+        try tree.drop(root.appending(path: "box").path, into: root.appending(path: "box"))
+        try tree.drop("some selected text", into: root.appending(path: "box"))
+        try tree.drop(root.appending(path: "missing.txt").path, into: root.appending(path: "box"))
+        #expect(manager.fileExists(atPath: root.appending(path: "a.txt").path))
+        #expect(manager.fileExists(atPath: elsewhere.appending(path: "outside.txt").path))
+        #expect(root.appending(path: "box/inner").isExistingDirectory)
+    }
+}
+
+@Test @MainActor func trashingTheSelectedItemSelectsTheNextOne() async throws {
+    let root = try makeTree(["box"], files: ["box/inside.txt", "a.txt", "b.txt"])
+    defer { try? FileManager.default.removeItem(at: root) }
+
+    try await watching(root) { tree in
+        tree.toggle(try #require(row("box", in: tree)).node)
+        #expect(await eventually { names(tree) == ["box", "  inside.txt", "a.txt", "b.txt"] })
+        tree.selection = root.appending(path: "box").path
+        try tree.trash(try #require(tree.selectedNode))
+        #expect(tree.selection == root.appending(path: "a.txt").path)
+        tree.selection = root.appending(path: "b.txt").path
+        try tree.trash(try #require(tree.selectedNode))
+        #expect(tree.selection == root.appending(path: "a.txt").path)
+    }
+}

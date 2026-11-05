@@ -12,6 +12,7 @@ struct DenMenuItem: Identifiable {
     var isSelected: Bool
     var isEnabled: Bool
     var isDestructive: Bool
+    var shortcut: String?
     var children: [DenMenuSection]
     var action: () -> Void
 
@@ -21,6 +22,7 @@ struct DenMenuItem: Identifiable {
          isSelected: Bool = false,
          isEnabled: Bool = true,
          isDestructive: Bool = false,
+         shortcut: String? = nil,
          children: [DenMenuSection] = [],
          action: @escaping () -> Void = {}) {
         self.id = id
@@ -29,6 +31,7 @@ struct DenMenuItem: Identifiable {
         self.isSelected = isSelected
         self.isEnabled = isEnabled
         self.isDestructive = isDestructive
+        self.shortcut = shortcut
         self.children = children
         self.action = action
     }

@@ -153,6 +153,10 @@ private struct DenMenuRow: View {
             Image(systemName: "checkmark")
                 .font(.system(size: 10, weight: .semibold))
                 .foregroundStyle(Theme.accent)
+        } else if let shortcut = item.shortcut {
+            Text(shortcut)
+                .font(.system(size: 11, design: .monospaced))
+                .foregroundStyle(Theme.textTertiary)
         }
     }
 }
