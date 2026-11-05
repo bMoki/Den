@@ -164,7 +164,7 @@ struct EditorView: View {
             switch document.mode {
             case .code:
                 SourceEditor($document.text, language: document.language, configuration: .den, state: $document.editorState,
-                             undoManager: document.memory.undoManager, coordinators: [document.memory])
+                             undoManager: document.memory.undoManager, coordinators: [document.memory, EditorClipping.shared])
                     .id("\(document.url.path)#\(document.editorGeneration)")
             case .preview:
                 ScrollView {
@@ -226,7 +226,8 @@ struct EditorView: View {
                 .padding(.horizontal, 14)
                 .frame(maxWidth: .infinity, minHeight: 32, alignment: .leading)
                 .overlay(alignment: .bottom) { Rectangle().fill(Theme.border).frame(height: 1) }
-            SourceEditor(.constant(text), language: document.language, configuration: .denReadOnly, state: .constant(SourceEditorState()))
+            SourceEditor(.constant(text), language: document.language, configuration: .denReadOnly, state: .constant(SourceEditorState()),
+                         coordinators: [EditorClipping.shared])
                 .id("\(title)#\(text.hashValue)")
         }
         .frame(maxWidth: .infinity)

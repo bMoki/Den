@@ -56,18 +56,7 @@ final class EditorDocument: Identifiable {
     var isMarkdown: Bool { ["md", "markdown"].contains(url.pathExtension.lowercased()) }
 
     func load() async {
-        switch await readOffMain(limited: true) {
-        case .text(let read):
-            text = read
-            saved = read
-            kind = .text
-        case .image(let data):
-            kind = .image(data)
-        case .unreadable(let reason):
-            kind = .unreadable(reason)
-        case .missing:
-            kind = .unreadable("Este arquivo não existe mais.")
-        }
+        open(await readOffMain(limited: true))
     }
 
     func watch() async {
@@ -81,8 +70,13 @@ final class EditorDocument: Identifiable {
 
     func readDisk() async {
         let writesBefore = writes
-        let contents = await readOffMain(limited: false)
-        guard writes == writesBefore, kind == .text else { return }
+        let wasText = kind == .text
+        let contents = await readOffMain(limited: !wasText)
+        guard writes == writesBefore, kind != .loading, wasText == (kind == .text) else { return }
+        guard wasText else {
+            open(contents)
+            return
+        }
         if let loss = DiskLoss(contents) {
             lose(loss)
         } else if case .text(let disk) = contents {
@@ -162,6 +156,23 @@ final class EditorDocument: Identifiable {
     private func readOffMain(limited: Bool) async -> FileContents {
         let url = url
         return await Task.detached(priority: .userInitiated) { FileContents.read(url, limited: limited) }.value
+    }
+
+    private func open(_ contents: FileContents) {
+        let opened: Kind
+        switch contents {
+        case .text(let read):
+            text = read
+            saved = read
+            opened = .text
+        case .image(let data):
+            opened = .image(data)
+        case .unreadable(let reason):
+            opened = .unreadable(reason)
+        case .missing:
+            opened = .unreadable("Este arquivo não existe mais.")
+        }
+        if kind != opened { kind = opened }
     }
 
     private func lose(_ loss: DiskLoss) {

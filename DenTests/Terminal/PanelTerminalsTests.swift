@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import HarnessCore
 import SwiftTerm
 import Testing
 @testable import Den
@@ -206,4 +207,22 @@ private func openAttachedConsole(_ terminals: PanelTerminals, for session: UUID,
 
     type("\n", into: console)
     #expect(await eventually { terminals.terminals(of: session).isEmpty })
+}
+
+@MainActor
+@Test func archivingASessionEndsItsShells() async throws {
+    let folder = try makeTree([])
+    let terminals = PanelTerminals(shell: "/bin/sh")
+    let archived = summary("gone", in: "/dev/worktrees/NS-1234")
+    let active = summary("here", in: "/dev/worktrees/NS-12")
+    let ended = terminals.open(for: archived.id, in: folder)
+    let kept = terminals.open(for: active.id, in: folder)
+    #expect(await eventually { isAlive(ended.pid) && isAlive(kept.pid) })
+    let pid = ended.pid
+
+    SidebarGroups(sessions: [archived, active], status: sampleStatus).archived.forEach { terminals.close(sessionID: $0.id) }
+
+    #expect(await eventually { !isAlive(pid) })
+    #expect(terminals.all.map(\.id) == [kept.id])
+    terminals.closeAll()
 }

@@ -469,7 +469,7 @@ private func deletedWhileUnsaved() async throws -> (EditorDocument, URL) {
 }
 
 @MainActor
-private func loaded(_ tabs: EditorTabs, _ names: [String], in session: UUID, root: URL) async throws -> [EditorDocument] {
+func loaded(_ tabs: EditorTabs, _ names: [String], in session: UUID, root: URL) async throws -> [EditorDocument] {
     for name in names { tabs.open(root.appending(path: name), in: session) }
     let documents = tabs.documents(in: session).filter { names.contains($0.name) }
     for _ in 0..<100 where documents.contains(where: { $0.kind == .loading }) {
@@ -542,30 +542,6 @@ private func twoTabs() async throws -> (EditorTabs, UUID, [EditorDocument]) {
     #expect(onlyThere == nil)
 }
 
-@Test @MainActor func everyOpenWindowIsAskedAboutWhenLeaving() async throws {
-    let root = try makeTree([], files: ["a.ts", "b.ts"])
-    defer { try? FileManager.default.removeItem(at: root) }
-    let windows = EditorWindows()
-    let first = EditorTabs()
-    let second = EditorTabs()
-    windows.track(first)
-    windows.track(second)
-    let session = UUID()
-    let a = try await loaded(first, ["a.ts"], in: session, root: root)
-    let b = try await loaded(second, ["b.ts"], in: session, root: root)
-    a[0].text = "mine\n"
-    b[0].text = "mine\n"
-
-    #expect(Set(windows.unsaved().map(\.name)) == ["a.ts", "b.ts"])
-    #expect(!windows.settle(.cancel))
-    #expect(windows.settle(.saveAll))
-    #expect(windows.unsaved().isEmpty)
-
-    windows.closeSession(session)
-    #expect(first.documents(in: session).isEmpty)
-    #expect(second.documents(in: session).isEmpty)
-}
-
 @Test @MainActor func anOpenFileThatGrowsPastTheLimitStillSavesAndReloads() async throws {
     let (document, source) = try await opened("a\n")
     defer { try? FileManager.default.removeItem(at: source.deletingLastPathComponent()) }
@@ -597,4 +573,23 @@ private func twoTabs() async throws -> (EditorTabs, UUID, [EditorDocument]) {
     #expect(documents[0].changedOnDisk == "agent\n")
     #expect(tabs.selection(in: session) === documents[0])
     #expect(tabs.documents(in: session).count == 2)
+}
+
+@Test @MainActor func aTabOpenedOnAnUnreadableFileShowsTheTextOnceTheFileIsTextAgain() async throws {
+    let root = try makeTree([])
+    defer { try? FileManager.default.removeItem(at: root) }
+    let source = root.appending(path: "Main.java")
+    let document = EditorDocument(url: source)
+    await document.load()
+    #expect(document.kind == .unreadable("Este arquivo não existe mais."))
+
+    try Data([0x41, 0x00, 0x42]).write(to: source)
+    await document.readDisk()
+    #expect(document.kind == .unreadable("Arquivo binário."))
+
+    try Data("class Main {}\n".utf8).write(to: source)
+    await document.readDisk()
+    #expect(document.kind == .text)
+    #expect(document.text == "class Main {}\n")
+    #expect(!document.isDirty)
 }

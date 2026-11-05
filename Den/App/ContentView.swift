@@ -4,10 +4,11 @@ import HarnessCore
 struct ContentView: View {
     @State private var workspace: WorkspaceModel
     @Environment(NsWorkspace.self) private var ns
+    @Environment(PanelTerminals.self) private var terminals
 
     @State private var gitChanges = GitChangesModel()
     @State private var files = FileTree()
-    @State private var editors = EditorTabs()
+    @State private var editors = EditorTabs(windows: .shared)
 
     @State private var isFullScreen = false
 
@@ -42,13 +43,19 @@ struct ContentView: View {
         .background(WindowCloseGuard {
             UnsavedAlert.confirm("Salvar as alterações antes de fechar a janela?", unsaved: editors.unsaved()) { editors.settle($0) }
         })
-        .onAppear { EditorWindows.shared.track(editors) }
         .preferredColorScheme(.dark)
         .frame(minWidth: 860, minHeight: 560)
         .task { await workspace.refresh() }
+        .onChange(of: archivedSessions, initial: true) { _, archived in
+            archived.forEach(terminals.close(sessionID:))
+        }
         .sheet(item: Binding(get: { ns.updateReports.first }, set: { if $0 == nil { ns.dismissUpdateReport() } })) { report in
             BranchUpdateSheet(report: report, close: ns.dismissUpdateReport)
         }
+    }
+
+    private var archivedSessions: [UUID] {
+        SidebarGroups(sessions: workspace.summaries, status: ns.status, place: ns.place(of:)).archived.map(\.id)
     }
 
     private var lightsInset: CGFloat { isFullScreen ? 0 : Theme.trafficLightsInset }
