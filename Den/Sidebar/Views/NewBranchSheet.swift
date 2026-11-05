@@ -23,14 +23,9 @@ struct NewBranchSheet: View {
             VStack(alignment: .leading, spacing: 14) {
                 field("Nome da branch") {
                     TextField("", text: $creation.name)
-                        .textFieldStyle(.plain)
-                        .font(.system(size: 13, design: .monospaced))
                         .focused($nameFocused)
                         .onSubmit(start)
-                        .padding(.horizontal, 11)
-                        .frame(height: 34)
-                        .background(Theme.field, in: DialogBox.shape)
-                        .overlay(DialogBox.shape.strokeBorder(nameFocused ? Theme.accent.opacity(0.7) : Theme.borderControl))
+                        .dialogField(focused: nameFocused)
                         .accessibilityLabel("Nome da branch")
                 }
                 field("Base") {
@@ -66,9 +61,7 @@ struct NewBranchSheet: View {
             .padding(EdgeInsets(top: 14, leading: 20, bottom: 4, trailing: 20))
             DialogFooter {
                 Spacer(minLength: 0)
-                Button { creation.isPresented = false } label: { Text("Cancelar").pillLabel() }
-                    .buttonStyle(.denSecondary)
-                    .keyboardShortcut(.cancelAction)
+                DialogCancelButton { creation.isPresented = false }
                 Button(action: start) { Text("Criar e preparar").pillLabel() }
                     .buttonStyle(.denPrimary)
                     .keyboardShortcut(.defaultAction)

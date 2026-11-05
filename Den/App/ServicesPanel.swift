@@ -8,6 +8,10 @@ struct ServicesPanel: View {
     @Environment(NsWorkspace.self) private var ns
     @Environment(PanelTerminals.self) private var terminals
 
+    @State private var takingSnapshot = false
+    @State private var restoring: RestoreRequest?
+    @State private var removing: NsClient.Snapshot?
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
@@ -34,13 +38,16 @@ struct ServicesPanel: View {
                                 state: status.database, isDatabase: true, isFirst: true) {
                                 iconAction("arrow.up.forward.app", title: BranchActionTitle.openDatabase, perform: openDatabase)
                                     .disabled(ns.activity[branch] != nil)
+                                DenMenuChip(sections: databaseMenu, radius: 6, arrowEdge: .leading, opened: { Task { await ns.loadSnapshots() } }, label: {
+                                    Image(systemName: "cylinder.split.1x2")
+                                        .font(.system(size: 11, weight: .medium))
+                                        .foregroundStyle(Theme.textSecondary)
+                                        .iconLabel(size: 26)
+                                })
+                                .help("Snapshots")
+                                .accessibilityLabel("Snapshots")
                             }
-                            .denContextMenu([
-                                DenMenuSection(id: "database", items: [
-                                    DenMenuItem(id: "open", title: BranchActionTitle.openDatabase,
-                                                isEnabled: ns.activity[branch] == nil) { Task { await openDatabase() } },
-                                ]),
-                            ])
+                            .denContextMenu(databaseMenu)
                         }
                     }
                 } else {
@@ -54,6 +61,67 @@ struct ServicesPanel: View {
             .padding(12)
         }
         .scrollIndicators(.never)
+        .task(id: branch) { await ns.loadSnapshots() }
+        .sheet(isPresented: $takingSnapshot) {
+            TakeSnapshotSheet(branch: branch, cancel: { takingSnapshot = false }, take: { name in
+                takingSnapshot = false
+                Task { await ns.takeSnapshot(branch, name: name) }
+            })
+        }
+        .sheet(item: $restoring) { request in
+            RestoreSnapshotSheet(branch: branch, sources: ns.restoreSources(for: branch), running: runningServices,
+                                 problem: ns.snapshotsProblem, selected: request.selected,
+                                 cancel: { restoring = nil }, restore: { ref in
+                                     restoring = nil
+                                     Task { await ns.restore(branch, from: ref) }
+                                 })
+        }
+        .confirmationDialog("Remover \(removing?.ref ?? "")?", isPresented: Binding(
+            get: { removing != nil },
+            set: { if !$0 { removing = nil } }
+        ), titleVisibility: .visible) {
+            Button("Remover", role: .destructive) {
+                if let snapshot = removing { Task { await ns.removeSnapshot(snapshot) } }
+                removing = nil
+            }
+            Button("Cancelar", role: .cancel) { removing = nil }
+        } message: {
+            Text("Apaga o Snapshot e o volume dele. Não dá para desfazer.")
+        }
+    }
+
+    private var runningServices: [String] {
+        ns.branch(named: branch)?.services.filter { $0.state == .rodando }.map(\.id) ?? []
+    }
+
+    private var databaseMenu: [DenMenuSection] {
+        let idle = ns.activity[branch] == nil
+        let snapshots = ns.snapshots(of: branch)
+        var listed = snapshots.map { snapshot in
+            DenMenuItem(id: snapshot.ref, title: snapshotTitle(snapshot), isEnabled: idle, children: [
+                DenMenuSection(items: [
+                    DenMenuItem(id: "restore", title: "Restaurar…") { restoring = RestoreRequest(selected: snapshot.ref) },
+                    DenMenuItem(id: "remove", title: "Remover…", isDestructive: true) { removing = snapshot },
+                ]),
+            ])
+        }
+        if snapshots.isEmpty {
+            listed = [DenMenuItem(id: "none", title: ns.snapshotsProblem ?? "Nenhum snapshot", isEnabled: false)]
+        }
+        return [
+            DenMenuSection(id: "open", items: [
+                DenMenuItem(id: "open", title: BranchActionTitle.openDatabase, isEnabled: idle) { Task { await openDatabase() } },
+            ]),
+            DenMenuSection(id: "snapshot", items: [
+                DenMenuItem(id: "take", title: "Tirar snapshot…", isEnabled: idle) { takingSnapshot = true },
+                DenMenuItem(id: "restore", title: "Restaurar…", isEnabled: idle) { restoring = RestoreRequest() },
+            ]),
+            DenMenuSection(id: "snapshots", header: "Snapshots desta branch", items: listed),
+        ]
+    }
+
+    private func snapshotTitle(_ snapshot: NsClient.Snapshot) -> String {
+        snapshot.age.map { "\(snapshot.name) · \($0)" } ?? snapshot.name
     }
 
     private func branchCard(_ status: NsStatus.Branch) -> some View {
@@ -223,6 +291,11 @@ struct ServicesPanel: View {
         await terminals.openConsole(for: sessionID, branch: branch, service: service.id,
                                     session: session, in: directory)
     }
+}
+
+private struct RestoreRequest: Identifiable {
+    let id = UUID()
+    var selected: String?
 }
 
 private struct CardBackground: ViewModifier {

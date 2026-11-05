@@ -17,9 +17,7 @@ struct RemoveBranchSheet: View {
             .padding(EdgeInsets(top: 14, leading: 20, bottom: 4, trailing: 20))
             DialogFooter {
                 Spacer(minLength: 0)
-                Button(action: cancel) { Text("Cancelar").pillLabel() }
-                    .buttonStyle(.denSecondary)
-                    .keyboardShortcut(.cancelAction)
+                DialogCancelButton(action: cancel)
                 Button { remove(purge) } label: { Text("Remover branch").pillLabel() }
                     .buttonStyle(.denDestructive)
                     .disabled(preview?.uncommitted.isEmpty != true)
@@ -47,10 +45,10 @@ struct RemoveBranchSheet: View {
             }
             .frame(height: 34)
         case .failed(let message):
-            Warning(title: "Não deu para verificar os Repos.", detail: message)
+            DialogWarning(title: "Não deu para verificar os Repos.", detail: message)
         case .ready(let preview):
             if !preview.uncommitted.isEmpty {
-                Warning(title: "Não dá para remover: há alterações não commitadas.",
+                DialogWarning(title: "Não dá para remover: há alterações não commitadas.",
                         detail: "Faça commit ou descarte e tente de novo.")
                 VStack(spacing: 0) {
                     ForEach(Array(preview.uncommitted.enumerated()), id: \.element.repo) { index, repo in
@@ -62,28 +60,6 @@ struct RemoveBranchSheet: View {
             }
             DialogCheckbox(title: "Apagar também o banco", isOn: $purge, note: "volume \(preview.volume)")
         }
-    }
-}
-
-private struct Warning: View {
-    let title: String
-    let detail: String
-
-    var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 9) {
-            Image(systemName: "exclamationmark.triangle")
-                .font(.system(size: 12))
-            Text("\(title) \(Text(detail).foregroundStyle(Theme.alertText.opacity(0.8)))")
-                .font(.system(size: 12.5))
-                .fixedSize(horizontal: false, vertical: true)
-                .textSelection(.enabled)
-        }
-        .foregroundStyle(Theme.alertText)
-        .padding(EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12))
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.alertFill, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Theme.alertBorder))
-        .accessibilityElement(children: .combine)
     }
 }
 

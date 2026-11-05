@@ -31,6 +31,27 @@ enum DialogBox {
     static let shape = RoundedRectangle(cornerRadius: 8, style: .continuous)
 }
 
+struct DialogCancelButton: View {
+    var action: () -> Void
+
+    var body: some View {
+        Button(action: action) { Text("Cancelar").pillLabel() }
+            .buttonStyle(.denSecondary)
+            .keyboardShortcut(.cancelAction)
+    }
+}
+
+extension View {
+    func dialogField(focused: Bool) -> some View {
+        textFieldStyle(.plain)
+            .font(.system(size: 13, design: .monospaced))
+            .padding(.horizontal, 11)
+            .frame(height: 34)
+            .background(Theme.field, in: DialogBox.shape)
+            .overlay(DialogBox.shape.strokeBorder(focused ? Theme.accent.opacity(0.7) : Theme.borderControl))
+    }
+}
+
 struct DialogCheckbox: View {
     let title: String
     @Binding var isOn: Bool
@@ -73,5 +94,27 @@ struct DialogCheckbox: View {
         .accessibilityLabel(title)
         .accessibilityValue(isOn ? "marcado" : "desmarcado")
         .accessibilityAddTraits(.isToggle)
+    }
+}
+
+struct DialogWarning: View {
+    let title: String
+    let detail: String
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 9) {
+            Image(systemName: "exclamationmark.triangle")
+                .font(.system(size: 12))
+            Text("\(title) \(Text(detail).foregroundStyle(Theme.alertText.opacity(0.8)))")
+                .font(.system(size: 12.5))
+                .fixedSize(horizontal: false, vertical: true)
+                .textSelection(.enabled)
+        }
+        .foregroundStyle(Theme.alertText)
+        .padding(EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12))
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.alertFill, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Theme.alertBorder))
+        .accessibilityElement(children: .combine)
     }
 }

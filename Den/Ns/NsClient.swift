@@ -64,6 +64,28 @@ actor NsClient {
         let uncommitted: [UncommittedRepo]
     }
 
+    nonisolated struct Snapshot: Decodable, Equatable, Sendable, Identifiable {
+        let branch: String
+        let name: String
+        let ref: String
+        let createdAt: String
+
+        var id: String { ref }
+
+        var created: Date? {
+            try? Date.ISO8601FormatStyle(includingFractionalSeconds: true).parse(createdAt)
+        }
+
+        var age: String? {
+            created?.formatted(.relative(presentation: .named).locale(Locale(identifier: "pt_BR")))
+        }
+    }
+
+    nonisolated struct SnapshotGroup: Decodable, Equatable, Sendable {
+        let branch: String
+        let snapshots: [Snapshot]
+    }
+
     private nonisolated struct Request<Input: Encodable>: Encodable {
         let type = "op"
         let id: String
@@ -97,6 +119,16 @@ actor NsClient {
 
     private nonisolated struct BranchInput: Encodable {
         let branch: String
+    }
+
+    private nonisolated struct SnapshotInput: Encodable {
+        let branch: String
+        let name: String
+    }
+
+    private nonisolated struct RestoreInput: Encodable {
+        let branch: String
+        let ref: String
     }
 
     private nonisolated struct RemoveInput: Encodable {
@@ -196,6 +228,25 @@ actor NsClient {
 
     func openDatabase(branch: String) async throws {
         let _: Ignored = try await call("dbOpen", input: BranchInput(branch: branch), timeout: .seconds(60))
+    }
+
+    func snapshots() async throws -> [SnapshotGroup] {
+        try await call("dbSnapshots", input: NoInput(), timeout: .seconds(60))
+    }
+
+    func takeSnapshot(branch: String, name: String, progress: @escaping Progress) async throws {
+        let _: Ignored = try await call("dbSnapshot", input: SnapshotInput(branch: branch, name: name),
+                                        timeout: .seconds(900), progress: progress)
+    }
+
+    func restore(branch: String, ref: String, progress: @escaping Progress) async throws {
+        let _: Ignored = try await call("dbRestore", input: RestoreInput(branch: branch, ref: ref),
+                                        timeout: .seconds(900), progress: progress)
+    }
+
+    func removeSnapshot(branch: String, name: String) async throws {
+        let _: Ignored = try await call("dbRmSnapshot", input: SnapshotInput(branch: branch, name: name),
+                                        timeout: .seconds(120))
     }
 
     private func call<Value: Decodable>(_ op: String, input: some Encodable, timeout: Duration? = nil,

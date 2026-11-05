@@ -13,8 +13,23 @@ final class NsWorkspace {
                                         _ progress: @escaping NsClient.Progress) async throws -> Void
     typealias OpenDatabase = @Sendable (_ branch: String) async throws -> Void
 
+    nonisolated struct SnapshotOperations: Sendable {
+        var list: @Sendable () async throws -> [NsClient.SnapshotGroup]
+        var take: @Sendable (_ branch: String, _ name: String, _ progress: @escaping NsClient.Progress) async throws -> Void
+        var restore: @Sendable (_ branch: String, _ ref: String, _ progress: @escaping NsClient.Progress) async throws -> Void
+        var remove: @Sendable (_ branch: String, _ name: String) async throws -> Void
+
+        static let unavailable: SnapshotOperations = {
+            let failure = NsFailure(message: "ns indisponível")
+            return SnapshotOperations(list: { throw failure },
+                                      take: { _, _, _ in throw failure },
+                                      restore: { _, _, _ in throw failure },
+                                      remove: { _, _ in throw failure })
+        }()
+    }
+
     struct Activity: Equatable {
-        enum Kind { case start, stop, restart, update, remove, openDatabase }
+        enum Kind { case start, stop, restart, update, remove, openDatabase, snapshot, restore, removeSnapshot }
 
         var kind: Kind
         var label: String
@@ -46,6 +61,8 @@ final class NsWorkspace {
     private(set) var creation: BranchCreation?
     private(set) var updateReports: [UpdateReport] = []
     private(set) var removal: Removal?
+    private(set) var snapshotGroups: [NsClient.SnapshotGroup] = []
+    private(set) var snapshotsProblem: String?
 
     @ObservationIgnored private let fetch: @Sendable () async throws -> NsStatus
     @ObservationIgnored private let startBranch: BranchAction
@@ -55,6 +72,7 @@ final class NsWorkspace {
     @ObservationIgnored private let previewRemoval: PreviewRemoval
     @ObservationIgnored private let removeBranch: RemoveBranch
     @ObservationIgnored private let openBranchDatabase: OpenDatabase
+    @ObservationIgnored private let snapshotOperations: SnapshotOperations
 
     init(fetch: @escaping @Sendable () async throws -> NsStatus,
          start: @escaping BranchAction = { _, _, _ in },
@@ -63,7 +81,8 @@ final class NsWorkspace {
          update: @escaping UpdateBranch = { _, _ in throw NsFailure(message: "ns indisponível") },
          previewRemoval: @escaping PreviewRemoval = { _ in throw NsFailure(message: "ns indisponível") },
          remove: @escaping RemoveBranch = { _, _, _ in throw NsFailure(message: "ns indisponível") },
-         openDatabase: @escaping OpenDatabase = { _ in throw NsFailure(message: "ns indisponível") }) {
+         openDatabase: @escaping OpenDatabase = { _ in throw NsFailure(message: "ns indisponível") },
+         snapshots: SnapshotOperations = .unavailable) {
         self.fetch = fetch
         startBranch = start
         stopBranch = stop
@@ -72,6 +91,7 @@ final class NsWorkspace {
         self.previewRemoval = previewRemoval
         removeBranch = remove
         openBranchDatabase = openDatabase
+        snapshotOperations = snapshots
     }
 
     static func live(_ environment: any AppEnvironment) -> NsWorkspace {
@@ -86,7 +106,12 @@ final class NsWorkspace {
                            update: { try await client.pull(branch: $0, progress: $1) },
                            previewRemoval: { try await client.removalPreview(branch: $0) },
                            remove: { try await client.remove(branch: $0, purge: $1, progress: $2) },
-                           openDatabase: { try await client.openDatabase(branch: $0) })
+                           openDatabase: { try await client.openDatabase(branch: $0) },
+                           snapshots: SnapshotOperations(
+                               list: { try await client.snapshots() },
+                               take: { try await client.takeSnapshot(branch: $0, name: $1, progress: $2) },
+                               restore: { try await client.restore(branch: $0, ref: $1, progress: $2) },
+                               remove: { try await client.removeSnapshot(branch: $0, name: $1) }))
     }
 
     func newBranch() {
@@ -192,12 +217,59 @@ final class NsWorkspace {
         }
     }
 
+    func snapshots(of branch: String) -> [NsClient.Snapshot] {
+        snapshotGroups.first { $0.branch == branch }?.snapshots ?? []
+    }
+
+    func restoreSources(for branch: String) -> [NsClient.SnapshotGroup] {
+        let rank = { (group: NsClient.SnapshotGroup) in group.branch == branch ? 0 : group.branch == Self.mainBranch ? 1 : 2 }
+        return snapshotGroups.filter { !$0.snapshots.isEmpty }
+            .enumerated()
+            .sorted { (rank($0.element), $0.offset) < (rank($1.element), $1.offset) }
+            .map(\.element)
+    }
+
+    func loadSnapshots() async {
+        do {
+            let latest = try await snapshotOperations.list()
+            if latest != snapshotGroups { snapshotGroups = latest }
+            snapshotsProblem = nil
+        } catch {
+            snapshotsProblem = Self.describe(error)
+        }
+    }
+
+    func takeSnapshot(_ branch: String, name: String) async {
+        let take = snapshotOperations.take
+        await run(Activity(kind: .snapshot, label: "Tirando snapshot..."), on: branch) {
+            try await take(branch, name, $0)
+        }
+        await loadSnapshots()
+    }
+
+    func restore(_ branch: String, from ref: String) async {
+        let restore = snapshotOperations.restore
+        await run(Activity(kind: .restore, label: "Restaurando \(ref)..."), on: branch) {
+            try await restore(branch, ref, $0)
+        }
+    }
+
+    func removeSnapshot(_ snapshot: NsClient.Snapshot) async {
+        let remove = snapshotOperations.remove
+        await run(Activity(kind: .removeSnapshot, label: "Removendo \(snapshot.ref)..."), on: snapshot.branch) { _ in
+            try await remove(snapshot.branch, snapshot.name)
+        }
+        await loadSnapshots()
+    }
+
     func watch(every interval: Duration = .seconds(5), whileBusy busyInterval: Duration = .seconds(1.5)) async {
         while !Task.isCancelled {
             await refresh()
             try? await Task.sleep(for: isBusy ? busyInterval : interval)
         }
     }
+
+    static let mainBranch = "master"
 
     private var isBusy: Bool {
         !activity.isEmpty || creation?.isRunning == true || status?.branches.contains { $0.services.contains { $0.state == .iniciando } } == true

@@ -266,3 +266,62 @@ private let cleanPreview = NsClient.RemovalPreview(volume: "ns_db_ns-12", uncomm
     #expect(InspectorPane.opening(inBranch: true) == .services)
     #expect(InspectorPane.opening(inBranch: false) == .changes)
 }
+
+private func snapshot(_ branch: String, _ name: String) -> NsClient.Snapshot {
+    NsClient.Snapshot(branch: branch, name: name, ref: "\(branch):\(name)", createdAt: "2026-11-05T10:00:00.000Z")
+}
+
+private func snapshotOperations(_ groups: [NsClient.SnapshotGroup], calls: Recorder = Recorder()) -> NsWorkspace.SnapshotOperations {
+    NsWorkspace.SnapshotOperations(list: { calls.append("list"); return groups },
+                                   take: { branch, name, _ in calls.append("take \(branch) \(name)") },
+                                   restore: { branch, ref, _ in calls.append("restore \(branch) \(ref)") },
+                                   remove: { branch, name in calls.append("remove \(branch) \(name)") })
+}
+
+@Test func restoreListsThisBranchFirstThenTheMainBranchThenTheRest() async {
+    let groups = [
+        NsClient.SnapshotGroup(branch: "NS-7", snapshots: [snapshot("NS-7", "a")]),
+        NsClient.SnapshotGroup(branch: "master", snapshots: [snapshot("master", "seed")]),
+        NsClient.SnapshotGroup(branch: "NS-9", snapshots: []),
+        NsClient.SnapshotGroup(branch: "NS-12", snapshots: [snapshot("NS-12", "antes")]),
+        NsClient.SnapshotGroup(branch: "NS-3", snapshots: [snapshot("NS-3", "b")]),
+    ]
+    let ns = NsWorkspace(fetch: { sampleStatus }, snapshots: snapshotOperations(groups))
+
+    await ns.loadSnapshots()
+
+    #expect(ns.restoreSources(for: "NS-12").map(\.branch) == ["NS-12", "master", "NS-7", "NS-3"])
+    #expect(ns.snapshots(of: "NS-12").map(\.name) == ["antes"])
+    #expect(ns.snapshots(of: "NS-9").isEmpty)
+}
+
+@Test func restoringFromItsOwnBranchOrAnotherSendsTheFullReference() async {
+    let calls = Recorder()
+    let ns = NsWorkspace(fetch: { sampleStatus }, snapshots: snapshotOperations([], calls: calls))
+
+    await ns.restore("NS-12", from: "NS-12:antes")
+    await ns.restore("NS-12", from: "master:seed")
+
+    #expect(calls.all == ["restore NS-12 NS-12:antes", "restore NS-12 master:seed"])
+    #expect(ns.actionProblems["NS-12"] == nil)
+    #expect(ns.activity.isEmpty)
+}
+
+@Test func takingAndRemovingASnapshotReloadTheList() async {
+    let calls = Recorder()
+    let ns = NsWorkspace(fetch: { sampleStatus }, snapshots: snapshotOperations([], calls: calls))
+
+    await ns.takeSnapshot("NS-12", name: "antes")
+    await ns.removeSnapshot(snapshot("NS-12", "antes"))
+
+    #expect(calls.all == ["take NS-12 antes", "list", "remove NS-12 antes", "list"])
+}
+
+@Test func snapshotsThatCannotBeListedSayWhy() async {
+    let ns = NsWorkspace(fetch: { sampleStatus })
+
+    await ns.loadSnapshots()
+
+    #expect(ns.snapshotGroups.isEmpty)
+    #expect(ns.snapshotsProblem == "ns indisponível")
+}
