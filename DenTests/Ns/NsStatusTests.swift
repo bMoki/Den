@@ -3,6 +3,7 @@ import Testing
 @testable import Den
 
 let sampleStatus = NsStatus(
+    worktreesDir: "/dev/worktrees",
     baseRepos: [.init(repo: "backend", path: "/dev/scalemed-backend"),
                 .init(repo: "frontend", path: "/dev/frontend")],
     branches: [.init(branch: "NS-12", path: "/dev/worktrees/NS-12"),
@@ -18,7 +19,7 @@ let sampleStatus = NsStatus(
 }
 
 @Test func aBranchNameThatPrefixesAnotherDoesNotCaptureIt() {
-    #expect(sampleStatus.place(of: URL(fileURLWithPath: "/dev/worktrees/NS-1234")) == .elsewhere)
+    #expect(sampleStatus.place(of: URL(fileURLWithPath: "/dev/worktrees/NS-1234")) == .archived("NS-1234"))
 }
 
 @Test func aSessionInABaseRepoBelongsToThatRepo() {
@@ -27,12 +28,43 @@ let sampleStatus = NsStatus(
 
 @Test func anyOtherFolderIsElsewhere() {
     #expect(sampleStatus.place(of: URL(fileURLWithPath: "/Users/me/Documents")) == .elsewhere)
-    #expect(sampleStatus.place(of: URL(fileURLWithPath: "/dev/worktrees/removed")) == .elsewhere)
+    #expect(sampleStatus.place(of: URL(fileURLWithPath: "/dev/worktreesOld/NS-12")) == .elsewhere)
+}
+
+@Test func aSessionInABranchThatIsGoneIsArchivedUnderItsName() {
+    #expect(sampleStatus.place(of: URL(fileURLWithPath: "/dev/worktrees/removed/backend")) == .archived("removed"))
+}
+
+@Test func aBranchWhoseFolderIsStillThereIsNotArchived() throws {
+    let worktrees = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+    try FileManager.default.createDirectory(at: worktrees.appending(path: "NS-7/backend"), withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: worktrees) }
+    var status = sampleStatus
+    status.worktreesDir = worktrees.path
+
+    #expect(status.place(of: worktrees.appending(path: "NS-7/backend")) == .elsewhere)
+    #expect(status.place(of: worktrees.appending(path: "NS-8/backend")) == .archived("NS-8"))
+}
+
+@Test func aRemovedBranchWithASlashKeepsItsWholeName() throws {
+    let worktrees = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+    try FileManager.default.createDirectory(at: worktrees.appending(path: "feature/live"), withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: worktrees) }
+    var status = sampleStatus
+    status.worktreesDir = worktrees.path + "/"
+
+    #expect(status.place(of: worktrees.appending(path: "feature/gone/web")) == .archived("feature/gone"))
+}
+
+@Test func withoutTheWorktreesFolderNothingIsArchived() {
+    var status = sampleStatus
+    status.worktreesDir = nil
+    #expect(status.place(of: URL(fileURLWithPath: "/dev/worktrees/removed")) == .elsewhere)
 }
 
 @Test func theStatusDecodesFromWhatNsRpcSends() throws {
     let json = """
-        {"baseRepos":[{"repo":"backend","path":"/dev/b"}],
+        {"worktreesDir":"/dev/worktrees","baseRepos":[{"repo":"backend","path":"/dev/b"}],
          "branches":[{"branch":"NS-1","slug":"ns-1","path":"/dev/worktrees/NS-1",
                       "ports":{"db":5438,"backend":8084,"frontend":3015,"manager":3021},
                       "services":{"db":"rodando","backend":"iniciando","frontend":"falhou",
@@ -42,6 +74,7 @@ let sampleStatus = NsStatus(
                       "errors":{"frontend":"Port 3015 is in use"}}]}
         """
     let status = try JSONDecoder().decode(NsStatus.self, from: Data(json.utf8))
+    #expect(status.worktreesDir == "/dev/worktrees")
     #expect(status.baseRepos == [.init(repo: "backend", path: "/dev/b")])
     #expect(status.branches == [.init(
         branch: "NS-1", path: "/dev/worktrees/NS-1",

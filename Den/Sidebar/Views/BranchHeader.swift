@@ -12,6 +12,7 @@ struct BranchHeader: View {
     var start: () -> Void
     var stop: () -> Void
     var update: () -> Void
+    var remove: () -> Void
 
     @State private var hovering = false
 
@@ -69,6 +70,10 @@ struct BranchHeader: View {
             DenMenuSection(id: "branch", items: [
                 DenMenuItem(id: "update", title: BranchActionTitle.update, isEnabled: activity == nil, action: update),
                 DenMenuItem(id: "new-session", title: "Nova sessão aqui", action: newSession),
+            ]),
+            DenMenuSection(id: "remove", items: [
+                DenMenuItem(id: "remove", title: BranchActionTitle.remove, isEnabled: activity == nil,
+                            isDestructive: true, action: remove),
             ]),
         ])
         .accessibilityElement(children: .contain)

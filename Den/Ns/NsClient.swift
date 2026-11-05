@@ -54,6 +54,16 @@ actor NsClient {
         let repos: [RepoUpdate]
     }
 
+    nonisolated struct RemovalPreview: Decodable, Equatable, Sendable {
+        nonisolated struct UncommittedRepo: Decodable, Equatable, Sendable {
+            let repo: String
+            let files: [String]
+        }
+
+        let volume: String
+        let uncommitted: [UncommittedRepo]
+    }
+
     private nonisolated struct Request<Input: Encodable>: Encodable {
         let type = "op"
         let id: String
@@ -87,6 +97,11 @@ actor NsClient {
 
     private nonisolated struct BranchInput: Encodable {
         let branch: String
+    }
+
+    private nonisolated struct RemoveInput: Encodable {
+        let branch: String
+        let purge: Bool
     }
 
     private nonisolated struct PrepareInput: Encodable {
@@ -168,6 +183,15 @@ actor NsClient {
 
     func pull(branch: String, progress: @escaping Progress) async throws -> Pulled {
         try await call("pull", input: BranchInput(branch: branch), timeout: .seconds(600), progress: progress)
+    }
+
+    func removalPreview(branch: String) async throws -> RemovalPreview {
+        try await call("rmPreview", input: BranchInput(branch: branch), timeout: .seconds(60))
+    }
+
+    func remove(branch: String, purge: Bool, progress: @escaping Progress) async throws {
+        let _: Ignored = try await call("rm", input: RemoveInput(branch: branch, purge: purge),
+                                        timeout: .seconds(600), progress: progress)
     }
 
     private func call<Value: Decodable>(_ op: String, input: some Encodable, timeout: Duration? = nil,

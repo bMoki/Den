@@ -11,6 +11,7 @@ struct SidebarView: View {
     var collapse: () -> Void = {}
 
     @State private var toggled: Set<String> = []
+    @State private var archivedOpen = false
     @State private var pendingDelete: SessionSummary?
 
     @State private var tipTask: Task<Void, Never>?
@@ -48,6 +49,11 @@ struct SidebarView: View {
         )) {
             if let creation = ns.creation {
                 NewBranchSheet(creation: creation) { create(with: creation) }
+            }
+        }
+        .sheet(item: Binding(get: { ns.removal }, set: { if $0 == nil { ns.cancelRemoval() } })) { removal in
+            RemoveBranchSheet(removal: removal, cancel: ns.cancelRemoval) { purge in
+                Task { await ns.remove(removal.branch, purge: purge) }
             }
         }
     }
@@ -114,6 +120,10 @@ struct SidebarView: View {
                 .padding(.top, ns.status == nil ? 0 : 14)
                 ForEach(groups.otherFolders) { folder($0, detail: Self.parent(of: $0.path)) }
 
+                if !groups.archived.isEmpty {
+                    archived(groups.archived)
+                }
+
                 if groups.isEmpty {
                     SidebarEmptyList(search: workspace.search)
                 }
@@ -128,6 +138,30 @@ struct SidebarView: View {
         .onChange(of: workspace.summaries, initial: true) {
             monitor.noteActivity(Dictionary(workspace.summaries.map { ($0.id, $0.updatedAt) },
                                             uniquingKeysWith: { max($0, $1) }))
+        }
+    }
+
+    @ViewBuilder
+    private func archived(_ sessions: [SessionSummary]) -> some View {
+        let isOpen = archivedOpen || !workspace.search.isEmpty
+        Button {
+            withAnimation(.easeInOut(duration: 0.22)) { archivedOpen.toggle() }
+        } label: {
+            sectionTitle("Arquivadas") {
+                SessionCountLabel(count: sessions.count)
+                DisclosureChevron(isOpen: isOpen)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .padding(.top, 14)
+        .accessibilityLabel("Arquivadas")
+        .accessibilityValue(isOpen ? "aberta" : "fechada")
+        if isOpen {
+            VStack(alignment: .leading, spacing: 1) {
+                ForEach(sessions) { row(for: $0) }
+            }
+            .transition(.opacity)
         }
     }
 
@@ -168,7 +202,8 @@ struct SidebarView: View {
                     newSession: { Task { await workspace.newSession(in: folder.path) } },
                     start: { Task { await ns.start(folder.name) } },
                     stop: { Task { await ns.stop(folder.name) } },
-                    update: { Task { await ns.update(folder.name) } }
+                    update: { Task { await ns.update(folder.name) } },
+                    remove: { Task { await ns.askToRemove(folder.name) } }
                 )
             } else {
                 FolderHeader(

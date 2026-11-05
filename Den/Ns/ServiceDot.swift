@@ -46,4 +46,5 @@ enum BranchActionTitle {
     static let start = "Iniciar todos os Serviços"
     static let stop = "Parar todos os Serviços"
     static let update = "Atualizar com a branch principal"
+    static let remove = "Remover branch…"
 }

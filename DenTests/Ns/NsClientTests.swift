@@ -284,3 +284,39 @@ private let answersStatus = #"""
     #expect(request.contains(#""op":"pull""#))
     #expect(request.contains(#""branch":"NS-1""#))
 }
+
+@Test func theRemovalPreviewListsTheReposWithUncommittedChanges() async throws {
+    let (client, folder) = try fakeNs(#"""
+        read -r line
+        printf '%s\n' "$line" > "$0.request"
+        printf '%s' '{"type":"result","id":"1","result":{"branch":"NS-1","path":"/w/NS-1","repos":["backend","frontend"],'
+        echo '"volume":"ns_db_ns-1","uncommitted":[{"repo":"backend","files":["A.java","B.java"]}]}}'
+        cat >/dev/null
+        """#)
+    defer { try? FileManager.default.removeItem(at: folder) }
+
+    let preview = try await client.removalPreview(branch: "NS-1")
+
+    #expect(preview == .init(volume: "ns_db_ns-1", uncommitted: [.init(repo: "backend", files: ["A.java", "B.java"])]))
+    let request = try String(contentsOf: folder.appending(path: "ns.request"), encoding: .utf8)
+    #expect(request.contains(#""op":"rmPreview""#))
+}
+
+@Test func removeSendsWhetherToDeleteTheDatabase() async throws {
+    let (client, folder) = try fakeNs(#"""
+        read -r line
+        printf '%s\n' "$line" > "$0.request"
+        echo '{"type":"event","id":"1","event":{"step":"rm:worktrees","label":"Removendo worktrees..."}}'
+        echo '{"type":"result","id":"1","result":{"branch":"NS-1","purged":false}}'
+        cat >/dev/null
+        """#)
+    defer { try? FileManager.default.removeItem(at: folder) }
+
+    let labels = Recorder()
+    try await client.remove(branch: "NS-1", purge: false) { labels.append($0) }
+
+    #expect(labels.all == ["Removendo worktrees..."])
+    let request = try String(contentsOf: folder.appending(path: "ns.request"), encoding: .utf8)
+    #expect(request.contains(#""op":"rm""#))
+    #expect(request.contains(#""purge":false"#))
+}

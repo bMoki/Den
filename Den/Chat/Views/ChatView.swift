@@ -37,8 +37,12 @@ struct ChatView: View {
                 VStack(spacing: 0) {
                     ChatHeader(chat: chat)
                     transcript
-                    ChatComposer(chat: chat, slash: slash, mentions: mentions,
-                                 keys: keys) { nearBottom = true }
+                    if let removedBranch {
+                        ArchivedSessionBar(branch: removedBranch)
+                    } else {
+                        ChatComposer(chat: chat, slash: slash, mentions: mentions,
+                                     keys: keys) { nearBottom = true }
+                    }
                     TerminalPanel(sessionID: chat.sessionID, directory: chat.workingDirectory)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -116,6 +120,8 @@ struct ChatView: View {
     }
 
     private var branch: String? { ns.branchName(of: chat.workingDirectory) }
+
+    private var removedBranch: String? { ns.removedBranch(of: chat.workingDirectory) }
 
     private var shownPane: InspectorPane { pane.shown(inBranch: branch != nil) }
 

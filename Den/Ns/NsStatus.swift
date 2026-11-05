@@ -63,6 +63,7 @@ nonisolated struct NsStatus: Decodable, Equatable, Sendable {
         }
     }
 
+    var worktreesDir: String?
     var baseRepos: [BaseRepo]
     var branches: [Branch]
 
@@ -78,7 +79,23 @@ nonisolated struct NsStatus: Decodable, Equatable, Sendable {
         if let base = baseRepos.first(where: { Self.path(path, isInside: $0.path) }) {
             return .baseRepo(base.repo)
         }
+        if let worktreesDir, let removed = Self.removedBranch(at: path, under: worktreesDir) {
+            return .archived(removed)
+        }
         return .elsewhere
+    }
+
+    private static func removedBranch(at path: String, under folder: String) -> String? {
+        let root = URL(fileURLWithPath: folder).standardizedFileURL.path
+        guard path.hasPrefix(root + "/") else { return nil }
+        var branch = root
+        for component in path.dropFirst(root.count + 1).split(separator: "/") {
+            branch += "/" + component
+            if !FileManager.default.fileExists(atPath: branch) {
+                return String(branch.dropFirst(root.count + 1))
+            }
+        }
+        return nil
     }
 
     private static func path(_ path: String, isInside folder: String) -> Bool {
@@ -103,5 +120,6 @@ nonisolated enum ServiceState: String, Decodable, Sendable {
 nonisolated enum SessionPlace: Hashable, Sendable {
     case branch(String)
     case baseRepo(String)
+    case archived(String)
     case elsewhere
 }

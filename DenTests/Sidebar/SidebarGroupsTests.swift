@@ -17,6 +17,17 @@ import Testing
     #expect(groups.otherFolders.map { $0.sessions.map(\.title) } == [["loose"]])
 }
 
+@Test func sessionsOfARemovedBranchAreArchivedNewestFirst() {
+    let groups = SidebarGroups(sessions: [summary("older", in: "/dev/worktrees/NS-9", updated: 1),
+                                          summary("newer", in: "/dev/worktrees/NS-8/backend", updated: 2),
+                                          summary("live", in: "/dev/worktrees/NS-12")],
+                               status: sampleStatus)
+
+    #expect(groups.archived.map(\.title) == ["newer", "older"])
+    #expect(groups.otherFolders.isEmpty)
+    #expect(groups.branches.first?.sessions.map(\.title) == ["live"])
+}
+
 @Test func withoutNsEverySessionIsAnOtherFolder() {
     let groups = SidebarGroups(sessions: [summary("a", in: "/dev/worktrees/NS-12"),
                                           summary("b", in: "/dev/frontend")],

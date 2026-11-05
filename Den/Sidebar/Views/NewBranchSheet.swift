@@ -29,8 +29,8 @@ struct NewBranchSheet: View {
                         .onSubmit(start)
                         .padding(.horizontal, 11)
                         .frame(height: 34)
-                        .background(Theme.field, in: Self.box)
-                        .overlay(Self.box.strokeBorder(nameFocused ? Theme.accent.opacity(0.7) : Theme.borderControl))
+                        .background(Theme.field, in: DialogBox.shape)
+                        .overlay(DialogBox.shape.strokeBorder(nameFocused ? Theme.accent.opacity(0.7) : Theme.borderControl))
                         .accessibilityLabel("Nome da branch")
                 }
                 field("Base") {
@@ -47,16 +47,16 @@ struct NewBranchSheet: View {
                     .foregroundStyle(Theme.textSecondary)
                     .padding(.horizontal, 11)
                     .frame(height: 34)
-                    .background(Theme.card, in: Self.box)
-                    .overlay(Self.box.strokeBorder(Theme.border))
+                    .background(Theme.card, in: DialogBox.shape)
+                    .overlay(DialogBox.shape.strokeBorder(Theme.border))
                 }
                 field("Repos") {
                     LazyVGrid(columns: [GridItem(.flexible(), spacing: 6), GridItem(.flexible())], spacing: 6) {
                         ForEach(BranchCreation.Repo.fixed, id: \.self) {
-                            RepoCheck(name: $0, isOn: .constant(true), note: "sempre")
+                            DialogCheckbox(title: $0, isOn: .constant(true), note: "sempre", isFixed: true)
                         }
                         ForEach(BranchCreation.Repo.allCases) { repo in
-                            RepoCheck(name: repo.rawValue, isOn: Binding(
+                            DialogCheckbox(title: repo.rawValue, isOn: Binding(
                                 get: { creation.repos.contains(repo) },
                                 set: { if $0 { creation.repos.insert(repo) } else { creation.repos.remove(repo) } }))
                         }
@@ -138,8 +138,6 @@ struct NewBranchSheet: View {
         }
     }
 
-    static let box = RoundedRectangle(cornerRadius: 8, style: .continuous)
-
     private func field(_ label: String, @ViewBuilder content: () -> some View) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(label)
@@ -149,52 +147,6 @@ struct NewBranchSheet: View {
         }
     }
 
-}
-
-private struct RepoCheck: View {
-    let name: String
-    @Binding var isOn: Bool
-    var note: String?
-
-    private var fixed: Bool { note != nil }
-
-    var body: some View {
-        Button { isOn.toggle() } label: {
-            HStack(spacing: 9) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 4, style: .continuous)
-                        .fill(isOn ? Theme.action : .clear)
-                    RoundedRectangle(cornerRadius: 4, style: .continuous)
-                        .strokeBorder(isOn ? Theme.action : Theme.borderControl, lineWidth: 1.5)
-                    if isOn {
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 9, weight: .bold))
-                            .foregroundStyle(Theme.onAction)
-                    }
-                }
-                .frame(width: 16, height: 16)
-                Text(name)
-                    .font(.system(size: 12.5, design: .monospaced))
-                Spacer(minLength: 0)
-                if let note {
-                    Text(note)
-                        .font(.system(size: 11))
-                        .foregroundStyle(Theme.textTertiary)
-                }
-            }
-            .padding(.horizontal, 10)
-            .frame(height: 34)
-            .background(Theme.card, in: NewBranchSheet.box)
-            .overlay(NewBranchSheet.box.strokeBorder(Theme.border))
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .disabled(fixed)
-        .opacity(fixed ? 0.6 : 1)
-        .accessibilityLabel(name)
-        .accessibilityValue(isOn ? "marcado" : "desmarcado")
-        .accessibilityAddTraits(.isToggle)
-    }
 }
 
 private struct StepRow: View {

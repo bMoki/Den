@@ -19,9 +19,10 @@ nonisolated struct SidebarGroups: Equatable {
     var branches: [Folder] = []
     var baseRepos: [Folder] = []
     var otherFolders: [Folder] = []
+    var archived: [SessionSummary] = []
 
     var isEmpty: Bool {
-        branches.isEmpty && baseRepos.isEmpty && otherFolders.isEmpty
+        branches.isEmpty && baseRepos.isEmpty && otherFolders.isEmpty && archived.isEmpty
     }
 
     init(sessions: [SessionSummary], status: NsStatus?, search: String = "") {
@@ -35,6 +36,7 @@ nonisolated struct SidebarGroups: Equatable {
             switch status?.place(of: session.workingDirectory) ?? .elsewhere {
             case .branch(let name): branchSessions[name, default: []].append(session)
             case .baseRepo(let repo): baseSessions[repo, default: []].append(session)
+            case .archived: archived.append(session)
             case .elsewhere: elsewhere.append(session)
             }
         }

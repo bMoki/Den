@@ -165,6 +165,75 @@ nonisolated private final class Replies: @unchecked Sendable {
     #expect(ns.updateReports.map(\.branch) == [shown == "NS-12" ? "NS-13" : "NS-12"])
 }
 
+private let cleanPreview = NsClient.RemovalPreview(volume: "ns_db_ns-12", uncommitted: [])
+
+@Test func removingAsksWithThePreviewAndArchivesTheSessionsOfTheBranch() async {
+    let gone = NsStatus(worktreesDir: "/dev/worktrees", baseRepos: [],
+                        branches: [.init(branch: "NS-123", path: "/dev/worktrees/NS-123")])
+    let replies = Replies([.success(sampleStatus), .success(gone)])
+    let removed = Recorder()
+    let ns = NsWorkspace(fetch: { try replies.next() },
+                         previewRemoval: { _ in cleanPreview },
+                         remove: { branch, purge, progress in
+                             progress("Removendo worktrees...")
+                             removed.append("\(branch) \(purge)")
+                         })
+    await ns.refresh()
+
+    await ns.askToRemove("NS-12")
+    #expect(ns.removal?.state == .ready(cleanPreview))
+    await ns.remove("NS-12", purge: false)
+
+    #expect(removed.all == ["NS-12 false"])
+    #expect(ns.removal == nil)
+    #expect(ns.activity.isEmpty)
+    #expect(ns.removedBranch(of: URL(fileURLWithPath: "/dev/worktrees/NS-12/backend")) == "NS-12")
+    #expect(ns.branchName(of: URL(fileURLWithPath: "/dev/worktrees/NS-12/backend")) == nil)
+}
+
+@Test func uncommittedChangesBlockTheRemoval() async {
+    let preview = NsClient.RemovalPreview(volume: "v", uncommitted: [.init(repo: "backend", files: ["A.java"])])
+    let removed = Recorder()
+    let ns = NsWorkspace(fetch: { sampleStatus },
+                         previewRemoval: { _ in preview },
+                         remove: { branch, _, _ in removed.append(branch) })
+
+    await ns.askToRemove("NS-12")
+    await ns.remove("NS-12", purge: true)
+
+    #expect(removed.all.isEmpty)
+    #expect(ns.removal?.state == .ready(preview))
+}
+
+@Test func aPreviewThatFailsSaysWhyAndCannotRemove() async {
+    let removed = Recorder()
+    let ns = NsWorkspace(fetch: { sampleStatus },
+                         previewRemoval: { _ in throw NsFailure(message: "Branch 'NS-12' não encontrada") },
+                         remove: { branch, _, _ in removed.append(branch) })
+
+    await ns.askToRemove("NS-12")
+    await ns.remove("NS-12", purge: false)
+
+    #expect(ns.removal?.state == .failed("Branch 'NS-12' não encontrada"))
+    #expect(removed.all.isEmpty)
+}
+
+@Test func aPreviewArrivingAfterCancelDoesNotReopenTheDialog() async {
+    let gate = AsyncStream<Void>.makeStream()
+    let ns = NsWorkspace(fetch: { sampleStatus }, previewRemoval: { _ in
+        for await _ in gate.stream { break }
+        return cleanPreview
+    })
+
+    let asking = Task { await ns.askToRemove("NS-12") }
+    while ns.removal == nil { await Task.yield() }
+    ns.cancelRemoval()
+    gate.continuation.yield()
+    await asking.value
+
+    #expect(ns.removal == nil)
+}
+
 @Test func theInspectorShowsServicesOnlyInABranch() {
     #expect(InspectorPane.services.shown(inBranch: true) == .services)
     #expect(InspectorPane.services.shown(inBranch: false) == .changes)

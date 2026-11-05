@@ -58,7 +58,7 @@ enum Theme {
 }
 
 struct DenButtonStyle: ButtonStyle {
-    enum Kind { case primary, secondary, ghost }
+    enum Kind { case primary, secondary, ghost, destructive }
 
     var kind: Kind
     var radius: CGFloat = 8
@@ -81,8 +81,10 @@ struct DenButtonStyle: ButtonStyle {
                 .foregroundStyle(foreground)
                 .background(background, in: shape)
                 .overlay {
-                    if kind == .secondary {
-                        shape.strokeBorder(Theme.borderControl, lineWidth: 1)
+                    switch kind {
+                    case .secondary: shape.strokeBorder(Theme.borderControl, lineWidth: 1)
+                    case .destructive: shape.strokeBorder(Theme.removed.opacity(0.4), lineWidth: 1)
+                    case .primary, .ghost: EmptyView()
                     }
                 }
                 .contentShape(shape)
@@ -95,6 +97,7 @@ struct DenButtonStyle: ButtonStyle {
             switch kind {
             case .primary: Theme.onAction
             case .secondary, .ghost: Theme.text
+            case .destructive: Theme.removed
             }
         }
 
@@ -109,6 +112,8 @@ struct DenButtonStyle: ButtonStyle {
             case .ghost:
                 return configuration.isPressed ? Theme.hoverRaised
                     : active ? Theme.hover : .clear
+            case .destructive:
+                return active ? Theme.removed.opacity(0.28) : Theme.removedFill
             }
         }
     }
@@ -118,6 +123,7 @@ extension ButtonStyle where Self == DenButtonStyle {
     static var denPrimary: DenButtonStyle { DenButtonStyle(kind: .primary) }
     static var denSecondary: DenButtonStyle { DenButtonStyle(kind: .secondary) }
     static var denGhost: DenButtonStyle { DenButtonStyle(kind: .ghost) }
+    static var denDestructive: DenButtonStyle { DenButtonStyle(kind: .destructive) }
     static func denGhost(radius: CGFloat) -> DenButtonStyle {
         DenButtonStyle(kind: .ghost, radius: radius)
     }
