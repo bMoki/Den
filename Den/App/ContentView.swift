@@ -39,6 +39,10 @@ struct ContentView: View {
         .tint(Theme.accent)
         .ignoresSafeArea()
         .background(WindowChrome(isFullScreen: $isFullScreen))
+        .background(WindowCloseGuard {
+            UnsavedAlert.confirm("Salvar as alterações antes de fechar a janela?", unsaved: editors.unsaved()) { editors.settle($0) }
+        })
+        .onAppear { EditorWindows.shared.track(editors) }
         .preferredColorScheme(.dark)
         .frame(minWidth: 860, minHeight: 560)
         .task { await workspace.refresh() }

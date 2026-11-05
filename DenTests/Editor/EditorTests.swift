@@ -27,7 +27,7 @@ private func repo(committing name: String, _ text: String) async throws -> URL {
     #expect(FileContents.read(try file("logo.png", Data([0x89, 0x50, 0x4E, 0x47]), in: root)) == .image(Data([0x89, 0x50, 0x4E, 0x47])))
     #expect(FileContents.read(try file("app.bin", Data([0x41, 0x00, 0x42]), in: root)) == .unreadable("Arquivo binário."))
     #expect(FileContents.read(try file("latin.txt", Data([0x63, 0xE3, 0x6F]), in: root)) == .unreadable("Este arquivo não está em UTF-8."))
-    #expect(FileContents.read(root.appending(path: "missing.txt")) == .unreadable("Não consegui abrir este arquivo."))
+    #expect(FileContents.read(root.appending(path: "missing.txt")) == .missing)
     let large = try file("dump.sql", Data(count: FileContents.sizeLimit + 1), in: root)
     guard case .unreadable(let reason) = FileContents.read(large) else {
         Issue.record("a file over the limit should not open")
@@ -186,8 +186,11 @@ private func repo(committing name: String, _ text: String) async throws -> URL {
 
     document.text = "x"
     document.save()
+    #expect(document.lostOnDisk == .deleted)
+    document.saveAnyway()
 
     #expect(document.problem == "A pasta deste arquivo não existe mais.")
+    #expect(document.lostOnDisk == .deleted)
     #expect(!FileManager.default.fileExists(atPath: root.appending(path: "gone").path))
 }
 
@@ -393,4 +396,205 @@ private func shown(_ document: EditorDocument) -> TextView {
     #expect(EditorMemory.moved(position, from: old, to: "a\nb\ncur") == CursorPosition.Position(line: 3, column: 4))
     #expect(EditorMemory.moved(CursorPosition.Position(line: 1, column: 2), from: "ab", to: "ab") == CursorPosition.Position(line: 1, column: 2))
     #expect(EditorMemory.moved(CursorPosition.Position(line: 1, column: 3), from: "ab", to: "abc") == CursorPosition.Position(line: 1, column: 3))
+}
+
+@MainActor
+private func deletedWhileUnsaved() async throws -> (EditorDocument, URL) {
+    let (document, source) = try await opened("a\n")
+    document.text = "mine\n"
+    try FileManager.default.removeItem(at: source)
+    return (document, source)
+}
+
+@Test @MainActor func aDeletedFileWarnsAndSavingDoesNotBringItBack() async throws {
+    let (document, source) = try await deletedWhileUnsaved()
+    defer { try? FileManager.default.removeItem(at: source.deletingLastPathComponent()) }
+
+    await document.readDisk()
+    #expect(document.lostOnDisk == .deleted)
+    #expect(document.text == "mine\n")
+    document.save()
+    #expect(!FileManager.default.fileExists(atPath: source.path))
+
+    document.saveAnyway()
+    #expect(document.lostOnDisk == nil)
+    #expect(!document.isDirty)
+    #expect(try String(contentsOf: source, encoding: .utf8) == "mine\n")
+}
+
+@Test @MainActor func savingAFileDeletedBeforeTheWatcherSawItWarnsFirst() async throws {
+    let (document, source) = try await deletedWhileUnsaved()
+    defer { try? FileManager.default.removeItem(at: source.deletingLastPathComponent()) }
+
+    document.save()
+
+    #expect(document.lostOnDisk == .deleted)
+    #expect(document.isDirty)
+    #expect(!FileManager.default.fileExists(atPath: source.path))
+}
+
+@Test @MainActor func aFileThatTurnsBinaryOrLeavesUTF8WarnsUntilItIsTextAgain() async throws {
+    let (document, source) = try await opened("a\n")
+    defer { try? FileManager.default.removeItem(at: source.deletingLastPathComponent()) }
+
+    try Data([0x41, 0x00, 0x42]).write(to: source)
+    await document.readDisk()
+    #expect(document.lostOnDisk == .unreadable("Arquivo binário."))
+    #expect(document.text == "a\n")
+    document.text = "mine\n"
+    document.save()
+    #expect(try Data(contentsOf: source) == Data([0x41, 0x00, 0x42]))
+
+    try Data([0x63, 0xE3, 0x6F]).write(to: source)
+    await document.readDisk()
+    #expect(document.lostOnDisk == .unreadable("Este arquivo não está em UTF-8."))
+
+    try Data("mine\n".utf8).write(to: source)
+    await document.readDisk()
+    #expect(document.lostOnDisk == nil)
+    #expect(!document.isDirty)
+}
+
+@Test @MainActor func aDeletedFileReplacesTheWarningAboutAChangeOnDisk() async throws {
+    let (document, source) = try await conflicted()
+    defer { try? FileManager.default.removeItem(at: source.deletingLastPathComponent()) }
+    document.compareWithDisk()
+
+    try FileManager.default.removeItem(at: source)
+    await document.readDisk()
+
+    #expect(document.lostOnDisk == .deleted)
+    #expect(document.changedOnDisk == nil)
+    #expect(document.mode == .code)
+}
+
+@MainActor
+private func loaded(_ tabs: EditorTabs, _ names: [String], in session: UUID, root: URL) async throws -> [EditorDocument] {
+    for name in names { tabs.open(root.appending(path: name), in: session) }
+    let documents = tabs.documents(in: session).filter { names.contains($0.name) }
+    for _ in 0..<100 where documents.contains(where: { $0.kind == .loading }) {
+        try await Task.sleep(for: .milliseconds(10))
+    }
+    return documents
+}
+
+@MainActor
+private func twoTabs() async throws -> (EditorTabs, UUID, [EditorDocument]) {
+    let root = try makeTree([], files: ["a.ts", "b.ts"])
+    let tabs = EditorTabs()
+    let session = UUID()
+    return (tabs, session, try await loaded(tabs, ["a.ts", "b.ts"], in: session, root: root))
+}
+
+@Test @MainActor func leavingWithAnUnsavedTabCancelsDiscardsOrSavesIt() async throws {
+    let (tabs, _, documents) = try await twoTabs()
+    defer { try? FileManager.default.removeItem(at: documents[0].url.deletingLastPathComponent()) }
+    let other = try await loaded(tabs, ["a.ts"], in: UUID(), root: documents[0].url.deletingLastPathComponent())
+    documents[0].text = "mine\n"
+
+    #expect(other.first === documents[0])
+    #expect(tabs.unsaved().map(ObjectIdentifier.init) == [ObjectIdentifier(documents[0])])
+    #expect(!tabs.settle(.cancel))
+    #expect(tabs.settle(.discard))
+    #expect(try String(contentsOf: documents[0].url, encoding: .utf8).isEmpty)
+
+    #expect(tabs.settle(.saveAll))
+    #expect(try String(contentsOf: documents[0].url, encoding: .utf8) == "mine\n")
+    #expect(tabs.unsaved().isEmpty)
+}
+
+@Test @MainActor func savingAllBeforeLeavingStopsAtAFileTheAgentDeleted() async throws {
+    let (tabs, session, documents) = try await twoTabs()
+    defer { try? FileManager.default.removeItem(at: documents[0].url.deletingLastPathComponent()) }
+    documents.forEach { $0.text = "mine\n" }
+    tabs.select(nil, in: session)
+    try FileManager.default.removeItem(at: documents[1].url)
+
+    #expect(!tabs.settle(.saveAll))
+
+    #expect(try String(contentsOf: documents[0].url, encoding: .utf8) == "mine\n")
+    #expect(!FileManager.default.fileExists(atPath: documents[1].url.path))
+    #expect(documents[1].lostOnDisk == .deleted)
+    #expect(tabs.selection(in: session) === documents[1])
+}
+
+@Test @MainActor func removingASessionClosesItsTabsAndLetsThemGo() async throws {
+    let root = try makeTree([], files: ["a.ts", "b.ts"])
+    defer { try? FileManager.default.removeItem(at: root) }
+    let tabs = EditorTabs()
+    let removed = UUID()
+    let kept = UUID()
+    var documents = try await loaded(tabs, ["a.ts", "b.ts"], in: removed, root: root)
+    _ = try await loaded(tabs, ["b.ts"], in: kept, root: root)
+    documents.forEach { $0.text = "mine\n" }
+    weak let onlyThere = documents[0]
+
+    #expect(tabs.unsaved(in: removed).map(\.name) == ["a.ts"])
+    tabs.closeSession(removed)
+    documents = []
+
+    #expect(tabs.documents(in: removed).isEmpty)
+    #expect(tabs.selection(in: removed) == nil)
+    #expect(tabs.documents(in: kept).map(\.name) == ["b.ts"])
+    for _ in 0..<100 where onlyThere != nil {
+        try await Task.sleep(for: .milliseconds(10))
+    }
+    #expect(onlyThere == nil)
+}
+
+@Test @MainActor func everyOpenWindowIsAskedAboutWhenLeaving() async throws {
+    let root = try makeTree([], files: ["a.ts", "b.ts"])
+    defer { try? FileManager.default.removeItem(at: root) }
+    let windows = EditorWindows()
+    let first = EditorTabs()
+    let second = EditorTabs()
+    windows.track(first)
+    windows.track(second)
+    let session = UUID()
+    let a = try await loaded(first, ["a.ts"], in: session, root: root)
+    let b = try await loaded(second, ["b.ts"], in: session, root: root)
+    a[0].text = "mine\n"
+    b[0].text = "mine\n"
+
+    #expect(Set(windows.unsaved().map(\.name)) == ["a.ts", "b.ts"])
+    #expect(!windows.settle(.cancel))
+    #expect(windows.settle(.saveAll))
+    #expect(windows.unsaved().isEmpty)
+
+    windows.closeSession(session)
+    #expect(first.documents(in: session).isEmpty)
+    #expect(second.documents(in: session).isEmpty)
+}
+
+@Test @MainActor func anOpenFileThatGrowsPastTheLimitStillSavesAndReloads() async throws {
+    let (document, source) = try await opened("a\n")
+    defer { try? FileManager.default.removeItem(at: source.deletingLastPathComponent()) }
+    let large = String(repeating: "x", count: FileContents.sizeLimit + 1)
+
+    document.text = large
+    document.save()
+    await document.readDisk()
+    #expect(document.lostOnDisk == nil)
+    #expect(!document.isDirty)
+
+    try Data((large + "y").utf8).write(to: source)
+    await document.readDisk()
+    #expect(document.lostOnDisk == nil)
+    #expect(document.text == large + "y")
+}
+
+@Test @MainActor func savingAllLeavesAFileWithAPendingChangeOnDiskForTheUserToSettle() async throws {
+    let (tabs, session, documents) = try await twoTabs()
+    defer { try? FileManager.default.removeItem(at: documents[0].url.deletingLastPathComponent()) }
+    documents.forEach { $0.text = "mine\n" }
+    try Data("agent\n".utf8).write(to: documents[0].url)
+    await documents[0].readDisk()
+
+    #expect(!tabs.settle(.saveAll, in: session))
+
+    #expect(try String(contentsOf: documents[0].url, encoding: .utf8) == "agent\n")
+    #expect(try String(contentsOf: documents[1].url, encoding: .utf8) == "mine\n")
+    #expect(documents[0].changedOnDisk == "agent\n")
+    #expect(tabs.selection(in: session) === documents[0])
+    #expect(tabs.documents(in: session).count == 2)
 }

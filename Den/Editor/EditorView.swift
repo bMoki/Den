@@ -4,6 +4,7 @@ import SwiftUI
 struct EditorView: View {
     @Bindable var document: EditorDocument
     let folder: URL
+    var close: () -> Void
 
     var body: some View {
         VStack(spacing: 0) {
@@ -12,6 +13,10 @@ struct EditorView: View {
                 DialogWarning(title: "Não consegui salvar.", detail: problem)
                     .padding(EdgeInsets(top: 10, leading: 14, bottom: 0, trailing: 14))
                     .onTapGesture { document.problem = nil }
+            }
+            if let loss = document.lostOnDisk {
+                lostBanner(loss)
+                    .padding(EdgeInsets(top: 10, leading: 14, bottom: 0, trailing: 14))
             }
             if document.changedOnDisk != nil {
                 changedBanner
@@ -31,6 +36,20 @@ struct EditorView: View {
                 secondaryButton(perform: document.compareWithDisk) { Text("Comparar") }
                     .accessibilityAddTraits(document.mode == .compare ? .isSelected : [])
                 secondaryButton(perform: document.keepMine) { Text("Manter a minha") }
+            }
+        }
+    }
+
+    private func lostBanner(_ loss: EditorDocument.DiskLoss) -> some View {
+        let unsaved = document.isDirty ? "Você tem alterações não salvas aqui." : "O texto agora só existe aqui."
+        let (title, detail) = switch loss {
+        case .deleted: ("Este arquivo foi apagado no disco.", unsaved)
+        case .unreadable(let reason): ("O arquivo no disco não abre mais aqui.", "\(reason) \(unsaved)")
+        }
+        return DialogWarning(title: title, detail: detail) {
+            HStack(spacing: 6) {
+                secondaryButton(perform: close) { Text("Fechar") }
+                secondaryButton(perform: document.saveAnyway) { Text("Salvar mesmo assim") }
             }
         }
     }
@@ -65,7 +84,7 @@ struct EditorView: View {
                     }
                 }
                 .keyboardShortcut("s", modifiers: .command)
-                .disabled(!document.isDirty)
+                .disabled(!document.isDirty || document.lostOnDisk != nil)
             }
         }
         .padding(.leading, 14)

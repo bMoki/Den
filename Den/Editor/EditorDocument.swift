@@ -16,6 +16,19 @@ final class EditorDocument: Identifiable {
         case unreadable(String)
     }
 
+    nonisolated enum DiskLoss: Equatable {
+        case deleted
+        case unreadable(String)
+
+        init?(_ contents: FileContents) {
+            switch contents {
+            case .missing: self = .deleted
+            case .unreadable(let reason): self = .unreadable(reason)
+            case .text, .image: return nil
+            }
+        }
+    }
+
     let url: URL
     let language: CodeLanguage
     var text = ""
@@ -26,6 +39,7 @@ final class EditorDocument: Identifiable {
     private(set) var saved = ""
     private(set) var kind: Kind = .loading
     private(set) var changedOnDisk: String?
+    private(set) var lostOnDisk: DiskLoss?
     private(set) var editorGeneration = 0
     private(set) var diff: FileDiff?
     @ObservationIgnored private var diffTask: Task<Void, Never>?
@@ -42,7 +56,7 @@ final class EditorDocument: Identifiable {
     var isMarkdown: Bool { ["md", "markdown"].contains(url.pathExtension.lowercased()) }
 
     func load() async {
-        switch await readOffMain() {
+        switch await readOffMain(limited: true) {
         case .text(let read):
             text = read
             saved = read
@@ -51,6 +65,8 @@ final class EditorDocument: Identifiable {
             kind = .image(data)
         case .unreadable(let reason):
             kind = .unreadable(reason)
+        case .missing:
+            kind = .unreadable("Este arquivo não existe mais.")
         }
     }
 
@@ -65,9 +81,14 @@ final class EditorDocument: Identifiable {
 
     func readDisk() async {
         let writesBefore = writes
-        let contents = await readOffMain()
-        guard writes == writesBefore else { return }
-        if case .text(let disk) = contents { absorbDiskChange(disk) }
+        let contents = await readOffMain(limited: false)
+        guard writes == writesBefore, kind == .text else { return }
+        if let loss = DiskLoss(contents) {
+            lose(loss)
+        } else if case .text(let disk) = contents {
+            lostOnDisk = nil
+            absorbDiskChange(disk)
+        }
     }
 
     func reloadFromDisk() {
@@ -86,13 +107,26 @@ final class EditorDocument: Identifiable {
     }
 
     func save() {
-        guard kind == .text else { return }
+        guard kind == .text, lostOnDisk == nil else { return }
+        let contents = FileContents.read(url, limited: false)
+        if let loss = DiskLoss(contents) {
+            lose(loss)
+        } else if case .text(let disk) = contents, changedOnDisk == nil, disk != saved, disk != text {
+            changedOnDisk = disk
+        } else {
+            write()
+        }
+    }
+
+    func saveAnyway() {
+        guard lostOnDisk != nil else { return }
+        write()
+        if problem == nil { lostOnDisk = nil }
+    }
+
+    private func write() {
         guard url.deletingLastPathComponent().isExistingDirectory else {
             problem = "A pasta deste arquivo não existe mais."
-            return
-        }
-        if changedOnDisk == nil, case .text(let disk) = FileContents.read(url), disk != saved, disk != text {
-            changedOnDisk = disk
             return
         }
         do {
@@ -125,13 +159,17 @@ final class EditorDocument: Identifiable {
         if mode == .diff { loadDiff() }
     }
 
-    private func readOffMain() async -> FileContents {
+    private func readOffMain(limited: Bool) async -> FileContents {
         let url = url
-        return await Task.detached(priority: .userInitiated) { FileContents.read(url) }.value
+        return await Task.detached(priority: .userInitiated) { FileContents.read(url, limited: limited) }.value
+    }
+
+    private func lose(_ loss: DiskLoss) {
+        lostOnDisk = loss
+        clearConflict()
     }
 
     private func absorbDiskChange(_ disk: String) {
-        guard kind == .text else { return }
         if disk == saved || disk == text {
             saved = disk
             clearConflict()

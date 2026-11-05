@@ -6,6 +6,7 @@ struct SidebarView: View {
     @Environment(PullRequestMonitor.self) private var monitor
     @Environment(NsWorkspace.self) private var ns
     @Environment(PanelTerminals.self) private var terminals
+    private let editors = EditorWindows.shared
     var lightsInset: CGFloat = 0
     var collapse: () -> Void = {}
 
@@ -30,16 +31,16 @@ struct SidebarView: View {
             ),
             titleVisibility: .visible
         ) {
-            Button("Apagar", role: .destructive) {
-                if let summary = pendingDelete {
-                    Task { await workspace.deleteSession(summary.id) }
-                    terminals.close(sessionID: summary.id)
-                }
-                pendingDelete = nil
+            if pendingUnsaved.isEmpty {
+                Button("Apagar", role: .destructive) { delete(.discard) }
+            } else {
+                Button("Salvar e apagar") { delete(.saveAll) }
+                Button("Apagar sem salvar", role: .destructive) { delete(.discard) }
             }
             Button("Cancelar", role: .cancel) { pendingDelete = nil }
         } message: {
-            Text("A conversa e o histórico dela serão removidos permanentemente.")
+            let unsaved = pendingUnsaved.isEmpty ? "" : " \(UnsavedAlert.listing(pendingUnsaved))"
+            Text("A conversa e o histórico dela serão removidos permanentemente.\(unsaved)")
         }
         .sheet(isPresented: Binding(
             get: { ns.creation?.isPresented == true },
@@ -54,6 +55,24 @@ struct SidebarView: View {
                 Task { await ns.remove(removal.branch, purge: purge) }
             }
         }
+    }
+
+    private var pendingUnsaved: [EditorDocument] {
+        pendingDelete.map { editors.unsaved(in: $0.id) } ?? []
+    }
+
+    private func delete(_ choice: UnsavedChoice) {
+        guard let summary = pendingDelete else { return }
+        pendingDelete = nil
+        let unsaved = editors.unsaved(in: summary.id)
+        guard editors.settle(choice, in: summary.id) else {
+            UnsavedAlert.tellFailure(unsaved.filter(\.isDirty))
+            Task { await workspace.select(summary.id) }
+            return
+        }
+        editors.closeSession(summary.id)
+        terminals.close(sessionID: summary.id)
+        Task { await workspace.deleteSession(summary.id) }
     }
 
     private func create(with creation: BranchCreation) {

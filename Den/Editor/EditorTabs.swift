@@ -1,6 +1,10 @@
 import Foundation
 import Observation
 
+nonisolated enum UnsavedChoice {
+    case saveAll, discard, cancel
+}
+
 @MainActor
 @Observable
 final class EditorTabs {
@@ -33,6 +37,37 @@ final class EditorTabs {
 
     func select(_ document: EditorDocument?, in session: UUID) {
         selected[session] = document?.url
+    }
+
+    func unsaved(in session: UUID? = nil) -> [EditorDocument] {
+        guard let session else {
+            var seen: Set<ObjectIdentifier> = []
+            return open.values.flatMap(\.self).filter { $0.isDirty && seen.insert(ObjectIdentifier($0)).inserted }
+        }
+        let elsewhere = open.filter { $0.key != session }.values.flatMap(\.self)
+        return documents(in: session).filter { document in document.isDirty && !elsewhere.contains { $0 === document } }
+    }
+
+    func settle(_ choice: UnsavedChoice, in session: UUID? = nil) -> Bool {
+        switch choice {
+        case .cancel:
+            return false
+        case .discard:
+            return true
+        case .saveAll:
+            let unsaved = unsaved(in: session)
+            unsaved.filter { $0.changedOnDisk == nil }.forEach { $0.save() }
+            guard let failed = unsaved.first(where: \.isDirty) else { return true }
+            if let owner = session ?? open.first(where: { $0.value.contains { $0 === failed } })?.key {
+                selected[owner] = failed.url
+            }
+            return false
+        }
+    }
+
+    func closeSession(_ session: UUID) {
+        open[session] = nil
+        selected[session] = nil
     }
 
     func close(_ document: EditorDocument, in session: UUID) {

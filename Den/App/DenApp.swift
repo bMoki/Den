@@ -2,6 +2,7 @@ import SwiftUI
 
 @main
 struct DenApp: App {
+    @NSApplicationDelegateAdaptor private var delegate: DenAppDelegate
     private let environment: any AppEnvironment
     @State private var monitor: PullRequestMonitor
     @State private var ns: NsWorkspace
@@ -46,5 +47,14 @@ struct DenApp: App {
         let repos = await Task.detached { BranchRepo.list(in: status) }.value
         guard !Task.isCancelled else { return }
         monitor.track(repos, branches: Set(status.branches.map(\.branch)))
+    }
+}
+
+final class DenAppDelegate: NSObject, NSApplicationDelegate {
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        let leaves = UnsavedAlert.confirm("Salvar as alterações antes de sair?", unsaved: EditorWindows.shared.unsaved()) {
+            EditorWindows.shared.settle($0)
+        }
+        return leaves ? .terminateNow : .terminateCancel
     }
 }

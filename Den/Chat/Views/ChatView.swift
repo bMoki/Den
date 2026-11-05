@@ -41,7 +41,7 @@ struct ChatView: View {
                     ChatHeader(chat: chat)
                     EditorTabStrip(tabs: editors, session: chat.sessionID, files: files)
                     if let document = editors.selection(in: chat.sessionID) {
-                        EditorView(document: document, folder: chat.workingDirectory)
+                        EditorView(document: document, folder: chat.workingDirectory) { editors.close(document, in: chat.sessionID) }
                     } else {
                         transcript
                         if let removedBranch {
