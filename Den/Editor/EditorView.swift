@@ -13,10 +13,37 @@ struct EditorView: View {
                     .padding(EdgeInsets(top: 10, leading: 14, bottom: 0, trailing: 14))
                     .onTapGesture { document.problem = nil }
             }
+            if document.changedOnDisk != nil {
+                changedBanner
+                    .padding(EdgeInsets(top: 10, leading: 14, bottom: 0, trailing: 14))
+            }
             content
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .background(Theme.canvas)
+        .task(id: document.url) { await document.watch() }
+    }
+
+    private var changedBanner: some View {
+        DialogWarning(title: "Este arquivo mudou no disco.", detail: "Você tem alterações não salvas aqui.") {
+            HStack(spacing: 6) {
+                secondaryButton(perform: document.reloadFromDisk) { Text("Recarregar") }
+                secondaryButton(perform: document.compareWithDisk) { Text("Comparar") }
+                    .accessibilityAddTraits(document.mode == .compare ? .isSelected : [])
+                secondaryButton(perform: document.keepMine) { Text("Manter a minha") }
+            }
+        }
+    }
+
+    private func secondaryButton(perform: @escaping () -> Void, @ViewBuilder label: () -> some View) -> some View {
+        Button(action: perform) {
+            label()
+                .font(.system(size: 12.5))
+                .fixedSize()
+                .padding(.horizontal, 10)
+                .frame(height: 28)
+        }
+        .buttonStyle(.denSecondary)
     }
 
     private var bar: some View {
@@ -31,17 +58,12 @@ struct EditorView: View {
                           perform: document.toggleFind)
                     .onKeyboardShortcut("f", modifiers: .command, perform: document.showFind)
                 barButton("Diff com o git", symbol: "plus.forwardslash.minus", isOn: document.mode == .diff) { document.toggle(.diff) }
-                Button(action: document.save) {
+                secondaryButton(perform: document.save) {
                     HStack(spacing: 6) {
                         Text("Salvar")
                         Text("⌘S").font(.system(size: 11, design: .monospaced)).foregroundStyle(Theme.textTertiary)
                     }
-                    .font(.system(size: 12.5))
-                    .fixedSize()
-                    .padding(.horizontal, 10)
-                    .frame(height: 28)
                 }
-                .buttonStyle(.denSecondary)
                 .keyboardShortcut("s", modifiers: .command)
                 .disabled(!document.isDirty)
             }
@@ -123,7 +145,7 @@ struct EditorView: View {
             switch document.mode {
             case .code:
                 SourceEditor($document.text, language: document.language, configuration: .den, state: $document.editorState)
-                    .id(document.url)
+                    .id("\(document.url.path)#\(document.editorGeneration)")
             case .preview:
                 ScrollView {
                     MarkdownText(text: document.text)
@@ -134,6 +156,8 @@ struct EditorView: View {
                 }
             case .diff:
                 diff
+            case .compare:
+                comparison
             }
         }
     }
@@ -164,6 +188,28 @@ struct EditorView: View {
                 }
             }
         }
+    }
+
+    private var comparison: some View {
+        HStack(spacing: 0) {
+            compareColumn("No editor (não salvo)", text: document.text)
+            Rectangle().fill(Theme.border).frame(width: 1)
+            compareColumn("No disco", text: document.changedOnDisk ?? "")
+        }
+    }
+
+    private func compareColumn(_ title: String, text: String) -> some View {
+        VStack(spacing: 0) {
+            Text(title)
+                .font(.system(size: 11.5, weight: .semibold))
+                .foregroundStyle(Theme.textTertiary)
+                .padding(.horizontal, 14)
+                .frame(maxWidth: .infinity, minHeight: 32, alignment: .leading)
+                .overlay(alignment: .bottom) { Rectangle().fill(Theme.border).frame(height: 1) }
+            SourceEditor(.constant(text), language: document.language, configuration: .denReadOnly, state: .constant(SourceEditorState()))
+                .id("\(title)#\(text.hashValue)")
+        }
+        .frame(maxWidth: .infinity)
     }
 
     private func notice(_ text: String, symbol: String) -> some View {

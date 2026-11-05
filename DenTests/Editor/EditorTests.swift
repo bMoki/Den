@@ -209,3 +209,123 @@ private func repo(committing name: String, _ text: String) async throws -> URL {
     }
     #expect(lines.filter { $0.kind != .hunk }.map(\.kind) == [.added])
 }
+
+@MainActor
+private func opened(_ text: String) async throws -> (EditorDocument, URL) {
+    let source = try file("Main.java", Data(text.utf8), in: try makeTree([]))
+    let document = EditorDocument(url: source)
+    await document.load()
+    return (document, source)
+}
+
+@MainActor
+private func conflicted() async throws -> (EditorDocument, URL) {
+    let (document, source) = try await opened("a\n")
+    document.text = "mine\n"
+    try Data("agent\n".utf8).write(to: source)
+    await document.readDisk()
+    return (document, source)
+}
+
+@Test @MainActor func aChangeOnDiskReplacesTheTextWhenNothingIsUnsaved() async throws {
+    let (document, source) = try await opened("class Main {}\n")
+    defer { try? FileManager.default.removeItem(at: source.deletingLastPathComponent()) }
+
+    try Data("class Main { int a; }\n".utf8).write(to: source)
+    await document.readDisk()
+
+    #expect(document.text == "class Main { int a; }\n")
+    #expect(!document.isDirty)
+    #expect(document.changedOnDisk == nil)
+    #expect(document.editorGeneration == 1)
+}
+
+@Test @MainActor func ourOwnSaveIsNotTakenForAChangeOnDisk() async throws {
+    let (document, source) = try await opened("a\n")
+    defer { try? FileManager.default.removeItem(at: source.deletingLastPathComponent()) }
+
+    document.text = "b\n"
+    document.save()
+    await document.readDisk()
+
+    #expect(document.changedOnDisk == nil)
+    #expect(document.editorGeneration == 0)
+}
+
+@Test @MainActor func aChangeOnDiskOverUnsavedTextAsksAndReloadTakesTheDisk() async throws {
+    let (document, source) = try await conflicted()
+    defer { try? FileManager.default.removeItem(at: source.deletingLastPathComponent()) }
+
+    #expect(document.text == "mine\n")
+    #expect(document.changedOnDisk == "agent\n")
+    document.reloadFromDisk()
+    #expect(document.text == "agent\n")
+    #expect(!document.isDirty)
+    #expect(document.changedOnDisk == nil)
+}
+
+@Test @MainActor func compareShowsBothVersionsUntilTheConflictIsSettled() async throws {
+    let (document, source) = try await conflicted()
+    defer { try? FileManager.default.removeItem(at: source.deletingLastPathComponent()) }
+
+    document.compareWithDisk()
+    #expect(document.mode == .compare)
+    #expect(document.text == "mine\n")
+    #expect(document.changedOnDisk == "agent\n")
+    document.keepMine()
+    #expect(document.mode == .code)
+    document.compareWithDisk()
+    #expect(document.mode == .code)
+}
+
+@Test @MainActor func keepingMineMakesTheNextSaveOverwriteTheDisk() async throws {
+    let (document, source) = try await conflicted()
+    defer { try? FileManager.default.removeItem(at: source.deletingLastPathComponent()) }
+
+    document.keepMine()
+    #expect(document.changedOnDisk == nil)
+    #expect(document.isDirty)
+    await document.readDisk()
+    #expect(document.changedOnDisk == nil)
+    document.save()
+
+    #expect(try String(contentsOf: source, encoding: .utf8) == "mine\n")
+    #expect(!document.isDirty)
+}
+
+@Test @MainActor func savingWhileWarnedKeepsMineOnDisk() async throws {
+    let (document, source) = try await conflicted()
+    defer { try? FileManager.default.removeItem(at: source.deletingLastPathComponent()) }
+
+    document.save()
+
+    #expect(document.changedOnDisk == nil)
+    #expect(try String(contentsOf: source, encoding: .utf8) == "mine\n")
+}
+
+@Test @MainActor func savingOverAChangeTheWatcherHasNotSeenYetAsksFirst() async throws {
+    let (document, source) = try await opened("a\n")
+    defer { try? FileManager.default.removeItem(at: source.deletingLastPathComponent()) }
+    document.text = "mine\n"
+    try Data("agent\n".utf8).write(to: source)
+
+    document.save()
+
+    #expect(document.changedOnDisk == "agent\n")
+    #expect(try String(contentsOf: source, encoding: .utf8) == "agent\n")
+}
+
+@Test @MainActor func theWatcherPicksUpAnAgentWrite() async throws {
+    let (document, source) = try await opened("a\n")
+    defer { try? FileManager.default.removeItem(at: source.deletingLastPathComponent()) }
+    let watching = Task { await document.watch() }
+    defer { watching.cancel() }
+    try await Task.sleep(for: .milliseconds(300))
+
+    try Data("agent\n".utf8).write(to: source)
+    for _ in 0..<50 where document.text != "agent\n" {
+        try await Task.sleep(for: .milliseconds(100))
+    }
+
+    #expect(document.text == "agent\n")
+}

@@ -119,24 +119,35 @@ struct DialogCheckbox: View {
     }
 }
 
-struct DialogWarning: View {
+struct DialogWarning<Actions: View>: View {
     let title: String
     let detail: String
+    @ViewBuilder var actions: Actions
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 9) {
-            Image(systemName: "exclamationmark.triangle")
-                .font(.system(size: 12))
-            Text("\(title) \(Text(detail).foregroundStyle(Theme.alertText.opacity(0.8)))")
-                .font(.system(size: 12.5))
-                .fixedSize(horizontal: false, vertical: true)
-                .textSelection(.enabled)
+        HStack(spacing: 10) {
+            HStack(alignment: .firstTextBaseline, spacing: 9) {
+                Image(systemName: "exclamationmark.triangle")
+                    .font(.system(size: 12))
+                Text("\(title) \(Text(detail).foregroundStyle(Theme.alertText.opacity(0.8)))")
+                    .font(.system(size: 12.5))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .textSelection(.enabled)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityElement(children: .combine)
+            actions
         }
         .foregroundStyle(Theme.alertText)
         .padding(EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12))
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Theme.alertFill, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Theme.alertBorder))
-        .accessibilityElement(children: .combine)
+    }
+}
+
+extension DialogWarning where Actions == EmptyView {
+    init(title: String, detail: String) {
+        self.init(title: title, detail: detail) { EmptyView() }
     }
 }

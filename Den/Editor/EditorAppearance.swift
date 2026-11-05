@@ -6,6 +6,12 @@ extension SourceEditorConfiguration {
     static let den = SourceEditorConfiguration(
         appearance: .init(theme: .den, font: .monospacedSystemFont(ofSize: 12.5, weight: .regular), lineHeightMultiple: 1.45, wrapLines: false),
         peripherals: .init(showMinimap: false, showFoldingRibbon: false))
+
+    static let denReadOnly = {
+        var configuration = den
+        configuration.behavior.isEditable = false
+        return configuration
+    }()
 }
 
 extension EditorTheme {

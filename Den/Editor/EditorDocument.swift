@@ -7,7 +7,7 @@ import Observation
 @MainActor
 @Observable
 final class EditorDocument: Identifiable {
-    enum Mode { case code, preview, diff }
+    enum Mode { case code, preview, diff, compare }
 
     nonisolated enum Kind: Equatable {
         case loading
@@ -24,8 +24,11 @@ final class EditorDocument: Identifiable {
     var problem: String?
     private(set) var saved = ""
     private(set) var kind: Kind = .loading
+    private(set) var changedOnDisk: String?
+    private(set) var editorGeneration = 0
     private(set) var diff: FileDiff?
     @ObservationIgnored private var diffTask: Task<Void, Never>?
+    @ObservationIgnored private var writes = 0
 
     init(url: URL) {
         self.url = url.standardizedFileURL
@@ -38,9 +41,7 @@ final class EditorDocument: Identifiable {
     var isMarkdown: Bool { ["md", "markdown"].contains(url.pathExtension.lowercased()) }
 
     func load() async {
-        let url = url
-        let contents = await Task.detached(priority: .userInitiated) { FileContents.read(url) }.value
-        switch contents {
+        switch await readOffMain() {
         case .text(let read):
             text = read
             saved = read
@@ -52,15 +53,52 @@ final class EditorDocument: Identifiable {
         }
     }
 
+    func watch() async {
+        let folder = url.deletingLastPathComponent()
+        let changes = FolderWatcher.changes(in: folder)
+        await readDisk()
+        for await paths in changes where paths.contains(folder.path) || paths.contains(url.path) {
+            await readDisk()
+        }
+    }
+
+    func readDisk() async {
+        let writesBefore = writes
+        let contents = await readOffMain()
+        guard writes == writesBefore else { return }
+        if case .text(let disk) = contents { absorbDiskChange(disk) }
+    }
+
+    func reloadFromDisk() {
+        guard let changedOnDisk else { return }
+        replace(with: changedOnDisk)
+    }
+
+    func compareWithDisk() {
+        if changedOnDisk != nil { toggle(.compare) }
+    }
+
+    func keepMine() {
+        guard let changedOnDisk else { return }
+        saved = changedOnDisk
+        clearConflict()
+    }
+
     func save() {
         guard kind == .text else { return }
         guard url.deletingLastPathComponent().isExistingDirectory else {
             problem = "A pasta deste arquivo não existe mais."
             return
         }
+        if changedOnDisk == nil, case .text(let disk) = FileContents.read(url), disk != saved, disk != text {
+            changedOnDisk = disk
+            return
+        }
         do {
+            writes += 1
             try Data(text.utf8).write(to: url)
             saved = text
+            clearConflict()
             problem = nil
         } catch {
             problem = error.localizedDescription
@@ -84,6 +122,37 @@ final class EditorDocument: Identifiable {
     func toggle(_ target: Mode) {
         mode = mode == target ? .code : target
         if mode == .diff { loadDiff() }
+    }
+
+    private func readOffMain() async -> FileContents {
+        let url = url
+        return await Task.detached(priority: .userInitiated) { FileContents.read(url) }.value
+    }
+
+    private func absorbDiskChange(_ disk: String) {
+        guard kind == .text else { return }
+        if disk == saved || disk == text {
+            saved = disk
+            clearConflict()
+        } else if isDirty {
+            changedOnDisk = disk
+        } else {
+            replace(with: disk)
+        }
+    }
+
+    private func replace(with disk: String) {
+        text = disk
+        saved = disk
+        editorState.cursorPositions = nil
+        editorGeneration += 1
+        clearConflict()
+        if mode == .diff { loadDiff() }
+    }
+
+    private func clearConflict() {
+        changedOnDisk = nil
+        if mode == .compare { mode = .code }
     }
 
     private func loadDiff() {
