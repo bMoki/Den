@@ -16,6 +16,7 @@ struct ChatView: View {
     @AppStorage(InspectorPane.storageKey) private var pane: InspectorPane = .closed
     @AppStorage("Den.inspectorWidth") private var inspectorWidth: Double = 480
     let gitChanges: GitChangesModel
+    @Environment(NsWorkspace.self) private var ns
 
     private static let minimumChatWidth: CGFloat = 420
     private static let minimumInspectorWidth: Double = 320
@@ -69,8 +70,8 @@ struct ChatView: View {
 
         .navigationTitle(chat.title)
         .focusedSceneValue(\.chat, chat)
-        .task(id: "\(pane == .changes)|\(chat.workingDirectory.path)") {
-            guard pane == .changes else { return }
+        .task(id: "\(shownPane == .changes)|\(chat.workingDirectory.path)") {
+            guard shownPane == .changes else { return }
             await gitChanges.load(directory: chat.workingDirectory)
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(4))
@@ -95,7 +96,7 @@ struct ChatView: View {
         .onChange(of: chat.isBusy) {
             if !chat.isBusy {
                 keys.disarmEsc()
-                if pane == .changes {
+                if shownPane == .changes {
                     let gitChanges = self.gitChanges
                     let directory = chat.workingDirectory
                     Task { await gitChanges.load(directory: directory) }
@@ -114,8 +115,12 @@ struct ChatView: View {
         .followsTask(of: chat)
     }
 
+    private var branch: String? { ns.branchName(of: chat.workingDirectory) }
+
+    private var shownPane: InspectorPane { pane.shown(inBranch: branch != nil) }
+
     private var inspector: some View {
-        InspectorView(pane: $pane, gitChanges: gitChanges, directory: chat.workingDirectory)
+        InspectorView(pane: $pane, gitChanges: gitChanges, directory: chat.workingDirectory, branch: branch)
     }
 
     private func zoom(_ data: Data) {

@@ -60,13 +60,13 @@ struct SidebarView: View {
 
                 if ns.status != nil {
                     sectionTitle("Branches de workspace") { EmptyView() }
-                    ForEach(groups.branches) { folder($0, kind: .branch) }
+                    ForEach(groups.branches) { folder($0, isBranch: true) }
                 }
 
                 if !groups.baseRepos.isEmpty {
                     sectionTitle("Repos base") { EmptyView() }
                         .padding(.top, 14)
-                    ForEach(groups.baseRepos) { folder($0, kind: .folder) }
+                    ForEach(groups.baseRepos) { folder($0) }
                 }
 
                 sectionTitle("Outras pastas") {
@@ -81,7 +81,7 @@ struct SidebarView: View {
                     .accessibilityLabel("Abrir pasta")
                 }
                 .padding(.top, ns.status == nil ? 0 : 14)
-                ForEach(groups.otherFolders) { folder($0, kind: .folder, detail: Self.parent(of: $0.path)) }
+                ForEach(groups.otherFolders) { folder($0, detail: Self.parent(of: $0.path)) }
 
                 if groups.isEmpty {
                     SidebarEmptyList(search: workspace.search)
@@ -121,28 +121,44 @@ struct SidebarView: View {
     }
 
     @ViewBuilder
-    private func folder(_ folder: SidebarGroups.Folder, kind: FolderHeader.Kind,
+    private func folder(_ folder: SidebarGroups.Folder, isBranch: Bool = false,
                         detail: String? = nil) -> some View {
         let isOpen = isOpen(folder)
-        FolderHeader(
-            kind: kind,
-            name: folder.name,
-            detail: detail,
-            sessionCount: folder.sessions.count,
-            isOpen: isOpen,
-            toggle: { toggle(folder) },
-            newSession: { Task { await workspace.newSession(in: folder.path) } }
-        )
+        Group {
+            if isBranch {
+                BranchHeader(
+                    name: folder.name,
+                    branch: ns.branch(named: folder.name),
+                    activity: ns.activity[folder.name],
+                    problem: ns.actionProblems[folder.name],
+                    sessionCount: folder.sessions.count,
+                    isOpen: isOpen,
+                    toggle: { toggle(folder) },
+                    newSession: { Task { await workspace.newSession(in: folder.path) } },
+                    start: { Task { await ns.start(folder.name) } },
+                    stop: { Task { await ns.stop(folder.name) } }
+                )
+            } else {
+                FolderHeader(
+                    name: folder.name,
+                    detail: detail,
+                    sessionCount: folder.sessions.count,
+                    isOpen: isOpen,
+                    toggle: { toggle(folder) },
+                    newSession: { Task { await workspace.newSession(in: folder.path) } }
+                )
+            }
+        }
         .hoverTip({ anchor in
             PaneTip(title: folder.name,
-                    detail: (folder.path.path as NSString).abbreviatingWithTildeInPath,
+                    detail: tipDetail(for: folder, isBranch: isBranch),
                     indicator: nil, anchor: anchor)
         }, update: { scheduleTip($0) })
 
-        if isOpen, kind == .branch || !folder.sessions.isEmpty {
+        if isOpen, isBranch || !folder.sessions.isEmpty {
             VStack(alignment: .leading, spacing: 1) {
                 ForEach(folder.sessions) { row(for: $0) }
-                if kind == .branch {
+                if isBranch {
                     NewSessionRow(workspace: workspace, directory: folder.path)
                 }
             }
@@ -150,6 +166,13 @@ struct SidebarView: View {
             .padding(.bottom, 4)
             .transition(.opacity)
         }
+    }
+
+    private func tipDetail(for folder: SidebarGroups.Folder, isBranch: Bool) -> String {
+        let path = (folder.path.path as NSString).abbreviatingWithTildeInPath
+        guard isBranch else { return path }
+        guard let branch = ns.branch(named: folder.name), !branch.services.isEmpty else { return path }
+        return "\(path)\n\(branch.stateSummary)"
     }
 
     private static func parent(of path: URL) -> String {

@@ -6,6 +6,7 @@ struct ChatHeader: View {
     @AppStorage(InspectorPane.storageKey) private var pane: InspectorPane = .closed
     @Environment(\.chrome) private var chrome
     @Environment(FreeTerminals.self) private var terminals
+    @Environment(NsWorkspace.self) private var ns
 
     var body: some View {
         TopBar(leadingInset: chrome.leadingInset + (chrome.sidebarHidden ? 8 : 20)) {
@@ -71,14 +72,14 @@ struct ChatHeader: View {
                 .iconLabel(size: 32)
         }
         .buttonStyle(DenButtonStyle(kind: .secondary))
-        .help(pane == .closed ? "Mostrar alterações (⌥⌘0)"
+        .help(pane == .closed ? "Mostrar painel (⌥⌘0)"
                               : "Ocultar painel")
         .accessibilityLabel(pane == .closed ? "Mostrar painel" : "Ocultar painel")
     }
 
     private func toggle() {
         withAnimation(.easeInOut(duration: 0.2)) {
-            pane = pane == .closed ? .changes : .closed
+            pane = pane == .closed ? .opening(inBranch: ns.branchName(of: chat.workingDirectory) != nil) : .closed
         }
     }
 }

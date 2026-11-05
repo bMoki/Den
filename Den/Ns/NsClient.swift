@@ -8,20 +8,41 @@ nonisolated struct NsFailure: Error, Equatable, Sendable {
 actor NsClient {
     typealias Locate = @Sendable () async throws -> ProcessTransport.Launch
 
-    private nonisolated struct Request: Encodable {
+    typealias Progress = @Sendable (String) -> Void
+
+    private nonisolated struct Request<Input: Encodable>: Encodable {
         let type = "op"
         let id: String
         let op: String
+        let input: Input
     }
+
+    private nonisolated struct NoInput: Encodable {}
+
+    private nonisolated struct BranchInput: Encodable {
+        let branch: String
+    }
+
+    private nonisolated struct StartInput: Encodable {
+        let branch: String
+        let installMissingDeps = "always"
+    }
+
+    private nonisolated struct Ignored: Decodable {}
 
     private nonisolated struct Header: Decodable {
         nonisolated struct Body: Decodable {
             let message: String
         }
 
+        nonisolated struct Event: Decodable {
+            let label: String
+        }
+
         let type: String
         let id: String?
         let error: Body?
+        let event: Event?
     }
 
     private nonisolated struct Reply<Value: Decodable>: Decodable {
@@ -34,6 +55,7 @@ actor NsClient {
     private var connecting: Task<ProcessTransport, any Error>?
     private var pending: [String: CheckedContinuation<Data, any Error>] = [:]
     private var deadlines: [String: Task<Void, Never>] = [:]
+    private var progress: [String: Progress] = [:]
     private var nextID = 0
 
     init(timeout: Duration = .seconds(30), locate: @escaping Locate) {
@@ -42,18 +64,32 @@ actor NsClient {
     }
 
     func status() async throws -> NsStatus {
-        try await call("status")
+        try await call("status", input: NoInput())
     }
 
-    private func call<Value: Decodable>(_ op: String) async throws -> Value {
+    func start(branch: String, progress: @escaping Progress) async throws {
+        let _: Ignored = try await call("start", input: StartInput(branch: branch),
+                                        timeout: .seconds(900), progress: progress)
+    }
+
+    func stop(branch: String, progress: @escaping Progress) async throws {
+        let _: Ignored = try await call("stop", input: BranchInput(branch: branch),
+                                        timeout: .seconds(120), progress: progress)
+    }
+
+    private func call<Value: Decodable>(_ op: String, input: some Encodable,
+                                        timeout: Duration? = nil,
+                                        progress: Progress? = nil) async throws -> Value {
         let transport = try await connected()
         nextID += 1
         let id = String(nextID)
-        let request = try JSONEncoder().encode(Request(id: id, op: op))
+        let request = try JSONEncoder().encode(Request(id: id, op: op, input: input))
+        let timeout = timeout ?? self.timeout
         let line = try await withCheckedThrowingContinuation { continuation in
             pending[id] = continuation
+            self.progress[id] = progress
             try? transport.writeSync(request)
-            deadlines[id] = Task { [timeout] in
+            deadlines[id] = Task {
                 guard (try? await Task.sleep(for: timeout)) != nil else { return }
                 await self.expire(id, on: transport)
             }
@@ -96,6 +132,7 @@ actor NsClient {
         switch header.type {
         case "result": finish(id, with: .success(line))
         case "error": finish(id, with: .failure(NsFailure(message: header.error?.message ?? "erro no ns")))
+        case "event": if let label = header.event?.label { progress[id]?(label) }
         default: break
         }
     }
@@ -103,13 +140,14 @@ actor NsClient {
     private func expire(_ id: String, on stuck: ProcessTransport) async {
         guard pending[id] != nil else { return }
         finish(id, with: .failure(NsFailure(message: "o ns rpc não respondeu a tempo")))
-        guard transport === stuck else { return }
+        guard transport === stuck, pending.isEmpty else { return }
         transport = nil
         await stuck.terminate()
     }
 
     private func finish(_ id: String, with result: Result<Data, any Error>) {
         deadlines.removeValue(forKey: id)?.cancel()
+        progress.removeValue(forKey: id)
         pending.removeValue(forKey: id)?.resume(with: result)
     }
 

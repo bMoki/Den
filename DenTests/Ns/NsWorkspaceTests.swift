@@ -56,3 +56,42 @@ nonisolated private final class Replies: @unchecked Sendable {
     #expect(ns.problem == nil)
     #expect(ns.status == sampleStatus)
 }
+
+@Test func startShowsEachStepThenRefreshes() async {
+    let replies = Replies([.success(sampleStatus)])
+    let gate = AsyncStream<Void>.makeStream()
+    let ns = NsWorkspace(fetch: { try replies.next() }, start: { branch, progress in
+        #expect(branch == "NS-12")
+        progress("Iniciando Backend...")
+        for await _ in gate.stream { break }
+    })
+
+    let running = Task { await ns.start("NS-12") }
+    while ns.activity["NS-12"]?.label != "Iniciando Backend..." { await Task.yield() }
+    #expect(ns.activity["NS-12"]?.kind == .start)
+
+    gate.continuation.yield()
+    await running.value
+    #expect(ns.activity["NS-12"] == nil)
+    #expect(ns.status == sampleStatus)
+}
+
+@Test func aFailedStopIsReportedOnTheBranch() async {
+    let replies = Replies([.success(sampleStatus), .success(sampleStatus)])
+    let ns = NsWorkspace(fetch: { try replies.next() },
+                         stop: { _, _ in throw NsFailure(message: "docker fora") })
+
+    await ns.stop("NS-12")
+    #expect(ns.actionProblems["NS-12"] == "docker fora")
+    #expect(ns.activity.isEmpty)
+
+    await ns.stop("NS-123")
+    #expect(ns.actionProblems["NS-123"] == "docker fora")
+}
+
+@Test func theInspectorShowsServicesOnlyInABranch() {
+    #expect(InspectorPane.services.shown(inBranch: true) == .services)
+    #expect(InspectorPane.services.shown(inBranch: false) == .changes)
+    #expect(InspectorPane.opening(inBranch: true) == .services)
+    #expect(InspectorPane.opening(inBranch: false) == .changes)
+}

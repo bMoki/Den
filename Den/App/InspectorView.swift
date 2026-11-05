@@ -4,28 +4,28 @@ struct InspectorView: View {
     @Binding var pane: InspectorPane
     let gitChanges: GitChangesModel
     let directory: URL
+    let branch: String?
 
     var body: some View {
+        let shown = pane.shown(inBranch: branch != nil)
         VStack(spacing: 0) {
             TopBar(leadingInset: 12) {
-                HStack(spacing: 7) {
-                    Image(systemName: "plus.forwardslash.minus")
-                        .font(.system(size: 12, weight: .medium))
-                    Text("Alterações")
-                        .font(.system(size: 13, weight: .medium))
-                    if gitChanges.changeCount > 0 {
-                        Text("\(gitChanges.changeCount)")
-                            .font(.system(size: 11, weight: .medium))
-                            .monospacedDigit()
-                            .foregroundStyle(Theme.textSecondary)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 1)
-                            .background(Theme.hoverRaised, in: Capsule())
+                HStack(spacing: 2) {
+                    if branch != nil {
+                        tab(.services, title: "Serviços", symbol: "server.rack", shown: shown)
+                    }
+                    tab(.changes, title: "Alterações", symbol: "plus.forwardslash.minus", shown: shown) {
+                        if gitChanges.changeCount > 0 {
+                            Text("\(gitChanges.changeCount)")
+                                .font(.system(size: 11, weight: .medium))
+                                .monospacedDigit()
+                                .foregroundStyle(Theme.textSecondary)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 1)
+                                .background(Theme.hoverRaised, in: Capsule())
+                        }
                     }
                 }
-                .foregroundStyle(Theme.text)
-                .padding(.horizontal, 12)
-                .frame(height: 32)
                 Spacer(minLength: 4)
                 Button {
                     withAnimation(.easeInOut(duration: 0.2)) { pane = .closed }
@@ -40,9 +40,39 @@ struct InspectorView: View {
                 .accessibilityLabel("Fechar painel")
             }
 
-            GitChangesPanel(model: gitChanges, directory: directory)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            Group {
+                if shown == .services, let branch {
+                    ServicesPanel(branch: branch)
+                } else {
+                    GitChangesPanel(model: gitChanges, directory: directory)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .background(Theme.panel)
+    }
+
+    private func tab(_ target: InspectorPane, title: String, symbol: String, shown: InspectorPane,
+                     @ViewBuilder trailing: () -> some View = { EmptyView() }) -> some View {
+        let isOn = shown == target
+        return Button {
+            pane = target
+        } label: {
+            HStack(spacing: 7) {
+                Image(systemName: symbol)
+                    .font(.system(size: 12, weight: .medium))
+                Text(title)
+                    .font(.system(size: 13, weight: .medium))
+                trailing()
+            }
+            .foregroundStyle(isOn ? Theme.text : Theme.textTertiary)
+            .padding(.horizontal, 12)
+            .frame(height: 32)
+            .background(isOn && branch != nil ? Theme.hoverRaised : .clear,
+                        in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isOn ? .isSelected : [])
     }
 }
