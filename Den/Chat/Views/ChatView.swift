@@ -17,6 +17,7 @@ struct ChatView: View {
     @AppStorage("Den.inspectorWidth") private var inspectorWidth: Double = 480
     let gitChanges: GitChangesModel
     let files: FileTree
+    let editors: EditorTabs
     @Environment(NsWorkspace.self) private var ns
 
     private static let minimumChatWidth: CGFloat = 420
@@ -37,12 +38,17 @@ struct ChatView: View {
             HStack(spacing: 0) {
                 VStack(spacing: 0) {
                     ChatHeader(chat: chat)
-                    transcript
-                    if let removedBranch {
-                        ArchivedSessionBar(branch: removedBranch)
+                    EditorTabStrip(tabs: editors, session: chat.sessionID, files: files)
+                    if let document = editors.selection(in: chat.sessionID) {
+                        EditorView(document: document, folder: chat.workingDirectory)
                     } else {
-                        ChatComposer(chat: chat, slash: slash, mentions: mentions,
-                                     keys: keys) { nearBottom = true }
+                        transcript
+                        if let removedBranch {
+                            ArchivedSessionBar(branch: removedBranch)
+                        } else {
+                            ChatComposer(chat: chat, slash: slash, mentions: mentions,
+                                         keys: keys) { nearBottom = true }
+                        }
                     }
                     TerminalPanel(sessionID: chat.sessionID, directory: chat.workingDirectory)
                 }
@@ -94,9 +100,13 @@ struct ChatView: View {
             slash.dismissed = false
             if SlashCatalog.query(in: chat.prompt) == nil { slash.group = nil }
         }
-        .onChange(of: chat.sessionID, initial: true) {
-            keys.install(chat: chat, slash: slash, mentions: mentions,
-                         zoomed: $zoomed) { nearBottom = true }
+        .onChange(of: "\(chat.sessionID)|\(isEditing)", initial: true) {
+            if isEditing {
+                keys.remove()
+            } else {
+                keys.install(chat: chat, slash: slash, mentions: mentions,
+                             zoomed: $zoomed) { nearBottom = true }
+            }
         }
         .onChange(of: chat.isBusy) {
             if !chat.isBusy {
@@ -122,15 +132,17 @@ struct ChatView: View {
 
     private var branch: String? { ns.branchName(of: chat.workingDirectory) }
 
+    private var isEditing: Bool { editors.selection(in: chat.sessionID) != nil }
+
     private var removedBranch: String? { ns.removedBranch(of: chat.workingDirectory) }
 
     private var shownPane: InspectorPane { pane.shown(inBranch: branch != nil) }
 
     private var inspector: some View {
         InspectorView(pane: $pane, gitChanges: gitChanges, files: files, sessionID: chat.sessionID,
-                      directory: chat.workingDirectory, branch: branch, removedBranch: removedBranch) { path, isDirectory in
-            mentions.mention(path, isDirectory: isDirectory, in: chat)
-        }
+                      directory: chat.workingDirectory, branch: branch, removedBranch: removedBranch,
+                      open: { editors.open($0, in: chat.sessionID) },
+                      mention: { path, isDirectory in mentions.mention(path, isDirectory: isDirectory, in: chat) })
     }
 
     private func zoom(_ data: Data) {

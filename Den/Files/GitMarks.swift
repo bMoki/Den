@@ -12,7 +12,11 @@ nonisolated struct GitMarks: Equatable, Sendable {
     private(set) var ignored: Set<String> = []
 
     func state(of node: FileNode) -> GitFileState? {
-        node.isDirectory ? folders[node.id] : states[node.id]
+        node.isDirectory ? folders[node.id] : state(ofFile: node.url)
+    }
+
+    func state(ofFile url: URL) -> GitFileState? {
+        states[url.path]
     }
 
     func isIgnoredItself(_ path: String) -> Bool {

@@ -4,6 +4,7 @@ struct FilesPanel: View {
     let tree: FileTree
     let directory: URL
     let removedBranch: String?
+    var open: (URL) -> Void
     var mention: (_ path: String, _ isDirectory: Bool) -> Void
 
     @State private var naming: FileNameRequest?
@@ -58,7 +59,7 @@ struct FilesPanel: View {
                 ForEach(tree.rows) { row in
                     FileTreeRow(row: row, isSelected: tree.selection == row.id) {
                         tree.selection = row.id
-                        tree.toggle(row.node)
+                        if row.node.isDirectory { tree.toggle(row.node) } else { open(row.node.url) }
                     }
                     .denContextMenu(menu(for: row.node))
                 }
@@ -240,24 +241,5 @@ private struct FileTreeRow: View {
         if let state = row.state { parts.append(state.accessibilityName) }
         if row.isIgnored { parts.append("ignorado pelo git") }
         return parts.joined(separator: ", ")
-    }
-}
-
-enum FileTreeMark {
-    static func letter(_ state: GitFileState) -> String {
-        switch state {
-        case .modified: "M"
-        case .added: "A"
-        case .untracked: "U"
-        case .deleted: "D"
-        case .renamed: "R"
-        case .conflicted: "!"
-        }
-    }
-
-    private static let imageExtensions: Set<String> = ["png", "jpg", "jpeg", "gif", "webp", "heic", "svg", "ico", "bmp", "tiff"]
-
-    static func isImage(_ name: String) -> Bool {
-        imageExtensions.contains((name as NSString).pathExtension.lowercased())
     }
 }

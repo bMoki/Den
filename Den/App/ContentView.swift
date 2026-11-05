@@ -7,6 +7,7 @@ struct ContentView: View {
 
     @State private var gitChanges = GitChangesModel()
     @State private var files = FileTree()
+    @State private var editors = EditorTabs()
 
     @State private var isFullScreen = false
 
@@ -55,7 +56,7 @@ struct ContentView: View {
     @ViewBuilder
     private var detail: some View {
         if let chat = workspace.active {
-            ChatView(chat: chat, gitChanges: gitChanges, files: files)
+            ChatView(chat: chat, gitChanges: gitChanges, files: files, editors: editors)
         } else if workspace.selectedID != nil {
             sessionLoading
         } else {

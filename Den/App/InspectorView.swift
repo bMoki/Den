@@ -8,6 +8,7 @@ struct InspectorView: View {
     let directory: URL
     let branch: String?
     let removedBranch: String?
+    var open: (URL) -> Void
     var mention: (_ path: String, _ isDirectory: Bool) -> Void
 
     var body: some View {
@@ -49,7 +50,7 @@ struct InspectorView: View {
                 if shown == .services, let branch {
                     ServicesPanel(branch: branch, sessionID: sessionID, directory: directory)
                 } else if shown == .files {
-                    FilesPanel(tree: files, directory: directory, removedBranch: removedBranch, mention: mention)
+                    FilesPanel(tree: files, directory: directory, removedBranch: removedBranch, open: open, mention: mention)
                 } else {
                     GitChangesPanel(model: gitChanges, directory: directory)
                 }

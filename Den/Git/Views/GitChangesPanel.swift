@@ -412,7 +412,7 @@ struct GitChangesPanel: View {
                         .padding(14)
                 }
                 ForEach(file.lines) { line in
-                    diffRow(line)
+                    GitDiffRow(line: line)
                 }
                 if file.truncated {
                     Text("Diff longo — mostrando o início")
@@ -428,51 +428,6 @@ struct GitChangesPanel: View {
         }
         .id(file.path)
         .frame(maxHeight: .infinity)
-    }
-
-    private func diffRow(_ line: GitDisplayLine) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 0) {
-            Text(line.kind == .hunk ? "⋯" : line.number.map(String.init) ?? "")
-                .foregroundStyle(Theme.textFaint)
-                .frame(width: 40, alignment: .trailing)
-                .padding(.trailing, 8)
-            Text(sign(for: line.kind))
-                .foregroundStyle(signColor(for: line.kind))
-                .frame(width: 14, alignment: .leading)
-            Text(line.text)
-                .italic(line.kind == .hunk)
-                .foregroundStyle(line.kind == .hunk ? Theme.hunk : Theme.text)
-                .fixedSize(horizontal: false, vertical: true)
-            Spacer(minLength: 8)
-        }
-        .font(.system(size: 12, design: .monospaced))
-        .padding(.vertical, 1.5)
-        .background(background(for: line.kind))
-    }
-
-    private func sign(for kind: GitDiffLine.Kind) -> String {
-        switch kind {
-        case .added: "+"
-        case .removed: "−"
-        case .hunk, .context: " "
-        }
-    }
-
-    private func signColor(for kind: GitDiffLine.Kind) -> Color {
-        switch kind {
-        case .added: Theme.added
-        case .removed: Theme.removed
-        case .hunk, .context: Theme.textFaint
-        }
-    }
-
-    private func background(for kind: GitDiffLine.Kind) -> Color {
-        switch kind {
-        case .added: Theme.addedFill
-        case .removed: Theme.removedFill
-        case .hunk: Theme.hunkFill
-        case .context: .clear
-        }
     }
 
     static func counts(of file: GitChangesModel.FileChange) -> (added: Int, removed: Int) {
