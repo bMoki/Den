@@ -10,6 +10,8 @@ nonisolated struct NsStatus: Decodable, Equatable, Sendable {
         var id: String
         var state: ServiceState
         var port: Int?
+        var session: String?
+        var error: String?
     }
 
     nonisolated struct Branch: Decodable, Equatable, Sendable {
@@ -29,7 +31,7 @@ nonisolated struct NsStatus: Decodable, Equatable, Sendable {
         }
 
         private enum CodingKeys: String, CodingKey {
-            case branch, path, services, ports
+            case branch, path, services, ports, sessions, errors
         }
 
         private enum Key: String, CodingKey, CaseIterable {
@@ -44,12 +46,19 @@ nonisolated struct NsStatus: Decodable, Equatable, Sendable {
             path = try container.decode(String.self, forKey: .path)
             let states = try? container.nestedContainer(keyedBy: Key.self, forKey: .services)
             let ports = try? container.nestedContainer(keyedBy: Key.self, forKey: .ports)
+            let sessions = try? container.nestedContainer(keyedBy: Key.self, forKey: .sessions)
+            let errors = try? container.nestedContainer(keyedBy: Key.self, forKey: .errors)
             let state = { (key: Key) in try? states?.decodeIfPresent(ServiceState.self, forKey: key) }
             let port = { (key: Key) in try? ports?.decodeIfPresent(Int.self, forKey: key) }
+            let session = { (key: Key) in try? sessions?.decodeIfPresent(String.self, forKey: key) }
+            let error = { (key: Key) in try? errors?.decodeIfPresent(String.self, forKey: key) }
             database = state(.db) ?? .parado
             databasePort = port(.db)
             services = Key.allCases.dropFirst().compactMap { key in
-                state(key).map { Service(id: key.id, state: $0, port: port(key)) }
+                state(key).map {
+                    Service(id: key.id, state: $0, port: port(key),
+                            session: session(key), error: error(key))
+                }
             }
         }
     }

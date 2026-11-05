@@ -5,7 +5,8 @@ struct TerminalPanel: View {
     let sessionID: UUID
     let directory: URL
 
-    @Environment(FreeTerminals.self) private var terminals
+    @Environment(PanelTerminals.self) private var terminals
+    @Environment(NsWorkspace.self) private var ns
     @AppStorage("Den.terminalPanelHeight") private var height: Double = 220
 
     var body: some View {
@@ -23,10 +24,11 @@ struct TerminalPanel: View {
         }
     }
 
-    private func tabs(_ open: [FreeTerminal], current: FreeTerminal) -> some View {
+    private func tabs(_ open: [PanelTerminal], current: PanelTerminal) -> some View {
         HStack(spacing: 0) {
             ForEach(open) { terminal in
-                TerminalTab(title: "Terminal livre · \(terminal.title)",
+                TerminalTab(title: terminal.title,
+                            state: state(of: terminal),
                             isSelected: terminal.id == current.id,
                             select: { terminals.select(terminal) },
                             close: { terminals.close(terminal) })
@@ -44,7 +46,8 @@ struct TerminalPanel: View {
             .help("Novo Terminal livre")
             .accessibilityLabel("Novo Terminal livre")
             Spacer(minLength: 8)
-            Text("Terminais livres se encerram quando o Thalamus fecha")
+            Text(current.isConsole ? "Fechar o Console não para o Serviço"
+                : "Terminais livres se encerram quando o Thalamus fecha")
                 .font(.system(size: 11.5))
                 .foregroundStyle(Theme.textFaint)
                 .lineLimit(1)
@@ -66,10 +69,16 @@ struct TerminalPanel: View {
         .background(Theme.panel)
         .overlay(alignment: .bottom) { Rectangle().fill(Theme.border).frame(height: 1) }
     }
+
+    private func state(of terminal: PanelTerminal) -> ServiceState? {
+        guard case .console(let branch, let service) = terminal.kind else { return nil }
+        return ns.branch(named: branch)?.services.first { $0.id == service }?.state ?? .parado
+    }
 }
 
 private struct TerminalTab: View {
     let title: String
+    let state: ServiceState?
     let isSelected: Bool
     var select: () -> Void
     var close: () -> Void
@@ -78,8 +87,12 @@ private struct TerminalTab: View {
 
     var body: some View {
         HStack(spacing: 7) {
-            Image(systemName: "terminal")
-                .font(.system(size: 11))
+            if let state {
+                ServiceDot(state: state)
+            } else {
+                Image(systemName: "terminal")
+                    .font(.system(size: 11))
+            }
             Text(title)
                 .lineLimit(1)
             Button(action: close) {
@@ -90,7 +103,7 @@ private struct TerminalTab: View {
             }
             .buttonStyle(.denGhost(radius: 4))
             .opacity(isSelected || hovering ? 1 : 0)
-            .help("Fechar Terminal livre")
+            .help(state == nil ? "Fechar Terminal livre" : "Fechar Console")
             .accessibilityLabel("Fechar \(title)")
         }
         .font(.system(size: 12))
@@ -111,7 +124,7 @@ private struct TerminalTab: View {
 }
 
 private struct TerminalHost: NSViewRepresentable {
-    let terminal: FreeTerminal
+    let terminal: PanelTerminal
 
     func makeNSView(context: Context) -> HostView {
         let host = HostView()
@@ -124,9 +137,9 @@ private struct TerminalHost: NSViewRepresentable {
     }
 
     final class HostView: NSView {
-        private var terminal: FreeTerminal?
+        private var terminal: PanelTerminal?
 
-        func show(_ terminal: FreeTerminal) {
+        func show(_ terminal: PanelTerminal) {
             self.terminal = terminal
             if terminal.view.superview !== self {
                 terminal.view.removeFromSuperview()

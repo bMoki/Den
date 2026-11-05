@@ -3,6 +3,7 @@ import SwiftUI
 struct InspectorView: View {
     @Binding var pane: InspectorPane
     let gitChanges: GitChangesModel
+    let sessionID: UUID
     let directory: URL
     let branch: String?
 
@@ -42,7 +43,7 @@ struct InspectorView: View {
 
             Group {
                 if shown == .services, let branch {
-                    ServicesPanel(branch: branch)
+                    ServicesPanel(branch: branch, sessionID: sessionID, directory: directory)
                 } else {
                     GitChangesPanel(model: gitChanges, directory: directory)
                 }

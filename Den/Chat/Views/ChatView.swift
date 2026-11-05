@@ -120,7 +120,8 @@ struct ChatView: View {
     private var shownPane: InspectorPane { pane.shown(inBranch: branch != nil) }
 
     private var inspector: some View {
-        InspectorView(pane: $pane, gitChanges: gitChanges, directory: chat.workingDirectory, branch: branch)
+        InspectorView(pane: $pane, gitChanges: gitChanges, sessionID: chat.sessionID,
+                      directory: chat.workingDirectory, branch: branch)
     }
 
     private func zoom(_ data: Data) {

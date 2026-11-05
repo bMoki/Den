@@ -115,13 +115,14 @@ private let answersStatus = #"""
         """#)
     defer { try? FileManager.default.removeItem(at: folder) }
 
-    let labels = Labels()
+    let labels = Recorder()
     try await client.start(branch: "NS-1") { labels.append($0) }
 
     let request = try String(contentsOf: folder.appending(path: "ns.request"), encoding: .utf8)
     #expect(request.contains(#""op":"start""#))
     #expect(request.contains(#""branch":"NS-1""#))
     #expect(request.contains(#""installMissingDeps":"always""#))
+    #expect(!request.contains(#""service""#))
     #expect(labels.all == ["Iniciando PostgreSQL...", "Iniciando Backend..."])
 }
 
@@ -154,13 +155,20 @@ private let answersStatus = #"""
     }
 }
 
-nonisolated private final class Labels: @unchecked Sendable {
-    private let lock = NSLock()
-    private var labels: [String] = []
+@Test func aServiceActionNamesTheService() async throws {
+    let (client, folder) = try fakeNs(#"""
+        read -r line
+        printf '%s\n' "$line" > "$0.request"
+        echo '{"type":"result","id":"1","result":{"branch":"NS-1"}}'
+        cat >/dev/null
+        """#)
+    defer { try? FileManager.default.removeItem(at: folder) }
 
-    var all: [String] { lock.withLock { labels } }
+    try await client.stop(branch: "NS-1", service: "backend") { _ in }
 
-    func append(_ label: String) { lock.withLock { labels.append(label) } }
+    let request = try String(contentsOf: folder.appending(path: "ns.request"), encoding: .utf8)
+    #expect(request.contains(#""op":"stop""#))
+    #expect(request.contains(#""service":"backend""#))
 }
 
 @Test func withAnOverrideOnlyThatPathIsTried() async throws {

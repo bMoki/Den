@@ -1,18 +1,30 @@
 import SwiftUI
 import SwiftTerm
 
-final class FreeTerminal: Identifiable {
+final class PanelTerminal: Identifiable {
+    enum Kind: Equatable {
+        case free(shell: String)
+        case console(branch: String, service: String)
+    }
+
+    struct Launch {
+        var executable: String
+        var arguments: [String] = []
+        var environment: [String]
+        var execName: String?
+        var directory: URL
+    }
+
     let id = UUID()
     let sessionID: UUID
-    let title: String
+    let kind: Kind
     let view: LocalProcessTerminalView
     var wantsFocus = true
     private let watcher: ExitWatcher
 
-    init(sessionID: UUID, directory: URL, shell: String, ended: @escaping (UUID) -> Void) {
+    init(sessionID: UUID, kind: Kind, launch: Launch, ended: @escaping (UUID) -> Void) {
         self.sessionID = sessionID
-        let name = URL(fileURLWithPath: shell).lastPathComponent
-        title = name
+        self.kind = kind
         view = LocalProcessTerminalView(frame: CGRect(x: 0, y: 0, width: 640, height: 220))
         watcher = ExitWatcher(id: id, ended: ended)
         view.processDelegate = watcher
@@ -20,10 +32,22 @@ final class FreeTerminal: Identifiable {
         view.nativeForegroundColor = NSColor(Theme.textSecondary)
         view.caretColor = NSColor(Theme.textSecondary)
         view.font = .monospacedSystemFont(ofSize: 12, weight: .regular)
-        view.startProcess(executable: shell,
-                          environment: Terminal.getEnvironmentVariables() + ["SHELL=\(shell)"],
-                          execName: "-" + name,
-                          currentDirectory: directory.path)
+        view.startProcess(executable: launch.executable,
+                          args: launch.arguments,
+                          environment: launch.environment,
+                          execName: launch.execName,
+                          currentDirectory: launch.directory.path)
+    }
+
+    var title: String {
+        switch kind {
+        case .free(let shell): "Terminal livre · \(shell)"
+        case .console(_, let service): "Console · \(service)"
+        }
+    }
+
+    var isConsole: Bool {
+        if case .console = kind { true } else { false }
     }
 
     var pid: pid_t { view.process.shellPid }
@@ -51,5 +75,5 @@ private final class ExitWatcher: LocalProcessTerminalViewDelegate {
 }
 
 extension NSEvent {
-    var isForFreeTerminal: Bool { window?.firstResponder is TerminalView }
+    var isForPanelTerminal: Bool { window?.firstResponder is TerminalView }
 }

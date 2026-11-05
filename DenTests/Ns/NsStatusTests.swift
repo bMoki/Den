@@ -36,15 +36,19 @@ let sampleStatus = NsStatus(
          "branches":[{"branch":"NS-1","slug":"ns-1","path":"/dev/worktrees/NS-1",
                       "ports":{"db":5438,"backend":8084,"frontend":3015,"manager":3021},
                       "services":{"db":"rodando","backend":"iniciando","frontend":"falhou",
-                                  "manager":"parado","reportServer":null}}]}
+                                  "manager":"parado","reportServer":null},
+                      "sessions":{"backend":"ns-ns-1-backend","frontend":"ns-ns-1-frontend",
+                                  "manager":"ns-ns-1-manager"},
+                      "errors":{"frontend":"Port 3015 is in use"}}]}
         """
     let status = try JSONDecoder().decode(NsStatus.self, from: Data(json.utf8))
     #expect(status.baseRepos == [.init(repo: "backend", path: "/dev/b")])
     #expect(status.branches == [.init(
         branch: "NS-1", path: "/dev/worktrees/NS-1",
-        services: [.init(id: "backend", state: .iniciando, port: 8084),
-                   .init(id: "frontend", state: .falhou, port: 3015),
-                   .init(id: "manager", state: .parado, port: 3021)],
+        services: [.init(id: "backend", state: .iniciando, port: 8084, session: "ns-ns-1-backend"),
+                   .init(id: "frontend", state: .falhou, port: 3015, session: "ns-ns-1-frontend",
+                         error: "Port 3015 is in use"),
+                   .init(id: "manager", state: .parado, port: 3021, session: "ns-ns-1-manager")],
         database: .rodando, databasePort: 5438)])
 }
 

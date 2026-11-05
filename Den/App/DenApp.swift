@@ -6,7 +6,7 @@ struct DenApp: App {
     @State private var worktrees: WorktreeModel
     @State private var monitor: PullRequestMonitor
     @State private var ns: NsWorkspace
-    @State private var terminals = FreeTerminals()
+    @State private var terminals = PanelTerminals()
 
     init() {
         let environment = resolveEnvironment(ProcessInfo.processInfo.environment)

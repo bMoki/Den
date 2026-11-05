@@ -19,12 +19,14 @@ actor NsClient {
 
     private nonisolated struct NoInput: Encodable {}
 
-    private nonisolated struct BranchInput: Encodable {
+    private nonisolated struct StopInput: Encodable {
         let branch: String
+        let service: String?
     }
 
     private nonisolated struct StartInput: Encodable {
         let branch: String
+        let service: String?
         let installMissingDeps = "always"
     }
 
@@ -67,13 +69,13 @@ actor NsClient {
         try await call("status", input: NoInput())
     }
 
-    func start(branch: String, progress: @escaping Progress) async throws {
-        let _: Ignored = try await call("start", input: StartInput(branch: branch),
+    func start(branch: String, service: String? = nil, progress: @escaping Progress) async throws {
+        let _: Ignored = try await call("start", input: StartInput(branch: branch, service: service),
                                         timeout: .seconds(900), progress: progress)
     }
 
-    func stop(branch: String, progress: @escaping Progress) async throws {
-        let _: Ignored = try await call("stop", input: BranchInput(branch: branch),
+    func stop(branch: String, service: String? = nil, progress: @escaping Progress) async throws {
+        let _: Ignored = try await call("stop", input: StopInput(branch: branch, service: service),
                                         timeout: .seconds(120), progress: progress)
     }
 

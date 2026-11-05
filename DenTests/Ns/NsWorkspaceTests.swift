@@ -60,7 +60,7 @@ nonisolated private final class Replies: @unchecked Sendable {
 @Test func startShowsEachStepThenRefreshes() async {
     let replies = Replies([.success(sampleStatus)])
     let gate = AsyncStream<Void>.makeStream()
-    let ns = NsWorkspace(fetch: { try replies.next() }, start: { branch, progress in
+    let ns = NsWorkspace(fetch: { try replies.next() }, start: { branch, _, progress in
         #expect(branch == "NS-12")
         progress("Iniciando Backend...")
         for await _ in gate.stream { break }
@@ -76,10 +76,40 @@ nonisolated private final class Replies: @unchecked Sendable {
     #expect(ns.status == sampleStatus)
 }
 
+@Test func restartStopsThenStartsOnlyThatService() async {
+    let replies = Replies([.success(sampleStatus)])
+    let calls = Recorder()
+    let ns = NsWorkspace(fetch: { try replies.next() },
+                         start: { branch, service, _ in calls.append("start \(branch) \(service ?? "-")") },
+                         stop: { branch, service, _ in calls.append("stop \(branch) \(service ?? "-")") })
+
+    let running = Task { await ns.restart("NS-12", service: "backend") }
+    while ns.activity["NS-12"] == nil, calls.all.isEmpty { await Task.yield() }
+    await running.value
+
+    #expect(calls.all == ["stop NS-12 backend", "start NS-12 backend"])
+    #expect(ns.activity.isEmpty)
+}
+
+@Test func aServiceActionSaysWhichServiceIsBusy() async {
+    let replies = Replies([.success(sampleStatus)])
+    let gate = AsyncStream<Void>.makeStream()
+    let ns = NsWorkspace(fetch: { try replies.next() }, stop: { _, _, _ in
+        for await _ in gate.stream { break }
+    })
+
+    let running = Task { await ns.stop("NS-12", service: "frontend") }
+    while ns.activity["NS-12"] == nil { await Task.yield() }
+    #expect(ns.activity["NS-12"] == .init(kind: .stop, label: "Parando frontend..."))
+
+    gate.continuation.yield()
+    await running.value
+}
+
 @Test func aFailedStopIsReportedOnTheBranch() async {
     let replies = Replies([.success(sampleStatus), .success(sampleStatus)])
     let ns = NsWorkspace(fetch: { try replies.next() },
-                         stop: { _, _ in throw NsFailure(message: "docker fora") })
+                         stop: { _, _, _ in throw NsFailure(message: "docker fora") })
 
     await ns.stop("NS-12")
     #expect(ns.actionProblems["NS-12"] == "docker fora")

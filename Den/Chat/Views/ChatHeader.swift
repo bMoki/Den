@@ -5,7 +5,7 @@ struct ChatHeader: View {
 
     @AppStorage(InspectorPane.storageKey) private var pane: InspectorPane = .closed
     @Environment(\.chrome) private var chrome
-    @Environment(FreeTerminals.self) private var terminals
+    @Environment(PanelTerminals.self) private var terminals
     @Environment(NsWorkspace.self) private var ns
 
     var body: some View {

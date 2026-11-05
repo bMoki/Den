@@ -2,8 +2,11 @@ import SwiftUI
 
 struct ServicesPanel: View {
     let branch: String
+    let sessionID: UUID
+    let directory: URL
 
     @Environment(NsWorkspace.self) private var ns
+    @Environment(PanelTerminals.self) private var terminals
 
     var body: some View {
         ScrollView {
@@ -14,8 +17,15 @@ struct ServicesPanel: View {
                         sectionTitle("Serviços")
                         card {
                             ForEach(Array(status.services.enumerated()), id: \.element.id) { index, service in
-                                row(name: service.id, detail: service.port.map { ":\($0)" },
-                                    state: service.state, isFirst: index == 0)
+                                VStack(spacing: 0) {
+                                    row(name: service.id, detail: service.port.map { ":\($0)" },
+                                        state: service.state, isFirst: index == 0) {
+                                        serviceActions(service)
+                                    }
+                                    if service.state == .falhou {
+                                        errorLine(service)
+                                    }
+                                }
                             }
                         }
                         sectionTitle("Banco")
@@ -103,7 +113,8 @@ struct ServicesPanel: View {
     }
 
     private func row(name: String, detail: String?, state: ServiceState,
-                     isDatabase: Bool = false, isFirst: Bool) -> some View {
+                     isDatabase: Bool = false, isFirst: Bool,
+                     @ViewBuilder actions: () -> some View = { EmptyView() }) -> some View {
         HStack(spacing: 10) {
             ServiceDot(state: state, isDatabase: isDatabase)
             VStack(alignment: .leading, spacing: 1) {
@@ -120,6 +131,7 @@ struct ServicesPanel: View {
                 .font(.system(size: 11.5))
                 .foregroundStyle(state == .parado ? Theme.textTertiary : ServiceDot.color(state))
                 .frame(width: 62, alignment: .leading)
+            actions()
         }
         .padding(.leading, 12)
         .padding(.trailing, 8)
@@ -132,7 +144,70 @@ struct ServicesPanel: View {
         .overlay(alignment: .top) {
             if !isFirst { Rectangle().fill(Theme.border).frame(height: 1) }
         }
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .contain)
+    }
+
+    private func serviceActions(_ service: NsStatus.Service) -> some View {
+        let isUp = service.state == .rodando || service.state == .iniciando
+        return HStack(spacing: 1) {
+            if isUp {
+                iconAction("stop.fill", title: "Parar \(service.id)") { await ns.stop(branch, service: service.id) }
+            } else {
+                iconAction("play.fill", title: "Iniciar \(service.id)") { await ns.start(branch, service: service.id) }
+            }
+            iconAction("arrow.clockwise", title: "Reiniciar \(service.id)") {
+                await ns.restart(branch, service: service.id)
+            }
+            .disabled(service.state == .parado)
+            iconAction("terminal", title: "Abrir console de \(service.id)") { await openConsole(service) }
+                .disabled(service.session == nil || service.state == .parado)
+        }
+        .disabled(ns.activity[branch] != nil)
+    }
+
+    private func iconAction(_ symbol: String, title: String, perform: @escaping () async -> Void) -> some View {
+        Button { Task { await perform() } } label: {
+            Image(systemName: symbol)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(Theme.textSecondary)
+                .iconLabel(size: 26)
+        }
+        .buttonStyle(.denGhost(radius: 6))
+        .help(title)
+        .accessibilityLabel(title)
+    }
+
+    private func errorLine(_ service: NsStatus.Service) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "exclamationmark.triangle")
+                .font(.system(size: 10.5))
+            Text(service.error ?? "O processo terminou com erro")
+                .font(.system(size: 11, design: .monospaced))
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .help(service.error ?? "")
+            if service.session != nil {
+                Button("Ver no Console") { Task { await openConsole(service) } }
+                    .buttonStyle(.plain)
+                    .font(.system(size: 11.5, weight: .medium))
+                    .foregroundStyle(Theme.text)
+                    .underline()
+            }
+        }
+        .foregroundStyle(Theme.removed)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .background(Theme.removedFill, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+        .padding(.leading, 29)
+        .padding(.trailing, 8)
+        .padding(.bottom, 8)
+    }
+
+    private func openConsole(_ service: NsStatus.Service) async {
+        guard let session = service.session else { return }
+        await terminals.openConsole(for: sessionID, branch: branch, service: service.id,
+                                    session: session, in: directory)
     }
 }
 

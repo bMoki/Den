@@ -6,7 +6,7 @@ struct SidebarView: View {
     @Environment(WorktreeModel.self) private var worktrees
     @Environment(PullRequestMonitor.self) private var monitor
     @Environment(NsWorkspace.self) private var ns
-    @Environment(FreeTerminals.self) private var terminals
+    @Environment(PanelTerminals.self) private var terminals
     var lightsInset: CGFloat = 0
     var collapse: () -> Void = {}
 

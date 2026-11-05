@@ -4,7 +4,7 @@ import SwiftTerm
 import Testing
 @testable import Den
 
-private func type(_ text: String, into terminal: FreeTerminal) {
+private func type(_ text: String, into terminal: PanelTerminal) {
     terminal.view.send(data: ArraySlice(Array(text.utf8)))
 }
 
@@ -13,9 +13,9 @@ private func isAlive(_ pid: pid_t) -> Bool {
 }
 
 @MainActor
-@Test func aFreeTerminalOpensAShellInTheSessionFolder() async throws {
+@Test func aPanelTerminalOpensAShellInTheSessionFolder() async throws {
     let folder = try makeTree([])
-    let terminals = FreeTerminals(shell: "/bin/sh")
+    let terminals = PanelTerminals(shell: "/bin/sh")
     let session = UUID()
 
     let terminal = terminals.open(for: session, in: folder)
@@ -30,9 +30,9 @@ private func isAlive(_ pid: pid_t) -> Bool {
 }
 
 @MainActor
-@Test func aSessionCanHoldSeveralFreeTerminals() throws {
+@Test func aSessionCanHoldSeveralPanelTerminals() throws {
     let folder = try makeTree([])
-    let terminals = FreeTerminals(shell: "/bin/sh")
+    let terminals = PanelTerminals(shell: "/bin/sh")
     let session = UUID()
     let other = UUID()
 
@@ -50,7 +50,7 @@ private func isAlive(_ pid: pid_t) -> Bool {
 @MainActor
 @Test func closingATerminalEndsItsShell() async throws {
     let folder = try makeTree([])
-    let terminals = FreeTerminals(shell: "/bin/sh")
+    let terminals = PanelTerminals(shell: "/bin/sh")
     let session = UUID()
     let kept = terminals.open(for: session, in: folder)
     let closed = terminals.open(for: session, in: folder)
@@ -69,7 +69,7 @@ private func isAlive(_ pid: pid_t) -> Bool {
 @Test func quittingTheAppEndsEveryShell() async throws {
     let folder = try makeTree([])
     let center = NotificationCenter()
-    let terminals = FreeTerminals(shell: "/bin/sh", center: center)
+    let terminals = PanelTerminals(shell: "/bin/sh", center: center)
     let opened = [terminals.open(for: UUID(), in: folder), terminals.open(for: UUID(), in: folder)]
     #expect(await eventually { opened.allSatisfy { isAlive($0.pid) } })
     let pids = opened.map(\.pid)
@@ -83,7 +83,7 @@ private func isAlive(_ pid: pid_t) -> Bool {
 @MainActor
 @Test func aShellThatExitsLeavesThePanel() async throws {
     let folder = try makeTree([])
-    let terminals = FreeTerminals(shell: "/bin/sh")
+    let terminals = PanelTerminals(shell: "/bin/sh")
     let session = UUID()
     let terminal = terminals.open(for: session, in: folder)
 
@@ -95,7 +95,7 @@ private func isAlive(_ pid: pid_t) -> Bool {
 @MainActor
 @Test func theToggleOpensATerminalWhenTheSessionHasNone() throws {
     let folder = try makeTree([])
-    let terminals = FreeTerminals(shell: "/bin/sh")
+    let terminals = PanelTerminals(shell: "/bin/sh")
     let session = UUID()
 
     terminals.togglePanel(for: session, in: folder)
@@ -115,7 +115,7 @@ private func isAlive(_ pid: pid_t) -> Bool {
 @MainActor
 @Test func deletingASessionEndsOnlyItsShells() async throws {
     let folder = try makeTree([])
-    let terminals = FreeTerminals(shell: "/bin/sh")
+    let terminals = PanelTerminals(shell: "/bin/sh")
     let session = UUID()
     let deleted = terminals.open(for: session, in: folder)
     let kept = terminals.open(for: UUID(), in: folder)
@@ -128,4 +128,82 @@ private func isAlive(_ pid: pid_t) -> Bool {
     #expect(terminals.all.map(\.id) == [kept.id])
     #expect(!terminals.isPanelShown(for: session))
     terminals.closeAll()
+}
+
+private func fakeTmux(in folder: URL) throws -> PanelTerminals {
+    let script = folder.appending(path: "tmux")
+    try """
+        #!/bin/sh
+        here=$(dirname "$0")
+        printf '%s\\n' "$@" > "$here/tmux.args"
+        [ "$3" = "=ns-ns-1-backend" ] || exit 1
+        echo $$ > "$here/tmux.pid"
+        exec cat > "$here/tmux.keys"
+        """.write(to: script, atomically: true, encoding: .utf8)
+    try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: script.path)
+    let path = folder.path + ":/usr/bin:/bin"
+    return PanelTerminals(shell: "/bin/sh", environment: { ["PATH": path, "TMUX": "/tmp/outer,1,0"] })
+}
+
+private func contents(_ file: URL) -> String {
+    (try? String(contentsOf: file, encoding: .utf8)) ?? ""
+}
+
+@MainActor
+private func openAttachedConsole(_ terminals: PanelTerminals, for session: UUID, in folder: URL) async -> PanelTerminal {
+    let console = await terminals.openConsole(for: session, branch: "NS-1", service: "backend",
+                                              session: "ns-ns-1-backend", in: folder)
+    _ = await eventually { !contents(folder.appending(path: "tmux.pid")).isEmpty }
+    return console
+}
+
+@MainActor
+@Test func aConsoleAttachesToTheServiceSessionAndTakesTheKeyboard() async throws {
+    let folder = try makeTree([])
+    let terminals = try fakeTmux(in: folder)
+    let session = UUID()
+
+    let console = await openAttachedConsole(terminals, for: session, in: folder)
+    #expect(console.title == "Console · backend")
+    #expect(contents(folder.appending(path: "tmux.args")) == "attach-session\n-t\n=ns-ns-1-backend\n")
+
+    type("r\n", into: console)
+    #expect(await eventually { contents(folder.appending(path: "tmux.keys")) == "r\n" })
+
+    let again = await terminals.openConsole(for: session, branch: "NS-1", service: "backend",
+                                            session: "ns-ns-1-backend", in: folder)
+    #expect(again.id == console.id)
+    #expect(terminals.terminals(of: session).count == 1)
+    terminals.closeAll()
+}
+
+@MainActor
+@Test func closingAConsoleOnlyDetachesItsClient() async throws {
+    let folder = try makeTree([])
+    let terminals = try fakeTmux(in: folder)
+    let session = UUID()
+    let console = await openAttachedConsole(terminals, for: session, in: folder)
+    let pidFile = folder.appending(path: "tmux.pid")
+    let client = try #require(pid_t(contents(pidFile).trimmingCharacters(in: .whitespacesAndNewlines)))
+
+    terminals.close(console)
+
+    #expect(await eventually { !isAlive(client) })
+    #expect(terminals.terminals(of: session).isEmpty)
+}
+
+@MainActor
+@Test func aConsoleWithoutASessionSaysSoAndStaysUntilEnter() async throws {
+    let folder = try makeTree([])
+    let terminals = try fakeTmux(in: folder)
+    let session = UUID()
+
+    let console = await terminals.openConsole(for: session, branch: "NS-1", service: "frontend",
+                                              session: "ns-ns-1-frontend", in: folder)
+    #expect(await eventually { contents(folder.appending(path: "tmux.args")).contains("=ns-ns-1-frontend") })
+    try await Task.sleep(for: .milliseconds(300))
+    #expect(terminals.terminals(of: session).map(\.id) == [console.id])
+
+    type("\n", into: console)
+    #expect(await eventually { terminals.terminals(of: session).isEmpty })
 }
