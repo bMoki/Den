@@ -10,6 +10,7 @@ nonisolated struct BranchRepo: Hashable, Sendable, Identifiable {
     let name: String
     let folder: URL
     let remote: GitHubRemote?
+    let gitBranch: String?
 
     var id: Key { Key(branch: branch, repo: name) }
 
@@ -19,7 +20,8 @@ nonisolated struct BranchRepo: Hashable, Sendable, Identifiable {
             zip(status.baseRepos, remotes).compactMap { base, remote in
                 let folder = URL(fileURLWithPath: branch.path).appending(path: base.repo)
                 guard FileManager.default.fileExists(atPath: folder.appending(path: ".git").path) else { return nil }
-                return BranchRepo(branch: branch.branch, name: base.repo, folder: folder, remote: remote)
+                return BranchRepo(branch: branch.branch, name: base.repo, folder: folder, remote: remote,
+                                  gitBranch: branch.gitBranch(of: base.repo))
             }
         }
     }

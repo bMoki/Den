@@ -25,9 +25,9 @@ private struct Rig {
     }
 }
 
-func branchRepo(_ branch: String, _ name: String = "api", host: String = "github.com") -> BranchRepo {
+func branchRepo(_ branch: String, _ name: String = "api", host: String = "github.com", gitBranch: String? = nil) -> BranchRepo {
     BranchRepo(branch: branch, name: name, folder: URL(fileURLWithPath: "/wt/\(branch)/\(name)"),
-               remote: GitHubRemote(host: host, owner: "den", name: name))
+               remote: GitHubRemote(host: host, owner: "den", name: name), gitBranch: gitBranch ?? branch)
 }
 
 @MainActor
@@ -325,4 +325,78 @@ private func makeRig(branches: Int = 1, host: String = "github.com", limit: Int 
     rig.monitor.track([], branches: [])
 
     #expect(await rig.ticked(after: 20) == 1)
+}
+
+@MainActor
+@Test func theRepoIsCheckedByTheGitBranchItHasCheckedOut() async {
+    let rig = makeRig()
+    rig.monitor.track([branchRepo("NS-0", gitBranch: "fix/trocada")], branches: ["NS-0"])
+    rig.monitor.appear("NS-0")
+
+    await rig.monitor.tick()
+
+    #expect(await rig.fetcher.branches == ["fix/trocada"])
+}
+
+@MainActor
+@Test func switchingTheGitBranchDropsTheOldPullRequestAndChecksAtOnce() async {
+    let rig = makeRig()
+    var old = makePullRequest(number: 7)
+    old.head = "NS-0"
+    rig.ledger.setPullRequest(old, for: rig.repo(0).id)
+    await rig.fetcher.answer(.found(makePullRequest(number: 9)))
+
+    rig.monitor.track([branchRepo("NS-0", gitBranch: "outra")], branches: ["NS-0"])
+    #expect(rig.monitor.pullRequest(for: rig.repo(0)) == nil)
+
+    await rig.monitor.tick()
+    #expect(await rig.fetcher.branches == ["outra"])
+    #expect(rig.monitor.pullRequest(for: rig.repo(0))?.number == 9)
+}
+
+@MainActor
+@Test func aPullRequestSavedForAnotherGitBranchIsDroppedWhenTheAppStarts() {
+    let rig = makeRig()
+    var saved = makePullRequest(number: 7)
+    saved.head = "NS-0"
+    rig.ledger.setPullRequest(saved, for: rig.repo(0).id)
+    rig.monitor.track([branchRepo("NS-0", gitBranch: "NS-0")], branches: ["NS-0"])
+    #expect(rig.monitor.pullRequest(for: rig.repo(0))?.number == 7)
+
+    let fresh = PullRequestMonitor(ledger: rig.ledger, fetcher: rig.fetcher, now: { rig.clock.now })
+    fresh.track([branchRepo("NS-0", gitBranch: "outra")], branches: ["NS-0"])
+
+    #expect(fresh.pullRequest(for: rig.repo(0)) == nil)
+}
+
+@MainActor
+@Test func aRepoInDetachedHeadHasNoPullRequestAndIsNeverChecked() async {
+    let rig = makeRig()
+    rig.ledger.setPullRequest(makePullRequest(), for: rig.repo(0).id)
+    let detached = BranchRepo(branch: "NS-0", name: "api", folder: URL(fileURLWithPath: "/wt/NS-0/api"),
+                              remote: GitHubRemote(host: "github.com", owner: "den", name: "api"), gitBranch: nil)
+
+    rig.monitor.track([detached], branches: ["NS-0"])
+    rig.monitor.appear("NS-0")
+    await rig.monitor.tick()
+
+    #expect(rig.monitor.pullRequest(for: detached) == nil)
+    #expect(rig.monitor.bars(for: "NS-0").isEmpty)
+    #expect(await rig.fetcher.calls.isEmpty)
+}
+
+@MainActor
+@Test func anAnswerForTheGitBranchTheRepoLeftIsDiscarded() async {
+    let rig = makeRig()
+    rig.monitor.appear("NS-0")
+    await rig.fetcher.holdFetches()
+    await rig.fetcher.answer(.found(makePullRequest(number: 3)))
+
+    let checking = Task { await rig.monitor.tick() }
+    while await rig.fetcher.running == 0 { await Task.yield() }
+    rig.monitor.track([branchRepo("NS-0", gitBranch: "outra")], branches: ["NS-0"])
+    await rig.fetcher.release()
+    await checking.value
+
+    #expect(rig.monitor.pullRequest(for: rig.repo(0)) == nil)
 }

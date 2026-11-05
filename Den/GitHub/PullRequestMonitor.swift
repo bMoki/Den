@@ -14,6 +14,7 @@ final class PullRequestMonitor {
 
     nonisolated private struct Item: Sendable {
         let target: Target
+        let gitBranch: String
         let directory: URL
         let host: String
     }
@@ -54,8 +55,12 @@ final class PullRequestMonitor {
     }
 
     func track(_ repos: [BranchRepo], branches: Set<String>) {
+        let previous = Dictionary(self.repos.map { ($0.id, $0.gitBranch) }) { first, _ in first }
         if repos != self.repos { self.repos = repos }
         ledger.keep(only: branches)
+        for repo in repos where previous[repo.id].map({ $0 != repo.gitBranch }) == true || holdsAnotherBranchPullRequest(repo) {
+            forgetPullRequest(of: repo)
+        }
         let current = Set(repos.map(\.id))
         for target in Set(due.keys).union(checked.keys).union(followUps.keys) where !current.contains(target) {
             due[target] = nil
@@ -103,7 +108,7 @@ final class PullRequestMonitor {
         await withTaskGroup(of: Void.self) { group in
             for item in ready {
                 group.addTask {
-                    let result = await fetcher.pullRequest(branch: item.target.branch, in: item.directory)
+                    let result = await fetcher.pullRequest(branch: item.gitBranch, in: item.directory)
                     await self.finish(item, with: result)
                 }
             }
@@ -211,8 +216,21 @@ final class PullRequestMonitor {
 
     private var items: [Item] {
         repos.compactMap { repo in
-            repo.remote.map { Item(target: repo.id, directory: repo.folder, host: $0.host) }
+            guard let remote = repo.remote, let gitBranch = repo.gitBranch else { return nil }
+            return Item(target: repo.id, gitBranch: gitBranch, directory: repo.folder, host: remote.host)
         }
+    }
+
+    private func holdsAnotherBranchPullRequest(_ repo: BranchRepo) -> Bool {
+        guard let pr = ledger.pullRequest(for: repo.id) else { return false }
+        return (pr.head ?? repo.branch) != repo.gitBranch
+    }
+
+    private func forgetPullRequest(of repo: BranchRepo) {
+        ledger.setPullRequest(nil, for: repo.id)
+        checked[repo.id] = nil
+        followUps[repo.id] = nil
+        due[repo.id] = repo.gitBranch == nil ? nil : now()
     }
 
     private func targets(of branch: String) -> [Target] {
@@ -249,14 +267,13 @@ final class PullRequestMonitor {
 
     private func finish(_ item: Item, with result: FetchResult) {
         inFlight.remove(item.target)
+        if case .failed(rateLimited: true) = result { penalty = min(penalty * 2, Self.ceiling / Self.visibleInterval) }
+        guard items.contains(where: { $0.target == item.target && $0.gitBranch == item.gitBranch }) else { return }
         let moment = now()
-        switch result {
-        case .found(let pr):
+        if case .found(let pr) = result {
             ledger.setPullRequest(pr, for: item.target)
             checked[item.target] = moment
             penalty = 1
-        case .failed(let rateLimited):
-            if rateLimited { penalty = min(penalty * 2, Self.ceiling / Self.visibleInterval) }
         }
         if let follow = followUps[item.target], follow <= moment { followUps[item.target] = nil }
         if let interval = interval(for: item.target) {

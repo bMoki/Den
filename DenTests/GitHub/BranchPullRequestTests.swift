@@ -87,3 +87,19 @@ import Foundation
     #expect(monitor.pullRequests(for: "NS-1").isEmpty)
     #expect(PullRequestLedger(store: PullRequestStore(url: file)).pullRequest(for: kept.id)?.number == 2)
 }
+
+@Test func eachRepoCarriesTheGitBranchNsReportsForIt() throws {
+    let root = try makeTree(["base/backend/.git", "base/frontend/.git", "wt/NS-1/backend", "wt/NS-1/frontend"],
+                            files: ["wt/NS-1/backend/.git", "wt/NS-1/frontend/.git"])
+    let bases: [NsStatus.BaseRepo] = [.init(repo: "backend", path: root.appending(path: "base/backend").path),
+                                      .init(repo: "frontend", path: root.appending(path: "base/frontend").path)]
+    let path = root.appending(path: "wt/NS-1").path
+    let reported = NsStatus(worktreesDir: nil, baseRepos: bases, branches: [
+        .init(branch: "NS-1", path: path, repos: [.init(repo: "backend", gitBranch: "fix/outra"),
+                                                  .init(repo: "frontend", gitBranch: nil)]),
+    ])
+    let older = NsStatus(worktreesDir: nil, baseRepos: bases, branches: [.init(branch: "NS-1", path: path)])
+
+    #expect(BranchRepo.list(in: reported).map(\.gitBranch) == ["fix/outra", nil])
+    #expect(BranchRepo.list(in: older).map(\.gitBranch) == ["NS-1", "NS-1"])
+}

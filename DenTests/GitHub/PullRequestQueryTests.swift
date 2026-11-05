@@ -43,7 +43,8 @@ private func entry(number: Int, state: String, updatedAt: String, isDraft: Bool 
     """
     {"number": \(number), "title": "PR \(number)", "url": "https://github.com/den/app/pull/\(number)",
      "state": "\(state)", "isDraft": \(isDraft), "additions": 1, "deletions": 0, "baseRefName": "main",
-     "reviewDecision": "", "mergeable": "UNKNOWN", "updatedAt": "\(updatedAt)", "statusCheckRollup": null}
+     "reviewDecision": "", "mergeable": "UNKNOWN", "updatedAt": "\(updatedAt)", "statusCheckRollup": null,
+     "headRefName": "den/NS-1-fix"}
     """
 }
 
@@ -117,4 +118,9 @@ private func parse(_ text: String) throws -> PullRequest? {
 
 @Test func somethingThatIsNotAListThrows() {
     #expect(throws: (any Error).self) { try parse("{\"message\": \"Not Found\"}") }
+}
+
+@Test func thePullRequestRemembersTheGitBranchItCameFrom() throws {
+    #expect(PullRequestQuery.arguments(branch: "x").last?.contains("headRefName") == true)
+    #expect(try parse("[\(entry(number: 1, state: "OPEN", updatedAt: "2026-09-30T12:00:00Z"))]")?.head == "den/NS-1-fix")
 }

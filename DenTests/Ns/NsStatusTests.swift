@@ -71,7 +71,8 @@ nonisolated let sampleStatus = NsStatus(
                                   "manager":"parado","reportServer":null},
                       "sessions":{"backend":"ns-ns-1-backend","frontend":"ns-ns-1-frontend",
                                   "manager":"ns-ns-1-manager"},
-                      "errors":{"frontend":"Port 3015 is in use"}}]}
+                      "errors":{"frontend":"Port 3015 is in use"},
+                      "repos":[{"repo":"backend","gitBranch":"fix/x"},{"repo":"frontend","gitBranch":null}]}]}
         """
     let status = try JSONDecoder().decode(NsStatus.self, from: Data(json.utf8))
     #expect(status.worktreesDir == "/dev/worktrees")
@@ -82,11 +83,19 @@ nonisolated let sampleStatus = NsStatus(
                    .init(id: "frontend", state: .falhou, port: 3015, session: "ns-ns-1-frontend",
                          error: "Port 3015 is in use"),
                    .init(id: "manager", state: .parado, port: 3021, session: "ns-ns-1-manager")],
-        database: .rodando, databasePort: 5438)])
+        database: .rodando, databasePort: 5438,
+        repos: [.init(repo: "backend", gitBranch: "fix/x"), .init(repo: "frontend", gitBranch: nil)])])
 }
 
 @Test func aBranchWithoutServiceStatesStillDecodes() throws {
     let json = #"{"baseRepos":[],"branches":[{"branch":"NS-1","path":"/w/NS-1","services":{"db":true}}]}"#
     let status = try JSONDecoder().decode(NsStatus.self, from: Data(json.utf8))
     #expect(status.branches == [.init(branch: "NS-1", path: "/w/NS-1")])
+}
+
+@Test func unreadableReposMeanNoGitBranchInsteadOfTheWorkspaceBranch() throws {
+    let json = #"{"baseRepos":[],"branches":[{"branch":"NS-1","path":"/w/NS-1","repos":"x"},{"branch":"NS-2","path":"/w/NS-2"}]}"#
+    let status = try JSONDecoder().decode(NsStatus.self, from: Data(json.utf8))
+    #expect(status.branches[0].gitBranch(of: "backend") == nil)
+    #expect(status.branches[1].gitBranch(of: "backend") == "NS-2")
 }

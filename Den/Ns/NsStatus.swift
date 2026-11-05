@@ -14,24 +14,36 @@ nonisolated struct NsStatus: Decodable, Equatable, Sendable {
         var error: String?
     }
 
+    nonisolated struct Repo: Decodable, Equatable, Sendable {
+        var repo: String
+        var gitBranch: String?
+    }
+
     nonisolated struct Branch: Decodable, Equatable, Sendable {
         var branch: String
         var path: String
         var services: [Service]
         var database: ServiceState
         var databasePort: Int?
+        var repos: [Repo]?
 
         init(branch: String, path: String, services: [Service] = [],
-             database: ServiceState = .parado, databasePort: Int? = nil) {
+             database: ServiceState = .parado, databasePort: Int? = nil, repos: [Repo]? = nil) {
             self.branch = branch
             self.path = path
             self.services = services
             self.database = database
             self.databasePort = databasePort
+            self.repos = repos
+        }
+
+        func gitBranch(of repo: String) -> String? {
+            guard let repos else { return branch }
+            return repos.first { $0.repo == repo }?.gitBranch
         }
 
         private enum CodingKeys: String, CodingKey {
-            case branch, path, services, ports, sessions, errors
+            case branch, path, services, ports, sessions, errors, repos
         }
 
         private enum Key: String, CodingKey, CaseIterable {
@@ -44,6 +56,7 @@ nonisolated struct NsStatus: Decodable, Equatable, Sendable {
             let container = try decoder.container(keyedBy: CodingKeys.self)
             branch = try container.decode(String.self, forKey: .branch)
             path = try container.decode(String.self, forKey: .path)
+            repos = container.contains(.repos) ? (try? container.decode([Repo].self, forKey: .repos)) ?? [] : nil
             let states = try? container.nestedContainer(keyedBy: Key.self, forKey: .services)
             let ports = try? container.nestedContainer(keyedBy: Key.self, forKey: .ports)
             let sessions = try? container.nestedContainer(keyedBy: Key.self, forKey: .sessions)
