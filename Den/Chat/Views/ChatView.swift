@@ -11,6 +11,7 @@ struct ChatView: View {
     @State private var zoomed: ZoomedImage?
     @State private var nearBottom = true
     @State private var scrollPosition = ScrollPosition()
+    @State private var readingSpot = ReadingSpot()
     @State private var tableLock = TableScrollLock()
 
     @AppStorage(InspectorPane.storageKey) private var pane: InspectorPane = .closed
@@ -248,13 +249,20 @@ struct ChatView: View {
                 }
                 if nearBottom != follow { nearBottom = follow }
             }
+            .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y } action: { _, offset in
+                readingSpot.offset = offset
+            }
             .onAppear {
-                nearBottom = true
-                jumpToEnd()
+                let resume = readingSpot.resume(in: chat.sessionID)
+                nearBottom = resume == nil
+                returnToReading(at: resume)
                 Task { @MainActor in
                     try? await Task.sleep(for: .milliseconds(80))
-                    jumpToEnd()
+                    returnToReading(at: resume)
                 }
+            }
+            .onDisappear {
+                readingSpot.leave(chat.sessionID, atEnd: nearBottom)
             }
             .onChange(of: chat.lines.count) { scrollToEnd() }
             .onChange(of: chat.streaming) { scrollToEnd() }
@@ -269,6 +277,14 @@ struct ChatView: View {
             && chat.pending == nil && chat.pendingQuestion == nil
     }
 
+    private func returnToReading(at offset: CGFloat?) {
+        if let offset {
+            scrollPosition.scrollTo(y: offset)
+        } else {
+            jumpToEnd()
+        }
+    }
+
     private func jumpToEnd() {
         scrollPosition.scrollTo(edge: .bottom)
     }
@@ -278,5 +294,19 @@ struct ChatView: View {
         withAnimation(.easeOut(duration: 0.15)) {
             scrollPosition.scrollTo(edge: .bottom)
         }
+    }
+}
+
+private final class ReadingSpot {
+    var offset: CGFloat = 0
+    private var left: (session: UUID, offset: CGFloat)?
+
+    func leave(_ session: UUID, atEnd: Bool) {
+        left = atEnd ? nil : (session, offset)
+    }
+
+    func resume(in session: UUID) -> CGFloat? {
+        defer { left = nil }
+        return left?.session == session ? left?.offset : nil
     }
 }

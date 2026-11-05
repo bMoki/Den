@@ -144,7 +144,8 @@ struct EditorView: View {
         case .text:
             switch document.mode {
             case .code:
-                SourceEditor($document.text, language: document.language, configuration: .den, state: $document.editorState)
+                SourceEditor($document.text, language: document.language, configuration: .den, state: $document.editorState,
+                             undoManager: document.memory.undoManager, coordinators: [document.memory])
                     .id("\(document.url.path)#\(document.editorGeneration)")
             case .preview:
                 ScrollView {

@@ -1,4 +1,5 @@
 import CodeEditSourceEditor
+import CodeEditTextView
 import Foundation
 import Testing
 @testable import Den
@@ -328,4 +329,68 @@ private func conflicted() async throws -> (EditorDocument, URL) {
     }
 
     #expect(document.text == "agent\n")
+}
+
+@MainActor
+private func shown(_ document: EditorDocument) -> TextView {
+    let view = TextView(string: document.text)
+    view.setUndoManager(document.memory.undoManager)
+    return view
+}
+
+@Test @MainActor func undoOutlivesTheEditorViewItWasTypedIn() async throws {
+    let (document, source) = try await opened("class Main {}\n")
+    defer { try? FileManager.default.removeItem(at: source.deletingLastPathComponent()) }
+
+    let first = shown(document)
+    first.replaceCharacters(in: [NSRange(location: 12, length: 0)], with: " int a; ")
+    document.text = first.string
+
+    let second = shown(document)
+    document.memory.undoManager.undo()
+    #expect(second.string == "class Main {}\n")
+}
+
+@Test @MainActor func aReloadFromDiskKeepsTheCursorAndCanBeUndone() async throws {
+    let (document, source) = try await opened("line one\nline two\n")
+    defer { try? FileManager.default.removeItem(at: source.deletingLastPathComponent()) }
+    document.editorState.cursorPositions = [CursorPosition(line: 2, column: 5)]
+
+    try Data("new first line\nline one\nline two\n".utf8).write(to: source)
+    await document.readDisk()
+
+    #expect(document.text == "new first line\nline one\nline two\n")
+    #expect(document.editorState.cursorPositions?.map(\.start) == [CursorPosition.Position(line: 3, column: 5)])
+    let view = shown(document)
+    document.memory.undoManager.undo()
+    #expect(view.string == "line one\nline two\n")
+}
+
+@Test @MainActor func reloadingOverUnsavedTextCanBeUndoneBackToIt() async throws {
+    let (document, source) = try await conflicted()
+    defer { try? FileManager.default.removeItem(at: source.deletingLastPathComponent()) }
+
+    document.reloadFromDisk()
+    let view = shown(document)
+    document.memory.undoManager.undo()
+    #expect(view.string == "mine\n")
+}
+
+@Test func theRecordedChangeCoversOnlyWhatDiffers() {
+    #expect(EditorMemory.change(from: "abcdef", to: "abXYef") == (NSRange(location: 2, length: 2), "XY"))
+    #expect(EditorMemory.change(from: "abc", to: "abc") == (NSRange(location: 3, length: 0), ""))
+    #expect(EditorMemory.change(from: "", to: "new") == (NSRange(location: 0, length: 0), "new"))
+    #expect(EditorMemory.change(from: "aaa", to: "aa") == (NSRange(location: 2, length: 1), ""))
+    #expect(EditorMemory.change(from: "olá 👋", to: "olá 👋!") == (NSRange(location: 6, length: 0), "!"))
+}
+
+@Test func aCursorFollowsItsTextWhenLinesChangeAboveIt() {
+    let old = "a\nb\ncursor here\n"
+    let position = CursorPosition.Position(line: 3, column: 4)
+    #expect(EditorMemory.moved(position, from: old, to: "new\na\nb\ncursor here\n") == CursorPosition.Position(line: 4, column: 4))
+    #expect(EditorMemory.moved(position, from: old, to: "b\ncursor here\n") == CursorPosition.Position(line: 2, column: 4))
+    #expect(EditorMemory.moved(position, from: old, to: "a\nb\ncursor here\nmore below\n") == position)
+    #expect(EditorMemory.moved(position, from: old, to: "a\nb\ncur") == CursorPosition.Position(line: 3, column: 4))
+    #expect(EditorMemory.moved(CursorPosition.Position(line: 1, column: 2), from: "ab", to: "ab") == CursorPosition.Position(line: 1, column: 2))
+    #expect(EditorMemory.moved(CursorPosition.Position(line: 1, column: 3), from: "ab", to: "abc") == CursorPosition.Position(line: 1, column: 3))
 }

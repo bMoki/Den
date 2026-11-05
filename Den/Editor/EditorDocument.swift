@@ -21,6 +21,7 @@ final class EditorDocument: Identifiable {
     var text = ""
     var mode: Mode = .code
     var editorState = SourceEditorState()
+    let memory = EditorMemory()
     var problem: String?
     private(set) var saved = ""
     private(set) var kind: Kind = .loading
@@ -142,9 +143,15 @@ final class EditorDocument: Identifiable {
     }
 
     private func replace(with disk: String) {
+        let old = text
+        memory.recordReplacement(of: old, with: disk)
+        memory.keep(editorState.scrollPosition)
         text = disk
         saved = disk
-        editorState.cursorPositions = nil
+        editorState.cursorPositions = editorState.cursorPositions?.map { cursor in
+            let moved = EditorMemory.moved(cursor.start, from: old, to: disk)
+            return CursorPosition(line: moved.line, column: moved.column)
+        }
         editorGeneration += 1
         clearConflict()
         if mode == .diff { loadDiff() }
