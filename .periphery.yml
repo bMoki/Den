@@ -8,6 +8,11 @@ schemes:
 # HarnessKit is scanned on its own, where its tests count as users too.
 report_exclude:
   - Packages/**
+  # Sources SwiftTerm's build plugin generates.
+  - build/**
+# Periphery doesn't index SwiftTerm, so it can't see what the imports use.
+retain_unused_imported_modules:
+  - SwiftTerm
 # Properties of Codable types are read by the encoder, which Periphery can't see.
 retain_codable_properties: true
 relative_results: true

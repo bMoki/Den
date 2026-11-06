@@ -11,6 +11,8 @@
 		BE922E2A305C0F5300FFD487 /* ClaudeHarness in Frameworks */ = {isa = PBXBuildFile; productRef = BE922E29305C0F5300FFD487 /* ClaudeHarness */; };
 		BE922E2C305C0F5300FFD487 /* HarnessCore in Frameworks */ = {isa = PBXBuildFile; productRef = BE922E2B305C0F5300FFD487 /* HarnessCore */; };
 		BE922E2E305C0F5300FFD487 /* OpenCodeHarness in Frameworks */ = {isa = PBXBuildFile; productRef = BE922E2D305C0F5300FFD487 /* OpenCodeHarness */; };
+		BE7E57000000000000000F01 /* SwiftTerm in Frameworks */ = {isa = PBXBuildFile; productRef = BE7E57000000000000000F02 /* SwiftTerm */; };
+		BE7E57000000000000000F04 /* CodeEditSourceEditor in Frameworks */ = {isa = PBXBuildFile; productRef = BE7E57000000000000000F05 /* CodeEditSourceEditor */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -84,6 +86,8 @@
 				BE922E2C305C0F5300FFD487 /* HarnessCore in Frameworks */,
 				BE922E2A305C0F5300FFD487 /* ClaudeHarness in Frameworks */,
 				BE922E2E305C0F5300FFD487 /* OpenCodeHarness in Frameworks */,
+				BE7E57000000000000000F01 /* SwiftTerm in Frameworks */,
+				BE7E57000000000000000F04 /* CodeEditSourceEditor in Frameworks */,
 			);
 		};
 		BE7E570000000000000000A5 /* Frameworks */ = {
@@ -145,6 +149,8 @@
 				BE922E29305C0F5300FFD487 /* ClaudeHarness */,
 				BE922E2B305C0F5300FFD487 /* HarnessCore */,
 				BE922E2D305C0F5300FFD487 /* OpenCodeHarness */,
+				BE7E57000000000000000F02 /* SwiftTerm */,
+				BE7E57000000000000000F05 /* CodeEditSourceEditor */,
 			);
 			productName = Den;
 			productReference = BE5BD8D5305B606D00035C7F /* Den.app */;
@@ -237,6 +243,8 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				BE922E28305C0F5300FFD487 /* XCLocalSwiftPackageReference "Packages/HarnessKit" */,
+				BE7E57000000000000000F03 /* XCRemoteSwiftPackageReference "SwiftTerm" */,
+				BE7E57000000000000000F06 /* XCRemoteSwiftPackageReference "CodeEditSourceEditor" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = BE5BD8D6305B606D00035C7F /* Products */;
@@ -423,7 +431,7 @@
 		BE5BD8E1305B606E00035C7F /* Debug configuration for PBXNativeTarget "Den" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIconDev;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -440,8 +448,9 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = gabrielpassos.Den;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = gabrielpassos.Den.dev;
+				PRODUCT_MODULE_NAME = Den;
+				PRODUCT_NAME = "Den Dev";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -500,7 +509,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Den.app/Contents/MacOS/Den";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Den Dev.app/Contents/MacOS/Den Dev";
 			};
 			name = Debug;
 		};
@@ -604,6 +613,25 @@
 		};
 /* End XCLocalSwiftPackageReference section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		BE7E57000000000000000F03 /* XCRemoteSwiftPackageReference "SwiftTerm" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/migueldeicaza/SwiftTerm";
+			requirement = {
+				kind = exactVersion;
+				version = 1.99.2;
+			};
+		};
+		BE7E57000000000000000F06 /* XCRemoteSwiftPackageReference "CodeEditSourceEditor" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/CodeEditApp/CodeEditSourceEditor";
+			requirement = {
+				kind = exactVersion;
+				version = 0.15.2;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
 		BE7E570000000000000000AC /* HarnessCore */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -620,6 +648,16 @@
 		BE922E2D305C0F5300FFD487 /* OpenCodeHarness */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = OpenCodeHarness;
+		};
+		BE7E57000000000000000F02 /* SwiftTerm */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BE7E57000000000000000F03 /* XCRemoteSwiftPackageReference "SwiftTerm" */;
+			productName = SwiftTerm;
+		};
+		BE7E57000000000000000F05 /* CodeEditSourceEditor */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BE7E57000000000000000F06 /* XCRemoteSwiftPackageReference "CodeEditSourceEditor" */;
+			productName = CodeEditSourceEditor;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

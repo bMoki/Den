@@ -31,4 +31,23 @@ nonisolated struct GitHubRemote: Codable, Equatable, Hashable, Sendable {
         guard !parts[0].isEmpty, !repo.isEmpty else { return nil }
         self.init(host: host.lowercased(), owner: parts[0], name: repo)
     }
+
+    init?(originOf checkout: URL) {
+        let config = GitRepository.mainCheckout(of: checkout).appending(path: ".git/config")
+        guard let text = try? String(contentsOf: config, encoding: .utf8) else { return nil }
+        var inOrigin = false
+        for raw in text.split(whereSeparator: \.isNewline) {
+            let line = raw.trimmingCharacters(in: .whitespaces)
+            if line.hasPrefix("[") {
+                inOrigin = line == "[remote \"origin\"]"
+                continue
+            }
+            let parts = line.split(separator: "=", maxSplits: 1)
+            if inOrigin, parts.count == 2, parts[0].trimmingCharacters(in: .whitespaces) == "url" {
+                self.init(remoteURL: String(parts[1]))
+                return
+            }
+        }
+        return nil
+    }
 }

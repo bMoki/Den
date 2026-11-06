@@ -11,13 +11,15 @@ struct ChatView: View {
     @State private var zoomed: ZoomedImage?
     @State private var nearBottom = true
     @State private var scrollPosition = ScrollPosition()
+    @State private var readingSpot = ReadingSpot()
     @State private var tableLock = TableScrollLock()
 
     @AppStorage(InspectorPane.storageKey) private var pane: InspectorPane = .closed
     @AppStorage("Den.inspectorWidth") private var inspectorWidth: Double = 480
-    @Environment(RunManager.self) private var runs
-    @Environment(RunConfigurationsModel.self) private var runConfigurations
     let gitChanges: GitChangesModel
+    let files: FileTree
+    let editors: EditorTabs
+    @Environment(NsWorkspace.self) private var ns
 
     private static let minimumChatWidth: CGFloat = 420
     private static let minimumInspectorWidth: Double = 320
@@ -36,10 +38,20 @@ struct ChatView: View {
             let docked = room >= Self.minimumInspectorWidth
             HStack(spacing: 0) {
                 VStack(spacing: 0) {
-                    ChatHeader(chat: chat, runActive: runActive)
-                    transcript
-                    ChatComposer(chat: chat, slash: slash, mentions: mentions,
-                                 keys: keys) { nearBottom = true }
+                    ChatHeader(chat: chat)
+                    EditorTabStrip(tabs: editors, session: chat.sessionID, files: files)
+                    if let document = editors.selection(in: chat.sessionID) {
+                        EditorView(document: document, folder: chat.workingDirectory) { editors.close(document, in: chat.sessionID) }
+                    } else {
+                        transcript
+                        if let removedBranch {
+                            ArchivedSessionBar(branch: removedBranch)
+                        } else {
+                            ChatComposer(chat: chat, slash: slash, mentions: mentions,
+                                         keys: keys) { nearBottom = true }
+                        }
+                    }
+                    TerminalPanel(sessionID: chat.sessionID, directory: chat.workingDirectory)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Theme.canvas)
@@ -70,8 +82,8 @@ struct ChatView: View {
 
         .navigationTitle(chat.title)
         .focusedSceneValue(\.chat, chat)
-        .task(id: "\(pane == .changes)|\(chat.workingDirectory.path)") {
-            guard pane == .changes else { return }
+        .task(id: "\(shownPane == .changes)|\(chat.workingDirectory.path)") {
+            guard shownPane == .changes else { return }
             await gitChanges.load(directory: chat.workingDirectory)
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(4))
@@ -89,14 +101,18 @@ struct ChatView: View {
             slash.dismissed = false
             if SlashCatalog.query(in: chat.prompt) == nil { slash.group = nil }
         }
-        .onChange(of: chat.sessionID, initial: true) {
-            keys.install(chat: chat, slash: slash, mentions: mentions,
-                         zoomed: $zoomed) { nearBottom = true }
+        .onChange(of: "\(chat.sessionID)|\(isEditing)", initial: true) {
+            if isEditing {
+                keys.remove()
+            } else {
+                keys.install(chat: chat, slash: slash, mentions: mentions,
+                             zoomed: $zoomed) { nearBottom = true }
+            }
         }
         .onChange(of: chat.isBusy) {
             if !chat.isBusy {
                 keys.disarmEsc()
-                if pane == .changes {
+                if shownPane == .changes {
                     let gitChanges = self.gitChanges
                     let directory = chat.workingDirectory
                     Task { await gitChanges.load(directory: directory) }
@@ -112,19 +128,22 @@ struct ChatView: View {
             }
         }
         .overlay { Lightbox(zoomed: $zoomed) }
-        .followsTask(of: chat)
+        .followsPullRequests(of: branch, busy: chat.isBusy)
     }
+
+    private var branch: String? { ns.branchName(of: chat.workingDirectory) }
+
+    private var isEditing: Bool { editors.selection(in: chat.sessionID) != nil }
+
+    private var removedBranch: String? { ns.removedBranch(of: chat.workingDirectory) }
+
+    private var shownPane: InspectorPane { pane.shown(inBranch: branch != nil) }
 
     private var inspector: some View {
-        InspectorView(pane: $pane, gitChanges: gitChanges,
-                      directory: chat.workingDirectory, runRoot: runRoot,
-                      runActive: runActive)
-    }
-
-    private var runRoot: URL { runConfigurations.root(for: chat.workingDirectory) }
-
-    private var runActive: Bool {
-        runConfigurations.configurations(in: runRoot).contains { runs.isActive($0.id) }
+        InspectorView(pane: $pane, gitChanges: gitChanges, files: files, sessionID: chat.sessionID,
+                      directory: chat.workingDirectory, branch: branch, removedBranch: removedBranch,
+                      open: { editors.open($0, in: chat.sessionID) },
+                      mention: { path, isDirectory in mentions.mention(path, isDirectory: isDirectory, in: chat) })
     }
 
     private func zoom(_ data: Data) {
@@ -207,7 +226,7 @@ struct ChatView: View {
             }
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 VStack(spacing: 0) {
-                    TaskBars(chat: chat)
+                    if let branch { PullRequestBars(branch: branch) }
                     TransientCards(chat: chat) { nearBottom = true }
                 }
             }
@@ -230,13 +249,20 @@ struct ChatView: View {
                 }
                 if nearBottom != follow { nearBottom = follow }
             }
+            .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y } action: { _, offset in
+                readingSpot.offset = offset
+            }
             .onAppear {
-                nearBottom = true
-                jumpToEnd()
+                let resume = readingSpot.resume(in: chat.sessionID)
+                nearBottom = resume == nil
+                returnToReading(at: resume)
                 Task { @MainActor in
                     try? await Task.sleep(for: .milliseconds(80))
-                    jumpToEnd()
+                    returnToReading(at: resume)
                 }
+            }
+            .onDisappear {
+                readingSpot.leave(chat.sessionID, atEnd: nearBottom)
             }
             .onChange(of: chat.lines.count) { scrollToEnd() }
             .onChange(of: chat.streaming) { scrollToEnd() }
@@ -251,6 +277,14 @@ struct ChatView: View {
             && chat.pending == nil && chat.pendingQuestion == nil
     }
 
+    private func returnToReading(at offset: CGFloat?) {
+        if let offset {
+            scrollPosition.scrollTo(y: offset)
+        } else {
+            jumpToEnd()
+        }
+    }
+
     private func jumpToEnd() {
         scrollPosition.scrollTo(edge: .bottom)
     }
@@ -260,5 +294,19 @@ struct ChatView: View {
         withAnimation(.easeOut(duration: 0.15)) {
             scrollPosition.scrollTo(edge: .bottom)
         }
+    }
+}
+
+private final class ReadingSpot {
+    var offset: CGFloat = 0
+    private var left: (session: UUID, offset: CGFloat)?
+
+    func leave(_ session: UUID, atEnd: Bool) {
+        left = atEnd ? nil : (session, offset)
+    }
+
+    func resume(in session: UUID) -> CGFloat? {
+        defer { left = nil }
+        return left?.session == session ? left?.offset : nil
     }
 }

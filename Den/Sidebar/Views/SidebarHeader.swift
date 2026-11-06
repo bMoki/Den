@@ -20,8 +20,8 @@ struct SidebarHeader: View {
             },
             DenMenuItem(id: "new-session-with", title: "Nova sessão com",
                         children: [DenMenuSection(items: harnesses)]),
-            DenMenuItem(id: "new-folder", title: "Nova pasta") {
-                workspace.addFolder()
+            DenMenuItem(id: "open-folder", title: "Abrir pasta…") {
+                workspace.openFolder()
             },
         ])]
     }
@@ -35,7 +35,7 @@ struct SidebarHeader: View {
                     .foregroundStyle(Theme.textMuted)
                     .iconLabel()
             }
-            .help("Nova sessão ou nova pasta")
+            .help("Nova sessão")
             .accessibilityLabel("Nova")
             SidebarButton(title: "Recolher barra lateral", action: collapse)
         }
@@ -43,6 +43,13 @@ struct SidebarHeader: View {
         .padding(.trailing, 10)
         .frame(height: Theme.headerHeight)
         .windowDragArea()
+    }
+}
+
+extension WorkspaceModel {
+    func openFolder() {
+        guard let folder = FolderPicker.choose(prompt: "Abrir", from: workingDirectory) else { return }
+        Task { await newSession(in: folder) }
     }
 }
 

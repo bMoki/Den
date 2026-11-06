@@ -5,17 +5,7 @@ struct LocationChip: View {
     let chat: ChatModel
     var compact: Bool
 
-    @Environment(WorktreeModel.self) private var worktrees
-
     var body: some View {
-        if let worktree = worktrees.worktree(for: chat.sessionID) {
-            BranchBadge(worktree: worktree, compact: compact)
-        } else {
-            folderChip.disabled(worktrees.isCreating(chat.sessionID))
-        }
-    }
-
-    private var folderChip: some View {
         Button(action: chooseSessionFolder) {
             HStack(spacing: 6) {
                 Image(systemName: "folder")
@@ -40,12 +30,7 @@ struct LocationChip: View {
     }
 
     private func chooseSessionFolder() {
-        let panel = NSOpenPanel()
-        panel.canChooseDirectories = true
-        panel.canChooseFiles = false
-        panel.prompt = "Usar"
-        panel.directoryURL = chat.workingDirectory
-        guard panel.runModal() == .OK, let url = panel.url else { return }
+        guard let url = FolderPicker.choose(prompt: "Usar", from: chat.workingDirectory) else { return }
         Task { await chat.choose(directory: url) }
     }
 }

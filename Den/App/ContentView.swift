@@ -3,8 +3,12 @@ import HarnessCore
 
 struct ContentView: View {
     @State private var workspace: WorkspaceModel
+    @Environment(NsWorkspace.self) private var ns
+    @Environment(PanelTerminals.self) private var terminals
 
     @State private var gitChanges = GitChangesModel()
+    @State private var files = FileTree()
+    @State private var editors = EditorTabs(windows: .shared)
 
     @State private var isFullScreen = false
 
@@ -36,9 +40,22 @@ struct ContentView: View {
         .tint(Theme.accent)
         .ignoresSafeArea()
         .background(WindowChrome(isFullScreen: $isFullScreen))
+        .background(WindowCloseGuard {
+            UnsavedAlert.confirm("Salvar as alterações antes de fechar a janela?", unsaved: editors.unsaved()) { editors.settle($0) }
+        })
         .preferredColorScheme(.dark)
         .frame(minWidth: 860, minHeight: 560)
         .task { await workspace.refresh() }
+        .onChange(of: archivedSessions, initial: true) { _, archived in
+            archived.forEach(terminals.close(sessionID:))
+        }
+        .sheet(item: Binding(get: { ns.updateReports.first }, set: { if $0 == nil { ns.dismissUpdateReport() } })) { report in
+            BranchUpdateSheet(report: report, close: ns.dismissUpdateReport)
+        }
+    }
+
+    private var archivedSessions: [UUID] {
+        SidebarGroups(sessions: workspace.summaries, status: ns.status, place: ns.place(of:)).archived.map(\.id)
     }
 
     private var lightsInset: CGFloat { isFullScreen ? 0 : Theme.trafficLightsInset }
@@ -50,7 +67,7 @@ struct ContentView: View {
     @ViewBuilder
     private var detail: some View {
         if let chat = workspace.active {
-            ChatView(chat: chat, gitChanges: gitChanges)
+            ChatView(chat: chat, gitChanges: gitChanges, files: files, editors: editors)
         } else if workspace.selectedID != nil {
             sessionLoading
         } else {
@@ -163,13 +180,9 @@ private struct EmptyHeader: View {
 
 #Preview {
     let environment = DevEnvironment()
-    let ledger = TaskLedger(store: TaskWorktreeStore(url: environment.worktreesFile))
     ContentView(environment: environment)
-        .environment(RunManager())
-        .environment(RunConfigurationsModel(
-            store: RunConfigurationStore(url: environment.runConfigurationsFile)))
-        .environment(WorktreeModel(ledger: ledger, root: environment.worktreesRoot,
-                                   defaults: environment.defaults))
-        .environment(PullRequestMonitor(ledger: ledger, fetcher: GitHubCLI()))
+        .environment(PullRequestMonitor(ledger: PullRequestLedger(store: PullRequestStore(url: environment.pullRequestsFile)),
+                                        fetcher: GitHubCLI()))
+        .environment(PanelTerminals())
         .defaultAppStorage(environment.defaults)
 }

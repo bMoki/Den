@@ -10,7 +10,7 @@ private func names(_ roots: [URL], under base: URL) -> [String] {
 @Test func discoverFindsTheRepoAtTheDirectoryItself() throws {
     let root = try makeTree([".git"])
     defer { try? FileManager.default.removeItem(at: root) }
-    #expect(names(GitChangesModel.discoverRepoRoots(under: root), under: root) == [""])
+    #expect(names(GitRepository.repoRoots(under: root), under: root) == [""])
 }
 
 @Test func discoverReachesChildrenAndGrandchildren() throws {
@@ -21,7 +21,7 @@ private func names(_ roots: [URL], under base: URL) -> [String] {
     ])
     defer { try? FileManager.default.removeItem(at: root) }
 
-    let found = names(GitChangesModel.discoverRepoRoots(under: root), under: root)
+    let found = names(GitRepository.repoRoots(under: root), under: root)
     #expect(found.contains("child"))
     #expect(found.contains("middle/grandchild"))
     #expect(!found.contains("middle/other/great-grandchild"))
@@ -30,7 +30,7 @@ private func names(_ roots: [URL], under base: URL) -> [String] {
 @Test func discoverSkipsVendoredFolders() throws {
     let root = try makeTree(["node_modules/package/.git", "Pods/lib/.git", "tracked/.git"])
     defer { try? FileManager.default.removeItem(at: root) }
-    #expect(names(GitChangesModel.discoverRepoRoots(under: root), under: root) == ["tracked"])
+    #expect(names(GitRepository.repoRoots(under: root), under: root) == ["tracked"])
 }
 
 @Test func discoverClimbsToTheEnclosingRepo() throws {
@@ -38,14 +38,14 @@ private func names(_ roots: [URL], under base: URL) -> [String] {
     defer { try? FileManager.default.removeItem(at: root) }
 
     let inner = root.appending(path: "package/inner")
-    let found = GitChangesModel.discoverRepoRoots(under: inner)
+    let found = GitRepository.repoRoots(under: inner)
     #expect(found.map(\.path) == [root.standardizedFileURL.path])
 }
 
 @Test func discoverReturnsNothingOutsideAnyRepo() throws {
     let root = try makeTree(["empty/with/nothing"])
     defer { try? FileManager.default.removeItem(at: root) }
-    #expect(GitChangesModel.discoverRepoRoots(under: root).isEmpty)
+    #expect(GitRepository.repoRoots(under: root).isEmpty)
 }
 
 @Test func untrackedLinesNumberEveryLineAsAdded() throws {

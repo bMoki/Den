@@ -56,6 +56,8 @@ nonisolated enum PullRequestStatus {
         "\(pr.state.rawValue)|\(pr.isDraft)|\(checks(pr).key)|\(pr.review.rawValue)|\(pr.mergeable.rawValue)"
     }
 
+    static func number(_ pr: PullRequest) -> String { "#\(pr.number)" }
+
     static func label(_ pr: PullRequest) -> String {
         switch pr.state {
         case .merged: return "Mergeado"

@@ -25,10 +25,4 @@ import HarnessCore
         .saveMetadata(storedSession("Guardada"))
     await workspace.refresh()
     #expect(workspace.summaries.map(\.title) == ["Guardada"])
-
-    workspace.addFolder()
-    let reopened = WorkspaceModel(store: FileTranscriptStore(root: environment.sessionsRoot),
-                                  defaults: environment.defaults,
-                                  cache: SessionCache(defaults: environment.defaults))
-    #expect(reopened.folders.count == 1)
 }

@@ -8,6 +8,8 @@ nonisolated struct HarnessRegistry {
 
     static let standard = HarnessRegistry(harnesses: [ClaudeCodeHarness(), OpenCodeHarness()])
 
+    static let branchSessionHarness = HarnessID.claudeCode
+
     var ids: [HarnessID] { harnesses.map(\.id) }
 
     var fallback: HarnessID { harnesses.first?.id ?? .claudeCode }

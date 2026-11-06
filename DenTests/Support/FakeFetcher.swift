@@ -3,6 +3,7 @@ import Foundation
 
 actor FakeFetcher: PullRequestFetching {
     private(set) var calls: [String] = []
+    private(set) var branches: [String] = []
     private(set) var statusCalls = 0
     private(set) var configured: [String?] = []
     private(set) var running = 0
@@ -36,6 +37,7 @@ actor FakeFetcher: PullRequestFetching {
 
     func pullRequest(branch: String, in directory: URL) async -> FetchResult {
         calls.append(directory.path)
+        branches.append(branch)
         running += 1
         peak = max(peak, running)
         if holdingFetches { await withCheckedContinuation { waiting.append($0) } }

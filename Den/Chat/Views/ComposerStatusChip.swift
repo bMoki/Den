@@ -4,20 +4,15 @@ struct ComposerStatusChip: View {
     let chat: ChatModel
     let keys: ChatKeyMonitor
 
-    @Environment(WorktreeModel.self) private var worktrees
-
     var body: some View {
         let waiting = chat.pending != nil || chat.pendingQuestion != nil
         let interrupting = chat.isBusy && keys.escArmed
-        let note = worktrees.note(for: chat)
-        if !waiting, interrupting || note != nil || (!chat.isBusy && visibleStatus != nil) {
+        if !waiting, interrupting || (!chat.isBusy && visibleStatus != nil) {
             HStack(spacing: 7) {
                 if interrupting {
                     Image(systemName: "escape")
                         .foregroundStyle(Theme.accentSoft)
                     Text("Esc de novo interrompe")
-                } else if let note {
-                    WorktreeNoteLabel(note: note)
                 } else if let status = visibleStatus {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundStyle(Theme.modified)

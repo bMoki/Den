@@ -1,23 +1,17 @@
 import SwiftUI
-import UniformTypeIdentifiers
 import HarnessCore
-
-private final class DragTracker: NSItemProvider {
-    var onEnd: (() -> Void)?
-    deinit { onEnd?() }
-}
 
 struct SidebarView: View {
     @Bindable var workspace: WorkspaceModel
-    @Environment(WorktreeModel.self) private var worktrees
     @Environment(PullRequestMonitor.self) private var monitor
+    @Environment(NsWorkspace.self) private var ns
+    @Environment(PanelTerminals.self) private var terminals
+    private let editors = EditorWindows.shared
     var lightsInset: CGFloat = 0
     var collapse: () -> Void = {}
 
-    @State private var collapsed: Set<String> = []
-    @State private var dropTarget: String?
-    @State private var dragging: UUID?
-    @State private var dragGeneration = 0
+    @State private var toggled: Set<String> = []
+    @State private var archivedOpen = false
     @State private var pendingDelete: SessionSummary?
 
     @State private var tipTask: Task<Void, Never>?
@@ -37,52 +31,117 @@ struct SidebarView: View {
             ),
             titleVisibility: .visible
         ) {
-            Button("Apagar", role: .destructive) {
-                if let summary = pendingDelete {
-                    Task { await workspace.deleteSession(summary.id) }
-                    worktrees.forget(summary.id)
-                }
-                pendingDelete = nil
+            if pendingUnsaved.isEmpty {
+                Button("Apagar", role: .destructive) { delete(.discard) }
+            } else {
+                Button("Salvar e apagar") { delete(.saveAll) }
+                Button("Apagar sem salvar", role: .destructive) { delete(.discard) }
             }
             Button("Cancelar", role: .cancel) { pendingDelete = nil }
         } message: {
-            Text(deleteMessage)
+            let unsaved = pendingUnsaved.isEmpty ? "" : " \(UnsavedAlert.listing(pendingUnsaved))"
+            Text("A conversa e o histórico dela serão removidos permanentemente.\(unsaved)")
+        }
+        .sheet(isPresented: Binding(
+            get: { ns.creation?.isPresented == true },
+            set: { if !$0 { ns.creation?.isPresented = false } }
+        )) {
+            if let creation = ns.creation {
+                NewBranchSheet(creation: creation) { create(with: creation) }
+            }
+        }
+        .sheet(item: Binding(get: { ns.removal }, set: { if $0 == nil { ns.cancelRemoval() } })) { removal in
+            RemoveBranchSheet(removal: removal, cancel: ns.cancelRemoval) { purge in
+                Task { await ns.remove(removal.branch, purge: purge) }
+            }
+        }
+    }
+
+    private var pendingUnsaved: [EditorDocument] {
+        pendingDelete.map { editors.unsaved(in: $0.id) } ?? []
+    }
+
+    private func delete(_ choice: UnsavedChoice) {
+        guard let summary = pendingDelete else { return }
+        pendingDelete = nil
+        let unsaved = editors.unsaved(in: summary.id)
+        guard editors.settle(choice, in: summary.id) else {
+            UnsavedAlert.tellFailure(unsaved.filter(\.isDirty))
+            Task { await workspace.select(summary.id) }
+            return
+        }
+        editors.closeSession(summary.id)
+        terminals.close(sessionID: summary.id)
+        Task { await workspace.deleteSession(summary.id) }
+    }
+
+    private func create(with creation: BranchCreation) {
+        Task {
+            await creation.create { root in
+                await workspace.newSession(in: root, harness: HarnessRegistry.branchSessionHarness)
+            }
         }
     }
 
     // MARK: - List
 
+    private var groups: SidebarGroups {
+        SidebarGroups(sessions: workspace.summaries, status: ns.status, search: workspace.search, place: ns.place(of:))
+    }
+
     private var list: some View {
-        ScrollView {
+        let groups = groups
+        return ScrollView {
             LazyVStack(alignment: .leading, spacing: 1) {
-                sectionTitle("Pastas") {
-                    Button {
-                        workspace.addFolder()
-                    } label: {
+                if let problem = ns.problem {
+                    NsProblemNotice(problem: problem, keepsLastBranches: ns.status != nil)
+                }
+
+                if ns.status != nil {
+                    sectionTitle("Branches de workspace") {
+                        Button(action: ns.newBranch) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "plus")
+                                    .font(.system(size: 10, weight: .semibold))
+                                Text("Branch")
+                                    .font(.system(size: 12))
+                            }
+                            .foregroundStyle(Theme.textMuted)
+                            .padding(.horizontal, 8)
+                            .frame(height: 24)
+                        }
+                        .buttonStyle(.denGhost(radius: 6))
+                        .help("Nova Branch de workspace")
+                        .accessibilityLabel("Nova Branch de workspace")
+                    }
+                    ForEach(groups.branches) { folder($0, isBranch: true) }
+                }
+
+                if !groups.baseRepos.isEmpty {
+                    sectionTitle("Repos base") { EmptyView() }
+                        .padding(.top, 14)
+                    ForEach(groups.baseRepos) { folder($0) }
+                }
+
+                sectionTitle("Outras pastas") {
+                    Button(action: workspace.openFolder) {
                         Image(systemName: "plus")
                             .font(.system(size: 11, weight: .semibold))
                             .foregroundStyle(Theme.textTertiary)
                             .iconLabel(size: 22)
                     }
                     .buttonStyle(.denGhost(radius: 6))
-                    .help("Nova pasta")
-                    .accessibilityLabel("Nova pasta")
+                    .help("Abrir pasta")
+                    .accessibilityLabel("Abrir pasta")
+                }
+                .padding(.top, ns.status == nil ? 0 : 14)
+                ForEach(groups.otherFolders) { folder($0, detail: Self.parent(of: $0.path)) }
+
+                if !groups.archived.isEmpty {
+                    archived(groups.archived)
                 }
 
-                ForEach(workspace.folderGroups) { group in
-                    folder(group)
-                }
-
-                sectionTitle("Sessões") { EmptyView() }
-                    .padding(.top, workspace.folderGroups.isEmpty ? 0 : 14)
-
-                NewSessionRow(workspace: workspace)
-
-                ForEach(workspace.looseSessions) { summary in
-                    row(for: summary, in: nil)
-                }
-
-                if workspace.folderGroups.isEmpty, workspace.looseSessions.isEmpty {
+                if groups.isEmpty {
                     SidebarEmptyList(search: workspace.search)
                 }
             }
@@ -91,14 +150,36 @@ struct SidebarView: View {
         }
         .scrollIndicators(.never)
         .frame(maxHeight: .infinity)
-        .onDrop(of: [.plainText], isTargeted: nil) { providers in
-            receiveDrop(providers, into: nil)
-        }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("Sidebar")
         .onChange(of: workspace.summaries, initial: true) {
-            monitor.noteActivity(Dictionary(workspace.summaries.map { ($0.id, $0.updatedAt) },
-                                            uniquingKeysWith: { max($0, $1) }))
+            monitor.noteActivity(Dictionary(workspace.summaries.compactMap { summary in
+                ns.branchName(of: summary.workingDirectory).map { ($0, summary.updatedAt) }
+            }, uniquingKeysWith: { max($0, $1) }))
+        }
+    }
+
+    @ViewBuilder
+    private func archived(_ sessions: [SessionSummary]) -> some View {
+        let isOpen = archivedOpen || !workspace.search.isEmpty
+        Button {
+            withAnimation(.easeInOut(duration: 0.22)) { archivedOpen.toggle() }
+        } label: {
+            sectionTitle("Arquivadas") {
+                SessionCountLabel(count: sessions.count)
+                DisclosureChevron(isOpen: isOpen)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .padding(.top, 14)
+        .accessibilityLabel("Arquivadas")
+        .accessibilityValue(isOpen ? "aberta" : "fechada")
+        if isOpen {
+            VStack(alignment: .leading, spacing: 1) {
+                ForEach(sessions) { row(for: $0) }
+            }
+            .transition(.opacity)
         }
     }
 
@@ -116,60 +197,73 @@ struct SidebarView: View {
         .frame(height: 28)
     }
 
+    private func isOpen(_ folder: SidebarGroups.Folder) -> Bool {
+        let opensByDefault = !folder.sessions.isEmpty
+        let flipped = toggled.contains(folder.id)
+        return !workspace.search.isEmpty || (flipped ? !opensByDefault : opensByDefault)
+    }
+
     @ViewBuilder
-    private func folder(_ group: WorkspaceModel.Group) -> some View {
-        let isOpen = !collapsed.contains(group.id)
-        FolderHeader(
-            name: group.name,
-            count: group.sessions.count,
-            isOpen: isOpen,
-            isDropTarget: dropTarget == group.id,
-            toggle: { toggleCollapse(group.id) },
-            rename: { workspace.renameFolder(group.id, to: $0) },
-            newSession: { Task { await workspace.newSession(assignedTo: group.id) } },
-            remove: { workspace.removeFolder(group.id) }
-        )
-        .onDrop(of: [.plainText], isTargeted: dropBinding(group.id)) { providers in
-            receiveDrop(providers, into: group.id)
-        }
-        .onDrag {
-            dragging = nil
-            return NSItemProvider(object: ("folder:" + group.id) as NSString)
-        } preview: {
-            HStack(spacing: 6) {
-                Image(systemName: "folder.fill")
-                    .foregroundStyle(Theme.accent)
-                Text(group.name).font(.system(size: 13, weight: .semibold))
+    private func folder(_ folder: SidebarGroups.Folder, isBranch: Bool = false,
+                        detail: String? = nil) -> some View {
+        let isOpen = isOpen(folder)
+        Group {
+            if isBranch {
+                BranchHeader(
+                    name: folder.name,
+                    branch: ns.branch(named: folder.name),
+                    activity: ns.activity[folder.name],
+                    problem: ns.actionProblems[folder.name],
+                    pullRequests: monitor.pullRequests(for: folder.name).map(\.pullRequest),
+                    sessionCount: folder.sessions.count,
+                    isOpen: isOpen,
+                    toggle: { toggle(folder) },
+                    newSession: { Task { await workspace.newSession(in: folder.path) } },
+                    start: { Task { await ns.start(folder.name) } },
+                    stop: { Task { await ns.stop(folder.name) } },
+                    update: { Task { await ns.update(folder.name) } },
+                    remove: { Task { await ns.askToRemove(folder.name) } }
+                )
+            } else {
+                FolderHeader(
+                    name: folder.name,
+                    detail: detail,
+                    sessionCount: folder.sessions.count,
+                    isOpen: isOpen,
+                    toggle: { toggle(folder) },
+                    newSession: { Task { await workspace.newSession(in: folder.path) } }
+                )
             }
-            .foregroundStyle(Theme.text)
-            .padding(.vertical, 7)
-            .padding(.horizontal, 12)
-            .background(Theme.hoverRaised, in: RoundedRectangle(cornerRadius: 8))
         }
         .hoverTip({ anchor in
-            PaneTip(title: group.name,
-                    detail: group.sessions.count == 1
-                        ? "1 sessão" : "\(group.sessions.count) sessões",
-                    indicator: nil, anchor: anchor)
+            PaneTip(title: folder.name,
+                    detail: tipDetail(for: folder, isBranch: isBranch),
+                    indicator: nil, anchor: anchor,
+                    lines: isBranch ? PaneTip.Line.pullRequests(monitor.pullRequests(for: folder.name)) : [])
         }, update: { scheduleTip($0) })
 
-        if isOpen {
+        if isOpen, isBranch || !folder.sessions.isEmpty {
             VStack(alignment: .leading, spacing: 1) {
-                ForEach(group.sessions) { summary in
-                    row(for: summary, in: group.id)
-                }
-                if group.sessions.isEmpty {
-                    Text("nenhuma conversa")
-                        .font(.system(size: 12))
-                        .foregroundStyle(Theme.textFaint)
-                        .padding(.leading, 10)
-                        .frame(height: 28)
+                ForEach(folder.sessions) { row(for: $0) }
+                if isBranch {
+                    NewSessionRow(workspace: workspace, directory: folder.path)
                 }
             }
             .padding(.leading, 22)
             .padding(.bottom, 4)
             .transition(.opacity)
         }
+    }
+
+    private func tipDetail(for folder: SidebarGroups.Folder, isBranch: Bool) -> String {
+        let path = (folder.path.path as NSString).abbreviatingWithTildeInPath
+        guard isBranch else { return path }
+        guard let branch = ns.branch(named: folder.name), !branch.services.isEmpty else { return path }
+        return "\(path)\n\(branch.stateSummary)"
+    }
+
+    private static func parent(of path: URL) -> String {
+        (path.deletingLastPathComponent().path as NSString).abbreviatingWithTildeInPath
     }
 
     private func scheduleTip(_ next: PaneTip?) {
@@ -186,49 +280,19 @@ struct SidebarView: View {
         }
     }
 
-    private func badge(for summary: SessionSummary) -> TaskBadge? {
-        worktrees.worktree(for: summary.id).map {
-            TaskBadge.make(worktree: $0, pullRequests: monitor.pullRequests(for: summary.id).map(\.pullRequest))
-        }
-    }
-
-    private func hoverLines(for summary: SessionSummary) -> [PaneTip.Line] {
-        worktrees.worktree(for: summary.id).map {
-            PaneTip.Line.task($0, bars: monitor.pullRequests(for: summary.id))
-        } ?? []
-    }
-
-    private var deleteMessage: String {
-        var text = "A conversa e o histórico dela serão removidos permanentemente."
-        if let summary = pendingDelete, let worktree = worktrees.worktree(for: summary.id) {
-            text += " As worktrees em \(worktree.displayLocation) continuam no disco."
-        }
-        return text
-    }
-
-    private func row(for summary: SessionSummary, in folderID: String?) -> some View {
-        let inFolder = workspace.membership[summary.id.uuidString] != nil
-        return SessionRow(
+    private func row(for summary: SessionSummary) -> some View {
+        SessionRow(
             summary: summary,
             indicator: workspace.indicator(for: summary.id),
-            task: badge(for: summary),
             isSelected: workspace.selectedID == summary.id,
             select: { Task { await workspace.select(summary.id) } },
             rename: { name in
                 Task { await workspace.renameSession(summary.id, to: name) }
             },
-            unfile: inFolder ? {
-                withAnimation(.easeInOut(duration: 0.22)) {
-                    workspace.moveSession(summary.id, toFolder: nil)
-                }
-            } : nil,
             delete: { pendingDelete = summary }
         )
         .hoverTip({ anchor in
             var detail = [String]()
-            if inFolder, let group = workspace.folderGroups.first(where: {
-                $0.id == workspace.membership[summary.id.uuidString]
-            }) { detail.append(group.name) }
             if let harness = summary.harnesses.last {
                 detail.append(HarnessBadge.name(for: harness))
             }
@@ -236,114 +300,46 @@ struct SidebarView: View {
             return PaneTip(title: summary.title,
                            detail: detail.joined(separator: " · "),
                            indicator: workspace.indicator(for: summary.id),
-                           anchor: anchor,
-                           lines: hoverLines(for: summary))
+                           anchor: anchor)
         }, update: { scheduleTip($0) })
-        .opacity(dragging == summary.id ? 0 : 1)
-        .onDrop(of: [.plainText], delegate: SessionDropDelegate(
-            target: summary.id, areaFolderID: folderID,
-            workspace: workspace, dragging: $dragging))
-        .onDrag {
-            dragging = summary.id
-            dragGeneration += 1
-            let generation = dragGeneration
-            let provider = DragTracker(object: summary.id.uuidString as NSString)
-            provider.onEnd = {
-                Task { @MainActor in
-                    guard dragGeneration == generation else { return }
-                    withAnimation(.easeOut(duration: 0.15)) { dragging = nil }
-                }
-            }
-            return provider
-        } preview: {
-            SessionRow(
-                summary: summary,
-                indicator: workspace.indicator(for: summary.id),
-                isSelected: true,
-                select: {}, rename: { _ in }
-            )
-            .frame(width: 250, alignment: .leading)
-            .background(Theme.hoverRaised, in: RoundedRectangle(cornerRadius: 8))
-        }
     }
 
-    private func dropBinding(_ folderID: String) -> Binding<Bool> {
-        Binding(
-            get: { dropTarget == folderID },
-            set: { targeted in
-                if targeted { dropTarget = folderID }
-                else if dropTarget == folderID { dropTarget = nil }
-            }
-        )
-    }
-
-    private func receiveDrop(_ providers: [NSItemProvider], into folderID: String?) -> Bool {
-        dragging = nil
-        let readable = providers.filter { $0.canLoadObject(ofClass: NSString.self) }
-        guard !readable.isEmpty else { return false }
-        for provider in readable {
-            _ = provider.loadObject(ofClass: NSString.self) { object, _ in
-                guard let string = object as? String else { return }
-                Task { @MainActor in
-                    withAnimation(.easeInOut(duration: 0.22)) {
-                        if string.hasPrefix("folder:") {
-                            workspace.moveFolder(String(string.dropFirst(7)), before: folderID)
-                        } else if let id = UUID(uuidString: string) {
-                            workspace.moveSession(id, toFolder: folderID)
-                        }
-                    }
-                }
-            }
-        }
-        return true
-    }
-
-    private func toggleCollapse(_ id: String) {
+    private func toggle(_ folder: SidebarGroups.Folder) {
         Task { @MainActor in
             withAnimation(.easeInOut(duration: 0.22)) {
-                if collapsed.contains(id) { collapsed.remove(id) } else { collapsed.insert(id) }
+                if toggled.contains(folder.id) { toggled.remove(folder.id) } else { toggled.insert(folder.id) }
             }
         }
     }
 }
 
-private struct SessionDropDelegate: DropDelegate {
-    let target: UUID
-    let areaFolderID: String?
-    let workspace: WorkspaceModel
-    @Binding var dragging: UUID?
+private struct NsProblemNotice: View {
+    let problem: String
+    let keepsLastBranches: Bool
 
-    func dropEntered(info: DropInfo) {
-        guard let dragging, dragging != target else { return }
-        withAnimation(.easeInOut(duration: 0.18)) {
-            workspace.placeSession(dragging, near: target)
-        }
+    private var consequence: String {
+        keepsLastBranches
+            ? "As branches mostradas são as da última resposta e podem estar desatualizadas."
+            : "As sessões continuam aqui; as branches voltam quando o ns responder."
     }
 
-    func dropUpdated(info: DropInfo) -> DropProposal? {
-        DropProposal(operation: .move)
-    }
-
-    func performDrop(info: DropInfo) -> Bool {
-        defer { dragging = nil }
-        if dragging != nil { return true }
-
-        let providers = info.itemProviders(for: [.plainText])
-        guard !providers.isEmpty else { return false }
-        let workspace = self.workspace
-        let areaFolderID = self.areaFolderID
-        for provider in providers {
-            _ = provider.loadObject(ofClass: NSString.self) { object, _ in
-                guard let string = object as? String,
-                      string.hasPrefix("folder:") else { return }
-                Task { @MainActor in
-                    withAnimation(.easeInOut(duration: 0.22)) {
-                        workspace.moveFolder(String(string.dropFirst(7)),
-                                             before: areaFolderID)
-                    }
-                }
-            }
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text("ns indisponível")
+                .font(.system(size: 12, weight: .semibold))
+            Text("\(problem). \(consequence)")
+                .font(.system(size: 12))
+                .fixedSize(horizontal: false, vertical: true)
         }
-        return true
+        .foregroundStyle(Theme.alertText)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 9)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.alertFill, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous)
+            .strokeBorder(Theme.alertBorder, lineWidth: 1))
+        .padding(.horizontal, 4)
+        .padding(.bottom, 8)
+        .accessibilityElement(children: .combine)
     }
 }

@@ -2,7 +2,7 @@ import Foundation
 
 nonisolated enum PullRequestQuery {
     static let fields = "number,title,url,state,isDraft,additions,deletions,baseRefName,"
-        + "reviewDecision,mergeable,statusCheckRollup,updatedAt"
+        + "reviewDecision,mergeable,statusCheckRollup,updatedAt,headRefName"
 
     static func arguments(branch: String) -> [String] {
         ["pr", "list", "--head", branch, "--state", "all", "--limit", "5", "--json", fields]
@@ -32,6 +32,7 @@ nonisolated enum PullRequestQuery {
         let mergeable: String?
         let statusCheckRollup: [RawCheck]?
         let updatedAt: Date
+        let headRefName: String?
 
         var pullRequest: PullRequest {
             PullRequest(number: number, title: title, url: url,
@@ -42,7 +43,7 @@ nonisolated enum PullRequestQuery {
                         mergeable: mergeable == "MERGEABLE" ? .mergeable
                             : mergeable == "CONFLICTING" ? .conflicting : .unknown,
                         checks: (statusCheckRollup ?? []).map(\.checkRun),
-                        updatedAt: updatedAt)
+                        updatedAt: updatedAt, head: headRefName)
         }
     }
 

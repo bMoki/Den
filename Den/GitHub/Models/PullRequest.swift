@@ -38,4 +38,5 @@ nonisolated struct PullRequest: Codable, Equatable, Sendable {
     var mergeable: Mergeable
     var checks: [CheckRun]
     var updatedAt: Date
+    var head: String?
 }

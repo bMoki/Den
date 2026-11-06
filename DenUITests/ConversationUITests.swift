@@ -27,12 +27,10 @@ final class ConversationUITests: XCTestCase {
     }
 
     @MainActor
-    private func launch(projectSetup: String? = nil,
-                        extraEnvironment: [String: String] = [:]) -> XCUIApplication {
+    private func launch(projectSetup: String? = nil) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchEnvironment["DEN_UI_TEST_ROOT"] = root.path
         app.launchEnvironment["DEN_PROJECT_SETUP"] = projectSetup
-        app.launchEnvironment.merge(extraEnvironment) { $1 }
         for cli in [claude!, openCode!] {
             app.launchEnvironment.merge(cli.launchEnvironment) { $1 }
         }
@@ -81,97 +79,6 @@ final class ConversationUITests: XCTestCase {
     @MainActor
     private func startConversation(_ text: String, in app: XCUIApplication) {
         openComposer(in: app).typeText(text + "\n")
-    }
-
-    private let repositoryWithOrigin = """
-        git init -q -b main
-        git -c user.name=Den -c user.email=den@den.invalid -c commit.gpgsign=false commit -q --allow-empty -m init
-        git clone -q --bare . ../origin.git
-        git remote add origin https://github.com/den/fixture.git
-        git config url."$(cd ../origin.git && pwd)".insteadOf https://github.com/den/fixture.git
-        git fetch -q origin
-        git remote set-head origin main
-        """
-
-    @MainActor
-    private func element(_ identifier: String, in app: XCUIApplication) -> XCUIElement {
-        app.descendants(matching: .any).matching(identifier: identifier).firstMatch
-    }
-
-    @MainActor
-    func testTheWorktreeChipMovesTheFirstTurnIntoItsOwnWorktree() throws {
-        try claude.on(FakeCLI.userTurn, reply: RecordedSession.claude("hello"))
-        try claude.answerTitles(with: "Saudação curta")
-        let app = launch(projectSetup: repositoryWithOrigin)
-
-        let composer = openComposer(in: app)
-        let chip = element("worktree-chip", in: app)
-        require(chip, in: app)
-        chip.click()
-        composer.click()
-        composer.typeText("Diga apenas OK e nada mais.\n")
-
-        require(app.staticTexts["OK"], in: app)
-        let badge = element("worktree-branch", in: app)
-        require(badge, in: app)
-        XCTAssertEqual(badge.label, "feat/saudacao-curta")
-        require(text(containing: "⑂ feat/saudacao-curta", in: app), in: app)
-        let directory = claude.launches.last?.directory ?? ""
-        XCTAssertTrue(directory.hasSuffix("/worktrees/project/feat-saudacao-curta"), "launched in \(directory)")
-    }
-
-    private let failingPullRequest = #"""
-        [{"number":80,"title":"Diga apenas OK","url":"https://github.com/den/fixture/pull/80",
-          "state":"OPEN","isDraft":false,"additions":3,"deletions":1,"baseRefName":"main",
-          "reviewDecision":"","mergeable":"MERGEABLE","updatedAt":"2026-10-01T10:01:00Z",
-          "statusCheckRollup":[{"__typename":"CheckRun","name":"lint","workflowName":"CI",
-          "status":"COMPLETED","conclusion":"FAILURE",
-          "detailsUrl":"https://github.com/den/fixture/actions/runs/1",
-          "startedAt":"2026-10-01T10:00:00Z","completedAt":"2026-10-01T10:00:42Z"}]}]
-        """#
-
-    @MainActor
-    func testThePullRequestOfTheTaskShowsAboveTheComposerAndInTheSidebar() throws {
-        try claude.on(FakeCLI.userTurn, reply: RecordedSession.claude("hello"))
-        try claude.answerTitles(with: "Saudação curta")
-        let app = launch(projectSetup: repositoryWithOrigin,
-                         extraEnvironment: ["DEN_GH": FakeCLI.gh, "FAKE_GH_PR_LIST": failingPullRequest])
-
-        let composer = openComposer(in: app)
-        let chip = element("worktree-chip", in: app)
-        require(chip, in: app)
-        chip.click()
-        composer.click()
-        composer.typeText("Diga apenas OK e nada mais.\n")
-
-        require(element("pull-request-bar", in: app), in: app)
-        require(app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "#80")).firstMatch, in: app)
-        require(text(containing: "#80 · Checks falhando", in: app), in: app)
-        let checks = app.buttons["Checks"].firstMatch
-        require(checks, in: app)
-        checks.click()
-        require(app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "lint")).firstMatch,
-                in: app)
-    }
-
-    @MainActor
-    func testTheGitHubSetupBarAsksForALoginAndCanBeDismissed() throws {
-        try claude.on(FakeCLI.userTurn, reply: RecordedSession.claude("hello"))
-        try claude.answerTitles(with: "Saudação curta")
-        let app = launch(projectSetup: repositoryWithOrigin,
-                         extraEnvironment: ["DEN_GH": FakeCLI.gh, "FAKE_GH_AUTH_STATUS": "1"])
-
-        let composer = openComposer(in: app)
-        let chip = element("worktree-chip", in: app)
-        require(chip, in: app)
-        chip.click()
-        composer.click()
-        composer.typeText("Diga apenas OK e nada mais.\n")
-
-        let message = text(containing: "O gh precisa de login em github.com", in: app)
-        require(message, in: app)
-        app.buttons["Dispensar"].firstMatch.click()
-        XCTAssertTrue(message.waitForNonExistence(timeout: patience))
     }
 
     // MARK: - Conversation
@@ -255,15 +162,15 @@ final class ConversationUITests: XCTestCase {
         require(popover, in: app)
         let menu = popover.scrollViews["den-menu"]
         require(menu.buttons["Nova sessão"], in: app)
-        XCTAssertTrue(menu.buttons["Nova pasta"].exists)
+        XCTAssertTrue(menu.buttons["Abrir pasta…"].exists)
 
         menu.buttons["Nova sessão com"].click()
         require(popover.buttons["Voltar"], in: app)
-        XCTAssertFalse(menu.buttons["Nova pasta"].exists)
+        XCTAssertFalse(menu.buttons["Abrir pasta…"].exists)
         XCTAssertTrue(menu.buttons["Claude Code"].exists)
 
         popover.buttons["Voltar"].click()
-        require(menu.buttons["Nova pasta"], in: app)
+        require(menu.buttons["Abrir pasta…"], in: app)
     }
 
     // MARK: - Mentions
@@ -361,5 +268,27 @@ final class ConversationUITests: XCTestCase {
 
         require(app.staticTexts["Nenhuma conversa aberta"], in: app)
         XCTAssertFalse(sidebarRow("Saudação curta", in: app).exists)
+    }
+
+    @MainActor
+    func testFreeTerminalsRunAShellInTheSessionFolder() throws {
+        let app = launch()
+        _ = openComposer(in: app)
+
+        app.buttons["Mostrar Terminais livres"].click()
+        require(app.buttons["Novo Terminal livre"], in: app)
+        app.typeText("pwd -P > terminal.txt\r")
+
+        let written = root.appending(path: "project/terminal.txt")
+        let deadline = Date().addingTimeInterval(patience)
+        while Date() < deadline, (try? String(contentsOf: written, encoding: .utf8))?.isEmpty != false {
+            RunLoop.current.run(until: Date().addingTimeInterval(0.2))
+        }
+        let reported = try String(contentsOf: written, encoding: .utf8)
+        XCTAssertEqual(reported.trimmingCharacters(in: .whitespacesAndNewlines), root.path + "/project")
+
+        app.buttons["Novo Terminal livre"].click()
+        let tabs = app.staticTexts.matching(NSPredicate(format: "value BEGINSWITH %@", "Terminal livre ·"))
+        XCTAssertEqual(tabs.count, 2)
     }
 }

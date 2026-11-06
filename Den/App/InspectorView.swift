@@ -3,30 +3,33 @@ import SwiftUI
 struct InspectorView: View {
     @Binding var pane: InspectorPane
     let gitChanges: GitChangesModel
+    let files: FileTree
+    let sessionID: UUID
     let directory: URL
-    let runRoot: URL
-    let runActive: Bool
-
-    @State private var shown: InspectorPane = .changes
+    let branch: String?
+    let removedBranch: String?
+    var open: (URL) -> Void
+    var mention: (_ path: String, _ isDirectory: Bool) -> Void
 
     var body: some View {
+        let shown = pane.shown(inBranch: branch != nil)
         VStack(spacing: 0) {
             TopBar(leadingInset: 12) {
-                tab(.changes, title: "Alterações", icon: "plus.forwardslash.minus") {
-                    if gitChanges.changeCount > 0 {
-                        Text("\(gitChanges.changeCount)")
-                            .font(.system(size: 11, weight: .medium))
-                            .monospacedDigit()
-                            .foregroundStyle(Theme.textSecondary)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 1)
-                            .background(Theme.hoverRaised, in: Capsule())
+                HStack(spacing: 2) {
+                    if branch != nil {
+                        tab(.services, title: "Serviços", symbol: "server.rack", shown: shown)
                     }
-                }
-                tab(.run, title: "Execução", icon: "terminal") {
-                    if runActive {
-                        Circle().fill(Theme.added).frame(width: 7, height: 7)
-                            .accessibilityLabel("Em execução")
+                    tab(.files, title: "Arquivos", symbol: "folder", shown: shown)
+                    tab(.changes, title: "Alterações", symbol: "plus.forwardslash.minus", shown: shown) {
+                        if gitChanges.changeCount > 0 {
+                            Text("\(gitChanges.changeCount)")
+                                .font(.system(size: 11, weight: .medium))
+                                .monospacedDigit()
+                                .foregroundStyle(Theme.textSecondary)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 1)
+                                .background(Theme.hoverRaised, in: Capsule())
+                        }
                     }
                 }
                 Spacer(minLength: 4)
@@ -39,13 +42,15 @@ struct InspectorView: View {
                         .iconLabel()
                 }
                 .buttonStyle(.denGhost)
-                .help(shown == .run ? "Recolher painel (⌥⌘9)" : "Recolher painel (⌥⌘0)")
+                .help("Recolher painel (⌥⌘0)")
                 .accessibilityLabel("Fechar painel")
             }
 
             Group {
-                if shown == .run {
-                    RunPanel(root: runRoot)
+                if shown == .services, let branch {
+                    ServicesPanel(branch: branch, sessionID: sessionID, directory: directory)
+                } else if shown == .files {
+                    FilesPanel(tree: files, directory: directory, removedBranch: removedBranch, open: open, mention: mention)
                 } else {
                     GitChangesPanel(model: gitChanges, directory: directory)
                 }
@@ -53,32 +58,29 @@ struct InspectorView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .background(Theme.panel)
-        .onChange(of: pane, initial: true) {
-            if pane != .closed { shown = pane }
-        }
     }
 
-    private func tab(_ target: InspectorPane, title: String, icon: String,
-                     @ViewBuilder badge: () -> some View) -> some View {
-        let selected = shown == target
+    private func tab(_ target: InspectorPane, title: String, symbol: String, shown: InspectorPane,
+                     @ViewBuilder trailing: () -> some View = { EmptyView() }) -> some View {
+        let isOn = shown == target
         return Button {
             pane = target
         } label: {
             HStack(spacing: 7) {
-                Image(systemName: icon)
+                Image(systemName: symbol)
                     .font(.system(size: 12, weight: .medium))
                 Text(title)
-                    .font(.system(size: 13, weight: selected ? .medium : .regular))
-                badge()
+                    .font(.system(size: 13, weight: .medium))
+                trailing()
             }
-            .foregroundStyle(selected ? Theme.text : Theme.textTertiary)
+            .foregroundStyle(isOn ? Theme.text : Theme.textTertiary)
             .padding(.horizontal, 12)
             .frame(height: 32)
-            .hoverFill(selected: selected)
+            .background(isOn ? Theme.hoverRaised : .clear,
+                        in: RoundedRectangle(cornerRadius: 8, style: .continuous))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(title)
-        .accessibilityAddTraits(selected ? [.isSelected] : [])
+        .accessibilityAddTraits(isOn ? .isSelected : [])
     }
 }

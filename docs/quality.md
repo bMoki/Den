@@ -98,7 +98,7 @@ swift test --package-path Packages/HarnessKit --enable-code-coverage
 Scripts/quality/coverage package
 
 rm -rf build/app.xcresult
-xcodebuild test -project Den.xcodeproj -scheme Den -destination 'platform=macOS' \
+xcodebuild test -project Den.xcodeproj -scheme Den -destination 'platform=macOS' -skipPackagePluginValidation \
   -enableCodeCoverage YES -resultBundlePath build/app.xcresult
 Scripts/quality/coverage app build/app.xcresult
 ```
@@ -117,7 +117,7 @@ número que o job imprime antes de gravar um piso novo.
 
 ```sh
 swift test --package-path Packages/HarnessKit --sanitize=thread
-xcodebuild test -project Den.xcodeproj -scheme Den -destination 'platform=macOS' \
+xcodebuild test -project Den.xcodeproj -scheme Den -destination 'platform=macOS' -skipPackagePluginValidation \
   -enableThreadSanitizer YES
 ```
 
@@ -151,9 +151,9 @@ registrado e não bloqueia; **qualquer coisa nova bloqueia**:
 
 | Arquivo | O que guarda |
 |---|---|
-| `.swiftlint-baseline.json` | violações do SwiftLint que já existiam (funções e arquivos longos, force unwraps, `master`/`slave` no PTY…) e os comentários que já estavam no código |
+| `.swiftlint-baseline.json` | violações do SwiftLint que já existiam (funções e arquivos longos, force unwraps…) e os comentários que já estavam no código |
 | `.jscpd-baseline.json` | clones que já existiam (ex.: `ControlChannel` × `ACPChannel`, `ClaudeDiscovery` × `OpenCodeDiscovery`, vários testes) |
-| `.periphery-baseline.json` | o que o Periphery acha no app e não dá para apagar: `@State` usado só via `$`, exigência de protocolo que o app ainda não chama, propriedade lida só pelo `Equatable` sintetizado, e `RunInstance.configurationID` |
+| `.periphery-baseline.json` | o que o Periphery acha no app e não dá para apagar: `@State` usado só via `$`, exigência de protocolo que o app ainda não chama, e propriedade lida só pelo `Equatable` sintetizado |
 | `.mutation-baseline.json` | mutantes que já sobreviviam no HarnessKit, casados pelo texto da linha |
 
 Para limites de tamanho, o SwiftLint compara a mensagem inteira (“a função tem

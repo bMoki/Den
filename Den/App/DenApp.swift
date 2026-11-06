@@ -2,23 +2,18 @@ import SwiftUI
 
 @main
 struct DenApp: App {
-    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+    @NSApplicationDelegateAdaptor private var delegate: DenAppDelegate
     private let environment: any AppEnvironment
-    @State private var runConfigurations: RunConfigurationsModel
-    @State private var worktrees: WorktreeModel
     @State private var monitor: PullRequestMonitor
+    @State private var ns: NsWorkspace
+    @State private var terminals = PanelTerminals()
 
     init() {
         let environment = resolveEnvironment(ProcessInfo.processInfo.environment)
         self.environment = environment
-        _runConfigurations = State(initialValue: RunConfigurationsModel(
-            store: RunConfigurationStore(url: environment.runConfigurationsFile)))
-        let ledger = TaskLedger(store: TaskWorktreeStore(url: environment.worktreesFile))
-        _worktrees = State(initialValue: WorktreeModel(
-            ledger: ledger, root: environment.worktreesRoot, defaults: environment.defaults,
-            registry: environment.registry))
+        _ns = State(initialValue: NsWorkspace.live(environment))
         _monitor = State(initialValue: PullRequestMonitor(
-            ledger: ledger,
+            ledger: PullRequestLedger(store: PullRequestStore(url: environment.pullRequestsFile)),
             fetcher: GitHubCLI(override: environment.ghOverride,
                                configured: environment.defaults.string(forKey: GitHubCLI.pathKey))))
     }
@@ -26,12 +21,13 @@ struct DenApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView(environment: environment)
-                .environment(appDelegate.runs)
-                .environment(runConfigurations)
-                .environment(worktrees)
                 .environment(monitor)
+                .environment(ns)
+                .environment(terminals)
                 .defaultAppStorage(environment.defaults)
                 .task { monitor.start() }
+                .task { await ns.watch() }
+                .task(id: ns.status) { await track(ns.status) }
         }
 
         .commands { HarnessCommands() }
@@ -44,5 +40,21 @@ struct DenApp: App {
                 .environment(monitor)
                 .defaultAppStorage(environment.defaults)
         }
+    }
+
+    private func track(_ status: NsStatus?) async {
+        guard let status else { return }
+        let repos = await Task.detached { BranchRepo.list(in: status) }.value
+        guard !Task.isCancelled else { return }
+        monitor.track(repos, branches: Set(status.branches.map(\.branch)))
+    }
+}
+
+final class DenAppDelegate: NSObject, NSApplicationDelegate {
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        let leaves = UnsavedAlert.confirm("Salvar as alterações antes de sair?", unsaved: EditorWindows.shared.unsaved()) {
+            EditorWindows.shared.settle($0)
+        }
+        return leaves ? .terminateNow : .terminateCancel
     }
 }

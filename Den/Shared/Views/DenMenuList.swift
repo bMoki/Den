@@ -4,6 +4,8 @@ struct DenMenuChip<Label: View>: View {
     var sections: [DenMenuSection]
     var bordered = false
     var radius: CGFloat = 8
+    var arrowEdge = Edge.top
+    var opened: () -> Void = {}
     @ViewBuilder var label: () -> Label
 
     @State private var isOpen = false
@@ -18,7 +20,8 @@ struct DenMenuChip<Label: View>: View {
             .opacity(isEnabled ? 1 : 0.5)
             .onHover { hovering = isEnabled && $0 }
             .animation(.easeOut(duration: 0.12), value: hovering)
-            .popover(isPresented: $isOpen, arrowEdge: .top) {
+            .onChange(of: isOpen) { if isOpen { opened() } }
+            .popover(isPresented: $isOpen, arrowEdge: arrowEdge) {
                 DenMenuList(sections: sections) { isOpen = false }
                     .presentationBackground(Theme.raised)
                     .environment(\.colorScheme, .dark)
@@ -150,6 +153,10 @@ private struct DenMenuRow: View {
             Image(systemName: "checkmark")
                 .font(.system(size: 10, weight: .semibold))
                 .foregroundStyle(Theme.accent)
+        } else if let shortcut = item.shortcut {
+            Text(shortcut)
+                .font(.system(size: 11, design: .monospaced))
+                .foregroundStyle(Theme.textTertiary)
         }
     }
 }

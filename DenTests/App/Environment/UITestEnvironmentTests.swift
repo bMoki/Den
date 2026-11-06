@@ -24,9 +24,7 @@ private func scratchRoot() -> URL {
     #expect(environment.sessionsRoot.path.hasPrefix(root.path))
     #expect(environment.attachmentsRoot.path.hasPrefix(root.path))
     #expect(environment.workingDirectory.path.hasPrefix(root.path))
-    #expect(environment.runConfigurationsFile.path.hasPrefix(root.path))
-    #expect(environment.worktreesRoot.path.hasPrefix(root.path))
-    #expect(environment.worktreesFile.path.hasPrefix(root.path))
+    #expect(environment.pullRequestsFile.path.hasPrefix(root.path))
     #expect(FileManager.default.fileExists(atPath: environment.workingDirectory.path))
     #expect(environment.defaults != .standard)
 }
@@ -122,4 +120,30 @@ private func scratchRoot() -> URL {
 
     #expect(pinned.ghOverride == "/fake/gh")
     #expect(plain.ghOverride == nil)
+}
+
+@Test func uiTestsNeverReachTheRealNs() throws {
+    let root = scratchRoot()
+    defer { try? FileManager.default.removeItem(at: root) }
+
+    let pinned = try #require(UITestEnvironment([
+        UITestEnvironment.rootKey: root.path,
+        UITestEnvironment.nsKey: "/fake/ns",
+    ]))
+    let plain = try #require(UITestEnvironment([UITestEnvironment.rootKey: root.path]))
+
+    #expect(pinned.nsOverride == "/fake/ns")
+    #expect(plain.nsOverride == "")
+}
+
+@Test func anNsPathInThePreferencesPointsTheAppAtThatBinary() {
+    let scratch = ScratchDefaults()
+    defer { scratch.remove() }
+    let environment = TestEnvironment(root: scratchRoot(), defaults: scratch.defaults)
+
+    #expect(environment.nsOverride == nil)
+    scratch.defaults.set("", forKey: NsClient.pathKey)
+    #expect(environment.nsOverride == nil)
+    scratch.defaults.set("/Users/me/.local/bin/ns-nucleo", forKey: NsClient.pathKey)
+    #expect(environment.nsOverride == "/Users/me/.local/bin/ns-nucleo")
 }

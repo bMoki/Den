@@ -54,6 +54,12 @@ nonisolated enum GitParsing {
         return entries
     }
 
+    static func ignoredPaths(fromPorcelain output: String) -> [String] {
+        output.split(separator: "\0").compactMap { token in
+            token.hasPrefix("!! ") ? String(token.dropFirst(3)) : nil
+        }
+    }
+
     private static func state(staged: Character, unstaged: Character) -> GitFileState? {
         switch (staged, unstaged) {
         case ("?", _): .untracked
