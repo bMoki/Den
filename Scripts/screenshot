@@ -59,7 +59,7 @@ case "$output" in
     *) output=$repo/$output ;;
 esac
 
-app=build/DerivedData/Build/Products/Debug/Den.app
+app="build/DerivedData/Build/Products/Debug/Den Dev.app"
 if [ "$build" = yes ]; then
     xcodebuild build -quiet \
         -project Den.xcodeproj -scheme Den -configuration Debug \
@@ -88,7 +88,7 @@ env "DEN_UI_TEST_ROOT=$root" \
     "FAKE_NS_STATUS=$ns_status" \
     "DEN_CLI_claude-code=$repo/Scripts/fake-cli/claude-code" \
     "DEN_CLI_opencode=$repo/Scripts/fake-cli/opencode" \
-    "$app/Contents/MacOS/Den" >"$root/app.log" 2>&1 &
+    "$app/Contents/MacOS/Den Dev" >"$root/app.log" 2>&1 &
 pid=$!
 
 cleanup() {
