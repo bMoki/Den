@@ -5,8 +5,6 @@ struct ServiceDot: View {
     var isDatabase = false
     var size: CGFloat = 7
 
-    @State private var dimmed = false
-
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: isDatabase ? 2 : size / 2, style: .continuous)
         Group {
@@ -17,12 +15,7 @@ struct ServiceDot: View {
             }
         }
         .frame(width: size, height: size)
-        .opacity(state == .iniciando && dimmed ? 0.35 : 1)
-        .task(id: state) {
-            dimmed = false
-            guard state == .iniciando else { return }
-            withAnimation(.easeInOut(duration: 0.55).repeatForever()) { dimmed = true }
-        }
+        .pulsing(state == .iniciando)
         .accessibilityHidden(true)
     }
 

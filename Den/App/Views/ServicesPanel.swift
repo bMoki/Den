@@ -24,7 +24,7 @@ struct ServicesPanel: View {
                             ForEach(Array(status.services.enumerated()), id: \.element.id) { index, service in
                                 VStack(spacing: 0) {
                                     row(name: service.id, detail: service.port.map { ":\($0)" },
-                                        state: service.state, isFirst: index == 0) {
+                                        state: service.state, indicator: .service(service.id), isFirst: index == 0) {
                                         serviceActions(service)
                                     }
                                     if service.state == .falhou {
@@ -36,7 +36,7 @@ struct ServicesPanel: View {
                         sectionTitle("Banco")
                         card {
                             row(name: "postgres", detail: status.databasePort.map { ":\($0)" },
-                                state: status.database, isDatabase: true, isFirst: true) {
+                                state: status.database, indicator: .database, isFirst: true) {
                                 iconAction("arrow.up.forward.app", title: BranchActionTitle.openDatabase, perform: openDatabase)
                                     .disabled(ns.activity[branch] != nil)
                                 DenMenuChip(sections: databaseMenu, radius: 6, arrowEdge: .leading, opened: { Task { await ns.loadSnapshots() } }, label: {
@@ -198,10 +198,10 @@ struct ServicesPanel: View {
     }
 
     private func row(name: String, detail: String?, state: ServiceState,
-                     isDatabase: Bool = false, isFirst: Bool,
+                     indicator: IndicatorTarget, isFirst: Bool,
                      @ViewBuilder actions: () -> some View = { EmptyView() }) -> some View {
         HStack(spacing: 10) {
-            ServiceDot(state: state, isDatabase: isDatabase)
+            ServiceIndicator(indicator, state: state, iconSize: 14)
             VStack(alignment: .leading, spacing: 1) {
                 Text(name)
                     .font(.system(size: 13, weight: .medium))

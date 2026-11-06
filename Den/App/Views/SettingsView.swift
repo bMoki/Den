@@ -2,10 +2,14 @@ import SwiftUI
 import AppKit
 
 struct SettingsView: View {
+    let defaults: UserDefaults
+
     var body: some View {
         TabView {
             GitHubSettings()
                 .tabItem { Label("GitHub", systemImage: "arrow.triangle.pull") }
+            IndicatorSettings(defaults: defaults)
+                .tabItem { Label("Indicadores", systemImage: "circle.grid.2x2") }
         }
         .frame(width: 520)
     }

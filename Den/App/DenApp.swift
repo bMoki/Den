@@ -37,7 +37,7 @@ struct DenApp: App {
         .windowResizability(.contentMinSize)
 
         Settings {
-            SettingsView()
+            SettingsView(defaults: environment.defaults)
                 .environment(monitor)
                 .defaultAppStorage(environment.defaults)
         }

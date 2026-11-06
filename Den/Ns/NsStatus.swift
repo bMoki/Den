@@ -52,6 +52,8 @@ nonisolated struct NsStatus: Decodable, Equatable, Sendable {
             var id: String { self == .reportServer ? "report-server" : rawValue }
         }
 
+        static let serviceIDs = Key.allCases.filter { $0 != .db }.map(\.id)
+
         init(from decoder: any Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
             branch = try container.decode(String.self, forKey: .branch)
