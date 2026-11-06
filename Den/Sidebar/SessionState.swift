@@ -9,6 +9,32 @@ enum SessionState: Comparable, CaseIterable {
         case .thinking: "Pensando"
         }
     }
+
+    func label(count: Int) -> String {
+        switch self {
+        case .newReply where count > 1: "\(count) respostas novas"
+        default: "\(count) \(name.lowercased())"
+        }
+    }
+}
+
+struct PrevailingState: Equatable {
+    let state: SessionState
+    let count: Int
+
+    init?(_ states: some Sequence<SessionState?>) {
+        let present = states.compactMap(\.self)
+        guard let state = present.min() else { return nil }
+        self.state = state
+        count = present.count { $0 == state }
+    }
+
+    var label: String { state.label(count: count) }
+}
+
+struct SessionTally: Equatable {
+    let total: Int
+    let prevailing: PrevailingState?
 }
 
 extension ChatModel {
@@ -18,6 +44,6 @@ extension ChatModel {
         if isRateLimited { states.append(.outOfTokens) }
         if hasUnread { states.append(.newReply) }
         if isBusy { states.append(.thinking) }
-        return states.min()
+        return PrevailingState(states)?.state
     }
 }

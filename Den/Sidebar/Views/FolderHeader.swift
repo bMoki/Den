@@ -3,7 +3,7 @@ import SwiftUI
 struct FolderHeader: View {
     let name: String
     var detail: String?
-    let sessionCount: Int
+    let sessions: SessionTally
     let isOpen: Bool
     var toggle: () -> Void
     var newSession: () -> Void
@@ -13,10 +13,10 @@ struct FolderHeader: View {
     var body: some View {
         HStack(spacing: 8) {
             DisclosureChevron(isOpen: isOpen)
-                .opacity(sessionCount == 0 ? 0 : 1)
-            Image(systemName: sessionCount > 0 ? "folder.fill" : "folder")
+                .opacity(sessions.total == 0 ? 0 : 1)
+            Image(systemName: sessions.total > 0 ? "folder.fill" : "folder")
                 .font(.system(size: 13))
-                .foregroundStyle(sessionCount > 0 ? Theme.accent : Theme.textTertiary)
+                .foregroundStyle(sessions.total > 0 ? Theme.accent : Theme.textTertiary)
                 .frame(width: 16)
             Text(name)
                 .font(.system(size: 13, weight: .medium))
@@ -30,9 +30,7 @@ struct FolderHeader: View {
                     .lineLimit(1)
                     .truncationMode(.head)
             }
-            if sessionCount > 0 {
-                SessionCountLabel(count: sessionCount)
-            }
+            SessionTallyLabel(sessions: sessions)
         }
         .padding(.horizontal, 10)
         .frame(height: 32)

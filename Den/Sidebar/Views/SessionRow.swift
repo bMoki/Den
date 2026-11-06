@@ -33,6 +33,7 @@ struct SessionRow: View {
 
             if let state {
                 SessionStateDot(state: state)
+                    .describedAs(state.name)
             }
         }
         .padding(.horizontal, 10)

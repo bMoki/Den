@@ -26,9 +26,6 @@ struct SessionStateDot: View {
             }
         }
         .frame(width: Self.box, height: Self.box)
-        .help(state.name)
-        .accessibilityElement()
-        .accessibilityLabel(state.name)
     }
 
     private var dot: some View {
@@ -64,5 +61,13 @@ struct SessionStateDot: View {
 
     private static func progress(at date: Date, period: Double) -> Double {
         date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: period) / period
+    }
+}
+
+extension View {
+    func describedAs(_ label: String) -> some View {
+        help(label)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(label)
     }
 }

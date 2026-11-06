@@ -215,7 +215,7 @@ struct SidebarView: View {
                     activity: ns.activity[folder.name],
                     problem: ns.actionProblems[folder.name],
                     pullRequests: monitor.pullRequests(for: folder.name).map(\.pullRequest),
-                    sessionCount: folder.sessions.count,
+                    sessions: workspace.tally(folder.sessions),
                     isOpen: isOpen,
                     toggle: { toggle(folder) },
                     newSession: { Task { await workspace.newSession(in: folder.path) } },
@@ -228,7 +228,7 @@ struct SidebarView: View {
                 FolderHeader(
                     name: folder.name,
                     detail: detail,
-                    sessionCount: folder.sessions.count,
+                    sessions: workspace.tally(folder.sessions),
                     isOpen: isOpen,
                     toggle: { toggle(folder) },
                     newSession: { Task { await workspace.newSession(in: folder.path) } }

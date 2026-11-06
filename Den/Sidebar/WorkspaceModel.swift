@@ -70,6 +70,10 @@ final class WorkspaceModel {
         chats[id]?.sessionState
     }
 
+    func tally(_ sessions: [SessionSummary]) -> SessionTally {
+        SessionTally(total: sessions.count, prevailing: PrevailingState(sessions.map { state(for: $0.id) }))
+    }
+
     private func adopt(_ chat: ChatModel) {
         let id = chat.sessionID
         chat.isViewed = { [weak self] in

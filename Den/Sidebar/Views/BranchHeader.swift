@@ -6,7 +6,7 @@ struct BranchHeader: View {
     let activity: NsWorkspace.Activity?
     var problem: String?
     var pullRequests: [PullRequest] = []
-    let sessionCount: Int
+    let sessions: SessionTally
     let isOpen: Bool
     var toggle: () -> Void
     var newSession: () -> Void
@@ -28,9 +28,8 @@ struct BranchHeader: View {
                 Spacer(minLength: 4)
                 if hovering || activity != nil {
                     actions
-                } else if sessionCount > 0 {
-                    SessionCountLabel(count: sessionCount)
                 }
+                SessionTallyLabel(sessions: sessions)
             }
             .frame(height: 20)
             if let branch, !branch.services.isEmpty || !pullRequests.isEmpty {
