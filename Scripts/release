@@ -1,0 +1,127 @@
+#!/bin/sh
+# Builds the real Den from a clean main and installs it in /Applications, after
+# the unit tests and the static gates pass. The app and its data are backed up
+# first, and the build carries its commit, which the About panel shows.
+#
+#   Scripts/release              test, build, back up and install
+#   Scripts/release --rollback   put back the app the last release replaced
+#
+# Backups go to ~/Library/Application Support/Den Releases, the newest five
+# kept. The app is kept zipped there, so Launch Services never finds a second
+# Den to open. A rollback uses up the app it puts back, so running it again
+# goes one release further back. It swaps the app only; the data each release
+# found stays in its backup as data.zip.
+set -eu
+cd "$(dirname "$0")/.."
+
+bundle_id=gabrielpassos.Den
+app=/Applications/Den.app
+data="$HOME/Library/Application Support/Den"
+backups="$HOME/Library/Application Support/Den Releases"
+keep=5
+built=build/Release/Build/Products/Release/Den.app
+lsregister=/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
+
+fail() { echo "release: $*" >&2; exit 1; }
+
+# Den is opened again on the way out when the script closed it, whether the
+# swap worked or not.
+reopen=no
+unpacked=
+trap 'if [ -n "$unpacked" ]; then rm -rf "$unpacked"; fi; if [ "$reopen" = yes ]; then open "$app"; fi' EXIT
+
+adhoc() { "$@" CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= PROVISIONING_PROFILE_SPECIFIER=; }
+
+running() { [ "$(osascript -e "application id \"$bundle_id\" is running" 2>/dev/null)" = true ]; }
+
+# Asks an open Den to quit, which first asks about unsaved files; choosing to
+# stay stops the script before anything is swapped.
+quit_den() {
+    running || return 0
+    echo "Quitting Den..."
+    osascript -e "with timeout of 600 seconds" -e "tell application id \"$bundle_id\" to quit" -e "end timeout" >/dev/null \
+        || fail "Den did not quit; nothing was installed"
+    reopen=yes
+    tries=0
+    while running; do
+        tries=$((tries + 1))
+        [ "$tries" -le 60 ] || fail "Den did not quit within 30 seconds; nothing was installed"
+        sleep 0.5
+    done
+}
+
+# Copies beside the installed app first, so a failed copy leaves it in place.
+install_app() {
+    rm -rf "$app.new"
+    ditto "$1" "$app.new"
+    rm -rf "$app"
+    mv "$app.new" "$app"
+    "$lsregister" -f "$app"
+}
+
+describe() {
+    plist="$1/Contents/Info.plist"
+    version=$(/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" "$plist")
+    build=$(/usr/libexec/PlistBuddy -c "Print CFBundleVersion" "$plist")
+    commit=$(/usr/libexec/PlistBuddy -c "Print NSHumanReadableCopyright" "$plist" 2>/dev/null || true)
+    echo "$version ($build)${commit:+, $commit}"
+}
+
+# Writes into a hidden folder and names it only once both archives are whole,
+# so a backup cut short is never pruned against or rolled back to.
+back_up() {
+    [ -d "$app" ] || [ -d "$data" ] || return 0
+    partial="$backups/.partial"
+    rm -rf "$partial"
+    mkdir -p "$partial"
+    if [ -d "$app" ]; then ditto -c -k --keepParent "$app" "$partial/Den.app.zip"; fi
+    if [ -d "$data" ]; then ditto -c -k --keepParent "$data" "$partial/data.zip"; fi
+    dir="$backups/$(date +%Y-%m-%d_%H%M%S)"
+    mv "$partial" "$dir"
+    find "$backups" -mindepth 1 -maxdepth 1 -type d ! -name '.*' | sort -r | tail -n +$((keep + 1)) |
+        while IFS= read -r old; do rm -rf "$old"; done
+    echo "Backed up to $dir"
+}
+
+release() {
+    [ "$(git symbolic-ref --short -q HEAD)" = main ] || fail "run it from main"
+    [ -z "$(git status --porcelain)" ] || fail "commit or stash the changes first"
+    identity=$(security find-identity -v -p codesigning | awk '/"Apple Development/ { print $2; exit }')
+    [ -n "$identity" ] || fail "no Apple Development certificate in the keychain"
+    commit=$(git rev-parse --short HEAD)
+
+    adhoc xcodebuild test -project Den.xcodeproj -scheme Den -destination 'platform=macOS' \
+        -derivedDataPath build/DerivedData -skipPackagePluginValidation -skipMacroValidation -quiet \
+        -only-testing:DenTests
+    adhoc Scripts/quality/check
+
+    xcodebuild build -project Den.xcodeproj -scheme Den -configuration Release -destination 'platform=macOS' \
+        -derivedDataPath build/Release -skipPackagePluginValidation -skipMacroValidation -quiet \
+        CODE_SIGN_IDENTITY="$identity" CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= PROVISIONING_PROFILE_SPECIFIER= \
+        CURRENT_PROJECT_VERSION="$(git rev-list --count HEAD)" \
+        INFOPLIST_KEY_NSHumanReadableCopyright="Commit $commit"
+    codesign --verify --deep --strict "$built"
+
+    quit_den
+    back_up
+    install_app "$built"
+    echo "Installed Den $(describe "$app")"
+}
+
+rollback() {
+    last=$(find "$backups" -mindepth 2 -maxdepth 2 -name Den.app.zip ! -path '*/.*/*' 2>/dev/null | sort -r | head -n 1)
+    [ -n "$last" ] || fail "no backed-up app to go back to"
+    unpacked=$(mktemp -d)
+    ditto -x -k "$last" "$unpacked"
+
+    quit_den
+    install_app "$unpacked/Den.app"
+    rm "$last"
+    echo "Den is back to $(describe "$app"); its data was left as it is, and $(dirname "$last")/data.zip holds what that release found"
+}
+
+case "${1:-}" in
+    "") release ;;
+    --rollback) rollback ;;
+    *) echo "usage: Scripts/release [--rollback]" >&2; exit 64 ;;
+esac
