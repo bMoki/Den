@@ -131,6 +131,7 @@ final class WorkspaceModel {
         chats[id] = nil
         if selectedID == id { selectedID = nil }
         try? await store.delete(id)
+        cache.forgetPreferences(of: id)
         await refresh()
     }
 

@@ -10,6 +10,8 @@ struct SettingsView: View {
                 .tabItem { Label("GitHub", systemImage: "arrow.triangle.pull") }
             IndicatorSettings(defaults: defaults)
                 .tabItem { Label("Indicadores", systemImage: "circle.grid.2x2") }
+            SessionDefaultSettings(defaults: defaults)
+                .tabItem { Label("Sessões", systemImage: "bubble.left.and.text.bubble.right") }
         }
         .frame(width: 520)
     }

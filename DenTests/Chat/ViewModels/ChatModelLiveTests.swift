@@ -361,6 +361,80 @@ private let effortKnob = HarnessKnob(
     }
 }
 
+@Test(arguments: [
+    ("high", ["mode": "auto", "effort": "high"]),
+    ("max", ["mode": "auto"]),
+])
+func aNewSessionStartsOnTheSessionDefaultTheHarnessStillOffers(
+    effort: String, launched: [String: String]
+) async throws {
+    try await withLiveChat(configure: { harness in
+        harness.declaredKnobs = [modeKnob, effortKnob]
+    }, preparing: { cache in
+        cache.setSessionDefault("auto", knob: "mode", for: HarnessID(rawValue: "fake"))
+        cache.setSessionDefault(effort, knob: "effort", for: HarnessID(rawValue: "fake"))
+    }, { live in
+        #expect(live.chat.knob("mode")?.currentValue == "auto")
+
+        await live.chat.start()
+
+        #expect(live.chat.isLive)
+        #expect(live.log.lastSettings == launched)
+    })
+}
+
+@Test func choosingInsideASessionLeavesTheSessionDefaultAlone() async throws {
+    try await withLiveChat(configure: { harness in
+        harness.declaredKnobs = [effortKnob]
+    }, { live in
+        await live.chat.start()
+
+        await live.chat.choose(knob: "effort", value: "high")
+
+        #expect(live.cache.sessionDefault(for: live.harness.id) == [:])
+    })
+}
+
+@Test func changingTheSessionDefaultLeavesAnExistingSessionAlone() async throws {
+    try await withLiveChat(configure: { harness in
+        harness.declaredKnobs = [modeKnob]
+    }, { live in
+        live.cache.setSessionDefault("auto", knob: "mode", for: live.harness.id)
+
+        await live.chat.start()
+
+        #expect(live.log.lastSettings["mode"] == nil)
+    })
+}
+
+@Test func aHarnessTheSessionWentThroughGetsBackWhatWasChosenThere() async throws {
+    var other = FakeHarness(id: "other", displayName: "Other", session: FakeSession(), log: HarnessLog())
+    other.declaredKnobs = [modelKnob]
+    try await withLiveChat(configure: { harness in
+        harness.declaredCapabilities = HarnessCapabilities(canSetPermissionMode: true)
+        harness.declaredKnobs = [modeKnob]
+    }, alongside: [other], preparing: { cache in
+        cache.setSessionDefault("opus", knob: "model", for: HarnessID(rawValue: "other"))
+    }, { live in
+        await live.chat.start()
+        await live.chat.choose(knob: "mode", value: "auto")
+
+        await live.chat.switchHarness(to: other.id)
+        #expect(other.log.lastSettings == ["model": "opus"])
+        await live.chat.choose(knob: "model", value: "haiku")
+
+        await live.chat.switchHarness(to: live.harness.id)
+        #expect(live.log.lastSettings == ["mode": "auto"])
+
+        await live.chat.switchHarness(to: other.id)
+        #expect(other.log.lastSettings == ["model": "haiku"])
+    })
+}
+
+private let modelKnob = HarnessKnob(
+    id: "model", category: .model, name: "Modelo",
+    options: [.init(value: "opus", label: "Opus"), .init(value: "haiku", label: "Haiku")])
+
 // MARK: - Switching harness
 
 @Test func switchingHarnessOpensAFreshSegmentOnTheNewOne() async throws {

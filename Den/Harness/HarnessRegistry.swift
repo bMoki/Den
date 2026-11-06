@@ -22,6 +22,13 @@ nonisolated struct HarnessRegistry {
         harness(for: id)?.displayName ?? id.rawValue
     }
 
+    func offeredKnobs(for id: HarnessID, in directory: URL, cache: SessionCache) -> [HarnessKnob] {
+        guard let adapter = harness(for: id) else { return [] }
+        let declared = adapter.knobs(for: HarnessInstallation(executable: "", version: ""),
+                                     workingDirectory: directory)
+        return declared.isEmpty ? cache.rememberedKnobs(for: id) : declared
+    }
+
     private static let defaultKey = "Den.defaultHarness"
 
     func preferred(in defaults: UserDefaults) -> HarnessID {

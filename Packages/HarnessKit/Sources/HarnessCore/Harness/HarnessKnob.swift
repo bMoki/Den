@@ -32,6 +32,10 @@ public struct HarnessKnob: Identifiable, Sendable, Equatable, Codable {
         self.options = options
     }
 
+    public func offers(_ value: String) -> Bool {
+        options.contains { $0.value == value }
+    }
+
     public func label(for value: String?) -> String? {
         guard let value else { return nil }
         return options.first { $0.value == value }?.label ?? value

@@ -147,7 +147,7 @@ final class ChatModel {
         self.segments = [Segment(harness: harness, harnessSessionID: "", model: "")]
 
         self.harnessSessionID = ""
-        restorePreferences()
+        enterHarness()
         loadKnobs()
         catalog = cache.rememberedCatalog(for: workingDirectory, harness: harness)
     }
@@ -171,7 +171,8 @@ final class ChatModel {
         self.harnessSessionID = session.segments.last?.harnessSessionID ?? ""
         self.harness = session.segments.last?.harness ?? registry.fallback
         self.status = "fria"
-        restorePreferences()
+        settings = cache.preferences(for: sessionID, harness: harness) ?? [:]
+        persistPreferences()
         loadKnobs()
         catalog = cache.rememberedCatalog(for: workingDirectory, harness: harness)
         for segment in session.segments {
@@ -452,11 +453,7 @@ final class ChatModel {
     }
 
     private func loadKnobs() {
-        guard let adapter = registry.harness(for: harness) else { return }
-
-        var discovered = adapter.knobs(for: HarnessInstallation(executable: "", version: ""),
-                                       workingDirectory: workingDirectory)
-        if discovered.isEmpty { discovered = cache.rememberedKnobs(for: harness) }
+        var discovered = registry.offeredKnobs(for: harness, in: workingDirectory, cache: cache)
         for index in discovered.indices {
             if let chosen = settings[discovered[index].id] {
                 discovered[index].currentValue = chosen
@@ -475,13 +472,15 @@ final class ChatModel {
         await relaunchIfIdle()
     }
 
-    private func restorePreferences() {
-        settings = cache.preferences(for: sessionID)
+    private func enterHarness() {
+        let offered = registry.offeredKnobs(for: harness, in: workingDirectory, cache: cache)
+        settings = cache.preferences(for: sessionID, harness: harness)
+            ?? cache.offeredSessionDefault(for: harness, among: offered)
+        persistPreferences()
     }
 
     private func persistPreferences() {
-        cache.setPreferences(
-            settings.compactMapValues { $0.isEmpty ? nil : $0 }, for: sessionID)
+        cache.setPreferences(settings.compactMapValues { $0.isEmpty ? nil : $0 }, for: sessionID, harness: harness)
     }
 
     /// A setting the running CLI cannot take waits for the turn in flight to
@@ -519,7 +518,7 @@ final class ChatModel {
         contextWindow = nil
         contextUsage = nil
         hasLaunched = false
-        settings = [:]
+        enterHarness()
         loadKnobs()
         catalog = cache.rememberedCatalog(for: workingDirectory, harness: newHarness)
 
