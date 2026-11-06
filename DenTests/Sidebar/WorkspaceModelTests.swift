@@ -19,34 +19,47 @@ import HarnessCore
     }
 }
 
-@Test func indicatorRanksRateLimitAboveTheRest() async throws {
+@Test func stateRanksWhatNeedsAttentionFirst() async throws {
     try await withWorkspace { harness in
         let session = storedSession("busy")
         try await harness.store.saveMetadata(session)
         await harness.model.select(session.id)
         let chat = try #require(harness.model.active)
 
-        #expect(harness.model.indicator(for: session.id) == nil)
-
-        chat.hasUnread = true
-        #expect(harness.model.indicator(for: session.id) == .unread)
+        #expect(harness.model.state(for: session.id) == nil)
 
         chat.isBusy = true
-        #expect(harness.model.indicator(for: session.id) == .working)
+        #expect(harness.model.state(for: session.id) == .thinking)
 
-        chat.pendingQuestion = nil
-        chat.pending = PermissionRequest(id: "p1", toolName: "Bash",
-                                         input: .object([:]), options: [])
-        #expect(harness.model.indicator(for: session.id) == .waiting)
+        chat.hasUnread = true
+        #expect(harness.model.state(for: session.id) == .newReply)
 
         chat.isRateLimited = true
-        #expect(harness.model.indicator(for: session.id) == .rateLimited)
+        #expect(harness.model.state(for: session.id) == .outOfTokens)
+
+        chat.pending = PermissionRequest(id: "p1", toolName: "Bash",
+                                         input: .object([:]), options: [])
+        #expect(harness.model.state(for: session.id) == .awaitingDecision)
+
+        chat.pending = nil
+        chat.pendingQuestion = nil
+        chat.isRateLimited = false
+        chat.hasUnread = false
+        #expect(harness.model.state(for: session.id) == .thinking)
     }
 }
 
-@Test func indicatorIsQuietForASessionNeverOpened() async throws {
+@Test func sessionStatesSortByPrecedence() {
+    #expect(SessionState.allCases.sorted() == [.awaitingDecision, .outOfTokens, .newReply, .thinking])
+}
+
+@Test func sessionStatesUseTheGlossaryNames() {
+    #expect(SessionState.allCases.map(\.name) == ["Aguardando decisão", "Tokens esgotados", "Resposta nova", "Pensando"])
+}
+
+@Test func stateIsQuietForASessionNeverOpened() async throws {
     try await withWorkspace { harness in
-        #expect(harness.model.indicator(for: UUID()) == nil)
+        #expect(harness.model.state(for: UUID()) == nil)
         #expect(harness.model.isLive(UUID()) == false)
     }
 }

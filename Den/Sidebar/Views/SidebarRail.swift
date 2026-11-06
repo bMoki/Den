@@ -4,7 +4,7 @@ import AppKit
 struct PaneTip: Equatable {
     let title: String
     let detail: String?
-    let indicator: WorkspaceModel.SessionIndicator?
+    let state: SessionState?
     let anchor: CGRect
     var lines: [Line] = []
 
@@ -51,12 +51,12 @@ struct PaneHoverCard: View {
                         .lineLimit(1)
                 }
             }
-            if let indicator = tip.indicator {
+            if let state = tip.state {
                 HStack(spacing: 5) {
                     Circle()
-                        .fill(SessionRow.color(for: indicator))
+                        .fill(state.color)
                         .frame(width: 6, height: 6)
-                    Text(SessionRow.label(for: indicator))
+                    Text(state.name)
                         .font(.system(size: 10.5))
                         .foregroundStyle(.secondary)
                 }

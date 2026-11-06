@@ -3,7 +3,7 @@ import HarnessCore
 
 struct SessionRow: View {
     let summary: SessionSummary
-    let indicator: WorkspaceModel.SessionIndicator?
+    let state: SessionState?
     var isSelected = false
     var select: () -> Void
     var rename: (String) -> Void
@@ -31,12 +31,8 @@ struct SessionRow: View {
 
             Spacer(minLength: 4)
 
-            if let indicator {
-                Circle()
-                    .fill(Self.color(for: indicator))
-                    .frame(width: 6, height: 6)
-                    .help(Self.label(for: indicator))
-                    .accessibilityLabel(Self.label(for: indicator))
+            if let state {
+                SessionStateDot(state: state)
             }
         }
         .padding(.horizontal, 10)
@@ -65,23 +61,5 @@ struct SessionRow: View {
                             isDestructive: true, action: delete),
             ]),
         ]
-    }
-
-    static func color(for indicator: WorkspaceModel.SessionIndicator) -> Color {
-        switch indicator {
-        case .unread: Theme.added
-        case .working: Theme.accent
-        case .waiting: Theme.waiting
-        case .rateLimited: Theme.removed
-        }
-    }
-
-    static func label(for indicator: WorkspaceModel.SessionIndicator) -> String {
-        switch indicator {
-        case .unread: "Resposta nova"
-        case .working: "Pensando"
-        case .waiting: "Aguardando sua decisão"
-        case .rateLimited: "Tokens esgotados"
-        }
     }
 }

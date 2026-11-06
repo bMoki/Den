@@ -106,7 +106,7 @@ private func argument(after flag: String, in launch: FakeCLI.Launch?) -> String?
         await chat.send(text: "Use a ferramenta Write para criar prova.txt com o texto ok.")
         await settle(within: processPatience) { chat.pending != nil }
         #expect(chat.pending?.toolName == "Write")
-        #expect(e2e.workspace.indicator(for: chat.sessionID) == .waiting)
+        #expect(e2e.workspace.state(for: chat.sessionID) == .awaitingDecision)
 
         await chat.resolve(allow: true)
         await settle(within: processPatience) { !chat.isBusy }

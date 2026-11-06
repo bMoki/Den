@@ -47,7 +47,6 @@ enum Theme {
     static let renamed = Color(hex: 0xC3AEF0)
     static let hunk = Color(hex: 0x93AEE8)
     static let hunkFill = Color(hex: 0x1B2233)
-    static let waiting = Color(hex: 0xC3AEF0)
 
     static let alertFill = Color(hex: 0x1F1B12)
     static let alertBorder = Color(hex: 0x4D3F1F)

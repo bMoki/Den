@@ -238,7 +238,7 @@ struct SidebarView: View {
         .hoverTip({ anchor in
             PaneTip(title: folder.name,
                     detail: tipDetail(for: folder, isBranch: isBranch),
-                    indicator: nil, anchor: anchor,
+                    state: nil, anchor: anchor,
                     lines: isBranch ? PaneTip.Line.pullRequests(monitor.pullRequests(for: folder.name)) : [])
         }, update: { scheduleTip($0) })
 
@@ -283,7 +283,7 @@ struct SidebarView: View {
     private func row(for summary: SessionSummary) -> some View {
         SessionRow(
             summary: summary,
-            indicator: workspace.indicator(for: summary.id),
+            state: workspace.state(for: summary.id),
             isSelected: workspace.selectedID == summary.id,
             select: { Task { await workspace.select(summary.id) } },
             rename: { name in
@@ -299,7 +299,7 @@ struct SidebarView: View {
             detail.append(summary.updatedAt.formatted(.relative(presentation: .named)))
             return PaneTip(title: summary.title,
                            detail: detail.joined(separator: " · "),
-                           indicator: workspace.indicator(for: summary.id),
+                           state: workspace.state(for: summary.id),
                            anchor: anchor)
         }, update: { scheduleTip($0) })
     }

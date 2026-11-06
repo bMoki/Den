@@ -3,7 +3,7 @@ import AppKit
 @testable import Den
 
 private func tip(_ title: String, detail: String? = "Den · Claude Code") -> PaneTip {
-    PaneTip(title: title, detail: detail, indicator: nil, anchor: .zero)
+    PaneTip(title: title, detail: detail, state: nil, anchor: .zero)
 }
 
 @MainActor
