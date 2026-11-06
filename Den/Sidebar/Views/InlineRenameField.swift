@@ -2,6 +2,8 @@ import SwiftUI
 
 struct InlineRenameField: View {
     let initial: String
+    var placeholder = ""
+    var limit: Int?
     var commit: (String) -> Void
     var done: () -> Void
 
@@ -10,9 +12,12 @@ struct InlineRenameField: View {
     @FocusState private var focused: Bool
 
     var body: some View {
-        TextField("", text: $draft)
+        TextField(placeholder, text: $draft)
             .textFieldStyle(.plain)
             .focused($focused)
+            .onChange(of: draft) { _, text in
+                if let limit, text.count > limit { draft = String(text.prefix(limit)) }
+            }
             .onAppear {
                 draft = initial
                 DispatchQueue.main.async { focused = true }

@@ -386,3 +386,20 @@ private let answersStatus = #"""
         "dbRmSnapshot branch=NS-1 name=antes",
     ])
 }
+
+@Test func nicknamingSendsTheBranchAndTheText() async throws {
+    let (client, folder) = try fakeNs(#"""
+        read -r line
+        printf '%s\n' "$line" > "$0.request"
+        echo '{"type":"result","id":"1","result":{"branch":"NS-1","nickname":"Agenda"}}'
+        cat >/dev/null
+        """#)
+    defer { try? FileManager.default.removeItem(at: folder) }
+
+    try await client.setNickname(branch: "NS-1", nickname: "Agenda")
+
+    let request = try String(contentsOf: folder.appending(path: "ns.request"), encoding: .utf8)
+    #expect(request.contains(#""op":"setNickname""#))
+    #expect(request.contains(#""branch":"NS-1""#))
+    #expect(request.contains(#""nickname":"Agenda""#))
+}

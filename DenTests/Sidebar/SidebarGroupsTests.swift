@@ -83,3 +83,15 @@ import Testing
     #expect(groups.archived.map(\.title) == ["gone"])
     #expect(groups.otherFolders.isEmpty)
 }
+
+@Test func searchFindsABranchByItsNicknameIgnoringAccents() {
+    var status = sampleStatus
+    status.branches[1].nickname = "Agênda recorrente"
+
+    let byNickname = SidebarGroups(sessions: [], status: status, search: "agenda")
+    let byName = SidebarGroups(sessions: [], status: status, search: "123")
+
+    #expect(byNickname.branches.map(\.name) == ["NS-123"])
+    #expect(byNickname.branches.first?.nickname == "Agênda recorrente")
+    #expect(byName.branches.map(\.name) == ["NS-123"])
+}

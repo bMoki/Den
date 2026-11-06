@@ -222,7 +222,8 @@ struct SidebarView: View {
                     start: { Task { await ns.start(folder.name) } },
                     stop: { Task { await ns.stop(folder.name) } },
                     update: { Task { await ns.update(folder.name) } },
-                    remove: { Task { await ns.askToRemove(folder.name) } }
+                    remove: { Task { await ns.askToRemove(folder.name) } },
+                    setNickname: { text in Task { await ns.setNickname(folder.name, to: text) } }
                 )
             } else {
                 FolderHeader(
@@ -236,7 +237,8 @@ struct SidebarView: View {
             }
         }
         .hoverTip({ anchor in
-            PaneTip(title: folder.name,
+            PaneTip(title: folder.nickname ?? folder.name,
+                    caption: folder.nickname.map { _ in folder.name },
                     detail: tipDetail(for: folder, isBranch: isBranch),
                     state: nil, anchor: anchor,
                     lines: isBranch ? PaneTip.Line.pullRequests(monitor.pullRequests(for: folder.name)) : [])

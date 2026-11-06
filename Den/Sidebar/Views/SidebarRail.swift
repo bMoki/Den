@@ -3,6 +3,7 @@ import AppKit
 
 struct PaneTip: Equatable {
     let title: String
+    var caption: String?
     let detail: String?
     let state: SessionState?
     let anchor: CGRect
@@ -34,6 +35,12 @@ struct PaneHoverCard: View {
                 .font(.system(size: 12, weight: .semibold))
                 .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
+            if let caption = tip.caption {
+                Text(caption)
+                    .font(.system(size: 10.5, design: .monospaced))
+                    .foregroundStyle(Theme.textTertiary)
+                    .lineLimit(1)
+            }
             if let detail = tip.detail {
                 Text(detail)
                     .font(.system(size: 10.5))

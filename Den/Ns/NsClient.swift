@@ -402,3 +402,15 @@ extension NsClient {
         }
     }
 }
+
+extension NsClient {
+    private nonisolated struct NicknameInput: Encodable {
+        let branch: String
+        let nickname: String
+    }
+
+    func setNickname(branch: String, nickname: String) async throws {
+        let _: Ignored = try await call("setNickname", input: NicknameInput(branch: branch, nickname: nickname),
+                                        timeout: .seconds(30))
+    }
+}

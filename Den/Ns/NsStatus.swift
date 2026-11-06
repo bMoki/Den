@@ -21,15 +21,17 @@ nonisolated struct NsStatus: Decodable, Equatable, Sendable {
 
     nonisolated struct Branch: Decodable, Equatable, Sendable {
         var branch: String
+        var nickname: String?
         var path: String
         var services: [Service]
         var database: ServiceState
         var databasePort: Int?
         var repos: [Repo]?
 
-        init(branch: String, path: String, services: [Service] = [],
+        init(branch: String, nickname: String? = nil, path: String, services: [Service] = [],
              database: ServiceState = .parado, databasePort: Int? = nil, repos: [Repo]? = nil) {
             self.branch = branch
+            self.nickname = nickname
             self.path = path
             self.services = services
             self.database = database
@@ -43,7 +45,7 @@ nonisolated struct NsStatus: Decodable, Equatable, Sendable {
         }
 
         private enum CodingKeys: String, CodingKey {
-            case branch, path, services, ports, sessions, errors, repos
+            case branch, nickname, path, services, ports, sessions, errors, repos
         }
 
         private enum Key: String, CodingKey, CaseIterable {
@@ -57,6 +59,7 @@ nonisolated struct NsStatus: Decodable, Equatable, Sendable {
         init(from decoder: any Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
             branch = try container.decode(String.self, forKey: .branch)
+            nickname = try? container.decodeIfPresent(String.self, forKey: .nickname)
             path = try container.decode(String.self, forKey: .path)
             repos = container.contains(.repos) ? (try? container.decode([Repo].self, forKey: .repos)) ?? [] : nil
             let states = try? container.nestedContainer(keyedBy: Key.self, forKey: .services)
