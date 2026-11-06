@@ -53,6 +53,16 @@ Em que situação uma Sessão está, ordenada por quanto ela precisa de quem tra
 Uma Sessão sem nenhum desses está ociosa. Quando mais de um vale ao mesmo tempo, prevalece o de cima.
 _Evitar:_ "status da sessão" para o Estado de Serviço, e vice-versa.
 
+### Padrão de Sessão
+O modelo, o esforço e o modo com que uma Sessão nova de um harness começa. Cada harness tem o seu. Vale só no começo: o que se escolhe depois, dentro da Sessão, é da Sessão.
+_Evitar:_ "configuração da sessão" para o que se escolhe dentro de uma Sessão.
+
+### Mensagem na fila
+Uma mensagem mandada numa Sessão enquanto o agente trabalha e que o agente ainda não recebeu. Enquanto está na fila, pode ser retirada e editada; depois de recebida, faz parte da conversa.
+
+### Favorito
+Uma Branch de workspace, Repo base ou pasta de Outras pastas que o desenvolvedor fixou no topo da sidebar. É uma preferência de quem usa o Thalamus, não um atributo da Branch de workspace.
+
 ### Repo opcional
 Um Repo que uma Branch de workspace pode ou não ter, escolhido ao criá-la: **manager** (incluído por padrão), **report-server** e **parents**. Backend, frontend e docs estão sempre presentes.
 
