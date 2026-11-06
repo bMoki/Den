@@ -49,7 +49,8 @@ final class PanelTerminals {
     func open(for sessionID: UUID, in directory: URL) -> PanelTerminal {
         let name = URL(fileURLWithPath: shell).lastPathComponent
         let launch = PanelTerminal.Launch(executable: shell,
-                                          environment: Terminal.getEnvironmentVariables() + ["SHELL=\(shell)"],
+                                          environment: Terminal.getEnvironmentVariables() + ["SHELL=\(shell)"]
+                                              + NsConfigFolder.passedOn(ProcessInfo.processInfo.environment),
                                           execName: "-" + name,
                                           directory: directory)
         return add(PanelTerminal(sessionID: sessionID, kind: .free(shell: name), launch: launch, ended: removal))

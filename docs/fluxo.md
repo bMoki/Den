@@ -74,12 +74,62 @@ cinco mais novos. O app fica zipado ali para o macOS não achar um segundo Den.
 | Bundle id | `gabrielpassos.Den` | `gabrielpassos.Den.dev` | `gabrielpassos.Den.dev` |
 | Sessões, anexos, PRs | `~/Library/Application Support/Den` | `~/Library/Application Support/Den Dev` | uma pasta descartável em `/private/tmp` (`DenUITests-…`, `DenScreenshot-…`) |
 | Preferências | `gabrielpassos.Den` | `Den.Dev` | `Den.UITests`, zeradas a cada pasta nova |
-| CLIs (`ns`, `claude`, `opencode`) | os que o shell de login acha | os que o shell de login acha | os falsos de `Scripts/fake-cli`; nos XCUITests não há `ns` |
+| CLIs (`ns`, `claude`, `opencode`) | os que o shell de login acha | o `ns` do `cli` em desenvolvimento (veja abaixo); os outros, os que o shell de login acha | os falsos de `Scripts/fake-cli`; nos XCUITests não há `ns` |
 
 Os testes unitários rodam dentro do Den Dev e também não tocam no real.
 
-O Den e o Den Dev usam o `ns` que o shell de login acha (hoje
-`~/.local/bin/ns`), a menos que a preferência `Den.nsPath` daquele app aponte
-outro. Sem essa preferência, trocar o `ns` instalado afeta os dois.
-O `claude` e o `opencode` também vêm do shell de login, com caminhos comuns
-como `/opt/homebrew/bin` de reserva.
+O Den usa o `ns` que o shell de login acha (hoje `~/.local/bin/ns`), a menos
+que a preferência `Den.nsPath` dele aponte outro. O `claude` e o `opencode`
+vêm do shell de login nos dois apps, com caminhos comuns como
+`/opt/homebrew/bin` de reserva.
+
+## O Den Dev isolado, com o ns em desenvolvimento
+
+O `ns` e o Den evoluem juntos. O Den Dev usa o `ns` compilado do repositório
+`cli`, num workspace só de teste. Assim, criar, arquivar ou remover uma Sessão
+nele não mexe nas branches e worktrees reais, e o Den real segue com o `ns`
+instalado em `~/.local/bin/ns`.
+
+```sh
+Scripts/dev-ns setup   # uma vez: compila o cli, monta o workspace e aponta o Den Dev
+Scripts/dev-ns build   # a cada mudança no cli; depois reabra o Den Dev
+Scripts/dev-ns off     # volta o Den Dev para o ns instalado e o workspace real
+```
+
+O `setup` pode rodar de novo: ele reescreve a configuração de teste a partir
+da real e só cria os clones e os templates que faltam. Ele monta:
+
+| O quê | Den Dev | Den real |
+|---|---|---|
+| `ns` | `cli/dist/ns` (preferência `Den.nsPath`) | `~/.local/bin/ns` |
+| Configuração do `ns` | `~/.config/ns-dev` (preferência `Den.nsConfigDir`) | `~/.config/ns` |
+| Repositórios e worktrees | `~/Developer/ns-dev`, com clones locais dos reais | `~/Developer` |
+| Estado do `ns` | `~/.local/state/ns-dev` | `~/.local/state/ns` |
+| Nome do produto (containers, volumes, snapshots, URLs locais) | `nsdev` | o do `env.json` real |
+| Portas dos serviços principais | as do real mais 100 | as do `~/.config/ns/env.json` |
+| Templates | uma cópia em `~/Developer/ns-dev/nsdev-workspace` | os do workspace real |
+
+Os clones buscam do GitHub, mas não conseguem dar push: o endereço de push
+deles é inválido de propósito. Os apps das branches de teste sobem com `nsdev` nas URLs
+locais e nas variáveis de produto dos templates. Os hooks do IntelliJ ficam desligados, e o
+`setup` apaga as branches que o Den Dev lembrava do workspace real.
+
+O Den Dev exporta a pasta de configuração como `NS_CONFIG_DIR` ao abrir, então
+os terminais do painel e os agentes também usam o workspace de teste. Nos
+terminais, porém, `ns` continua sendo o do `PATH`, porque o shell de login
+monta o `PATH` de novo; chame `cli/dist/ns` pelo caminho para usar o de
+desenvolvimento.
+
+Ficam compartilhados com o real:
+- o volume de seed de onde saem os bancos novos (só lido);
+- o tmux e o nome do projeto do Docker Compose (`ns-<branch>`). Use nomes de
+  branch que não existam no workspace real;
+- as portas de debug do backend e de management, que o `ns` não desloca. Uma
+  branch de teste pode pegar a porta de uma branch real parada.
+
+Variáveis `NS_*` exportadas no seu shell valem mais que o `env.json`. Não
+exporte `NS_BASE_DIR`, `NS_STATE_DIR` nem os `NS_*_REPO`, ou o workspace de
+teste volta a apontar para o real.
+
+O Den real só recebe o `ns` novo com `bun run install-global` no `cli`, que faz
+para o `ns` o que o `Scripts/release` faz para o Den.

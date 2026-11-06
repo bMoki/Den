@@ -11,6 +11,7 @@ struct DenApp: App {
     init() {
         let environment = resolveEnvironment(ProcessInfo.processInfo.environment)
         self.environment = environment
+        NsConfigFolder.export(environment.nsConfigDirectory)
         _ns = State(initialValue: NsWorkspace.live(environment))
         _monitor = State(initialValue: PullRequestMonitor(
             ledger: PullRequestLedger(store: PullRequestStore(url: environment.pullRequestsFile)),

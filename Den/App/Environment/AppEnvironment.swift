@@ -6,6 +6,7 @@ protocol AppEnvironment {
     var pullRequestsFile: URL { get }
     var ghOverride: String? { get }
     var nsOverride: String? { get }
+    var nsConfigDirectory: String? { get }
     var defaults: UserDefaults { get }
     var registry: HarnessRegistry { get }
     var workingDirectory: URL { get }
@@ -13,7 +14,12 @@ protocol AppEnvironment {
 
 extension AppEnvironment {
     var ghOverride: String? { nil }
-    var nsOverride: String? { defaults.string(forKey: NsClient.pathKey).flatMap { $0.isEmpty ? nil : $0 } }
+    var nsOverride: String? { preference(NsClient.pathKey).map { ($0 as NSString).expandingTildeInPath } }
+    var nsConfigDirectory: String? { nil }
+
+    func preference(_ key: String) -> String? {
+        defaults.string(forKey: key).flatMap { $0.isEmpty ? nil : $0 }
+    }
 }
 
 protocol RootedEnvironment: AppEnvironment {

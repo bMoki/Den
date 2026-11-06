@@ -1,0 +1,170 @@
+#!/usr/bin/env python3
+"""Points Den Dev at the ns under development and at a workspace of its own.
+
+  Scripts/dev-ns setup   build the cli, create the test workspace, point Den Dev at both
+  Scripts/dev-ns build   rebuild the cli after a change (then reopen Den Dev)
+  Scripts/dev-ns off     point Den Dev back at the installed ns and the real workspace
+
+The test workspace takes the real ns config and changes what would reach real
+things: its own base, state and config folders, ports shifted by 100, and its
+own product name, which is in every Docker container, volume and snapshot name
+and in the local URLs, so none of them can land on a real one. The repositories
+are local clones of the real ones (their objects are hard links, so they take
+little disk) that fetch from GitHub but cannot push. The templates are a copy,
+and the IntelliJ hooks are off. Only the seed volume new databases are copied
+from, and tmux, stay shared.
+
+setup can run again: it rewrites the test env.json and settings.json from the
+real ones, rebuilds the cli, and only adds the clones and templates missing.
+"""
+import json
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+HOME = Path.home()
+CLI = Path(__file__).resolve().parents[2] / "cli"
+NS = CLI / "dist" / "ns"
+REAL_CONFIG = HOME / ".config" / "ns"
+CONFIG = HOME / ".config" / "ns-dev"
+BASE = HOME / "Developer" / "ns-dev"
+STATE = HOME / ".local" / "state" / "ns-dev"
+PRODUCT = "nsdev"
+SUITE = "Den.Dev"
+DEN_KEYS = ("Den.nsPath", "Den.nsConfigDir")
+PORT_SHIFT = 100
+PORTS = {
+    "NS_MASTER_DB_PORT": 5434,
+    "NS_MASTER_BACKEND_PORT": 8080,
+    "NS_MASTER_FRONTEND_PORT": 3011,
+    "NS_MASTER_MANAGER_PORT": 3020,
+    "NS_MASTER_REPORT_SERVER_PORT": 3030,
+    "NS_PORTLESS_PROXY_PORT": 1355,
+}
+REPO_PATHS = ("NS_BACKEND_REPO", "NS_FRONTEND_REPO", "NS_MANAGER_REPO",
+              "NS_REPORT_SERVER_REPO", "NS_DOCS_REPO", "NS_PARENTS_REPO")
+NO_PUSH = "no-push-from-the-test-workspace"
+
+
+class Failure(Exception):
+    pass
+
+
+def run(*command, **options):
+    try:
+        subprocess.run(command, check=True, **options)
+    except subprocess.CalledProcessError as error:
+        raise Failure(f"{' '.join(command)} failed with status {error.returncode}") from error
+
+
+def build():
+    run(str(HOME / ".bun" / "bin" / "bun"), "run", "build", cwd=CLI)
+    run("codesign", "--remove-signature", str(NS))
+    run("codesign", "-s", "-", "-f", str(NS))
+    print(f"Built {NS}")
+
+
+def real_base(real):
+    return Path(real.get("NS_BASE_DIR") or HOME / "Developer")
+
+
+def test_env(real):
+    env = {key: value for key, value in real.items() if key not in REPO_PATHS}
+    env["NS_BASE_DIR"] = str(BASE)
+    env["NS_STATE_DIR"] = str(STATE)
+    env["NS_PRODUCT_NAME"] = PRODUCT
+    for key, default in PORTS.items():
+        env[key] = int(real.get(key, default)) + PORT_SHIFT
+    return env
+
+
+def repository_names(env):
+    return {
+        "NS_BACKEND_REPO": env["NS_BACKEND_REPO_NAME"],
+        "NS_FRONTEND_REPO": "frontend",
+        "NS_MANAGER_REPO": env["NS_MANAGER_REPO_NAME"],
+        "NS_REPORT_SERVER_REPO": env.get("NS_REPORT_SERVER_REPO_NAME", "report-server"),
+        "NS_DOCS_REPO": env.get("NS_DOCS_REPO_NAME", "docs"),
+        "NS_PARENTS_REPO": env.get("NS_PARENTS_REPO_NAME", "scalemed-parents"),
+    }
+
+
+# Clones beside the target and renames it last, so a clone cut short is never
+# taken for a finished one, and never with a push URL still pointing anywhere.
+def clone(real, key, name):
+    target = BASE / name
+    if not target.exists():
+        source = Path(real.get(key) or real_base(real) / name)
+        if not (source / ".git").exists():
+            print(f"Skipped {name}: no repository at {source}")
+            return
+        partial = BASE / f".{name}.partial"
+        shutil.rmtree(partial, ignore_errors=True)
+        run("git", "clone", "--quiet", str(source), str(partial))
+        origin = subprocess.run(["git", "-C", str(source), "remote", "get-url", "origin"],
+                                capture_output=True, text=True).stdout.strip()
+        if origin:
+            run("git", "-C", str(partial), "remote", "set-url", "origin", origin)
+        run("git", "-C", str(partial), "remote", "set-url", "--push", "origin", NO_PUSH)
+        partial.rename(target)
+        print(f"Cloned {name}")
+    else:
+        run("git", "-C", str(target), "remote", "set-url", "--push", "origin", NO_PUSH)
+
+
+def write_config(real, env):
+    CONFIG.mkdir(parents=True, exist_ok=True)
+    (CONFIG / "env.json").write_text(json.dumps(env, indent=2) + "\n")
+    settings_file = REAL_CONFIG / "settings.json"
+    settings = json.loads(settings_file.read_text()) if settings_file.exists() else {}
+    settings["hooks"] = {"new:after": []}
+    (CONFIG / "settings.json").write_text(json.dumps(settings, indent=2) + "\n")
+
+
+def copy_templates(real):
+    templates = BASE / f"{PRODUCT}-workspace" / "templates"
+    if templates.exists() or templates.is_symlink():
+        return
+    source = real_base(real) / f"{real['NS_PRODUCT_NAME']}-workspace" / "templates"
+    shutil.copytree(source, templates, symlinks=True)
+    print(f"Copied the templates to {templates}")
+
+
+def forget_real_branches():
+    subprocess.run(["defaults", "delete", SUITE, "Den.nsMemory"], capture_output=True)
+
+
+def setup():
+    build()
+    real = json.loads((REAL_CONFIG / "env.json").read_text())
+    BASE.mkdir(parents=True, exist_ok=True)
+    STATE.mkdir(parents=True, exist_ok=True)
+    write_config(real, test_env(real))
+    for key, name in repository_names(real).items():
+        clone(real, key, name)
+    copy_templates(real)
+
+    run("defaults", "write", SUITE, "Den.nsPath", str(NS))
+    run("defaults", "write", SUITE, "Den.nsConfigDir", str(CONFIG))
+    forget_real_branches()
+    print(f"Den Dev now runs {NS} on {CONFIG}; reopen it to pick that up")
+
+
+def off():
+    for key in DEN_KEYS:
+        subprocess.run(["defaults", "delete", SUITE, key], capture_output=True)
+    forget_real_branches()
+    print("Den Dev is back on the installed ns and the real workspace; reopen it")
+
+
+COMMANDS = {"setup": setup, "build": build, "off": off}
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2 or sys.argv[1] not in COMMANDS:
+        print("usage: Scripts/dev-ns setup|build|off", file=sys.stderr)
+        sys.exit(64)
+    try:
+        COMMANDS[sys.argv[1]]()
+    except Failure as failure:
+        sys.exit(f"dev-ns: {failure}")
