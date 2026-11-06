@@ -146,4 +146,6 @@ private func scratchRoot() -> URL {
     #expect(environment.nsOverride == nil)
     scratch.defaults.set("/Users/me/.local/bin/ns-nucleo", forKey: NsClient.pathKey)
     #expect(environment.nsOverride == "/Users/me/.local/bin/ns-nucleo")
+    scratch.defaults.set("~/cli/dist/ns", forKey: NsClient.pathKey)
+    #expect(environment.nsOverride == NSHomeDirectory() + "/cli/dist/ns")
 }

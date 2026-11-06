@@ -31,3 +31,15 @@ import Foundation
 
     #expect(environment.defaults === first)
 }
+
+@Test func devReadsTheNsConfigFolderFromItsPreferences() {
+    let scratch = ScratchDefaults()
+    defer { scratch.remove() }
+    let environment = DevEnvironment(defaults: scratch.defaults)
+
+    #expect(environment.nsConfigDirectory == nil)
+    scratch.defaults.set("", forKey: NsConfigFolder.key)
+    #expect(environment.nsConfigDirectory == nil)
+    scratch.defaults.set("~/.config/ns-dev", forKey: NsConfigFolder.key)
+    #expect(environment.nsConfigDirectory == "~/.config/ns-dev")
+}

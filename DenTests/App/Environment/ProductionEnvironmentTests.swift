@@ -15,3 +15,7 @@ import Foundation
     #expect(environment.registry.ids == HarnessRegistry.standard.ids)
     #expect(environment.ghOverride == nil)
 }
+
+@Test func productionHasNoNsConfigFolder() {
+    #expect(ProductionEnvironment().nsConfigDirectory == nil)
+}
