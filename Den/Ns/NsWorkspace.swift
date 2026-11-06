@@ -12,6 +12,7 @@ final class NsWorkspace {
     typealias RemoveBranch = @Sendable (_ branch: String, _ purge: Bool,
                                         _ progress: @escaping NsClient.Progress) async throws -> Void
     typealias OpenDatabase = @Sendable (_ branch: String) async throws -> Void
+    typealias SetNickname = @Sendable (_ branch: String, _ nickname: String) async throws -> Void
 
     nonisolated struct SnapshotOperations: Sendable {
         var list: @Sendable () async throws -> [NsClient.SnapshotGroup]
@@ -73,9 +74,11 @@ final class NsWorkspace {
     @ObservationIgnored private let previewRemoval: PreviewRemoval
     @ObservationIgnored private let removeBranch: RemoveBranch
     @ObservationIgnored private let openBranchDatabase: OpenDatabase
+    @ObservationIgnored private let saveNickname: SetNickname
     @ObservationIgnored private let snapshotOperations: SnapshotOperations
     @ObservationIgnored private let defaults: UserDefaults?
     @ObservationIgnored private var places: [URL: SessionPlace] = [:]
+    @ObservationIgnored private var savingNicknames: [String: String?] = [:]
 
     init(fetch: @escaping @Sendable () async throws -> NsStatus,
          start: @escaping BranchAction = { _, _, _ in },
@@ -85,6 +88,7 @@ final class NsWorkspace {
          previewRemoval: @escaping PreviewRemoval = { _ in throw NsFailure(message: "ns indisponível") },
          remove: @escaping RemoveBranch = { _, _, _ in throw NsFailure(message: "ns indisponível") },
          openDatabase: @escaping OpenDatabase = { _ in throw NsFailure(message: "ns indisponível") },
+         setNickname: @escaping SetNickname = { _, _ in throw NsFailure(message: "ns indisponível") },
          snapshots: SnapshotOperations = .unavailable,
          defaults: UserDefaults? = nil) {
         self.fetch = fetch
@@ -95,6 +99,7 @@ final class NsWorkspace {
         self.previewRemoval = previewRemoval
         removeBranch = remove
         openBranchDatabase = openDatabase
+        saveNickname = setNickname
         snapshotOperations = snapshots
         self.defaults = defaults
         memory = NsMemory(defaults: defaults)
@@ -106,13 +111,14 @@ final class NsWorkspace {
                            start: { try await client.start(branch: $0, service: $1, progress: $2) },
                            stop: { try await client.stop(branch: $0, service: $1, progress: $2) },
                            create: BranchCreation.Operations(
-                               create: { try await client.new(branch: $0, repos: $1, steps: $2, ask: $3) },
+                               create: { try await client.new($0, steps: $1, ask: $2) },
                                addRepo: { try await client.addRepo(branch: $0, repo: $1, steps: $2) },
                                prepare: { try await client.prepare(branch: $0, steps: $1, ask: $2) }),
                            update: { try await client.pull(branch: $0, progress: $1) },
                            previewRemoval: { try await client.removalPreview(branch: $0) },
                            remove: { try await client.remove(branch: $0, purge: $1, progress: $2) },
                            openDatabase: { try await client.openDatabase(branch: $0) },
+                           setNickname: { try await client.setNickname(branch: $0, nickname: $1) },
                            snapshots: SnapshotOperations(
                                list: { try await client.snapshots() },
                                take: { try await client.takeSnapshot(branch: $0, name: $1, replace: $2, progress: $3) },
@@ -151,7 +157,7 @@ final class NsWorkspace {
 
     func refresh() async {
         do {
-            let latest = try await fetch()
+            let latest = withSavingNicknames(try await fetch())
             if latest != status { status = latest }
             remember(latest)
             problem = nil
@@ -332,5 +338,33 @@ final class NsWorkspace {
         case is DecodingError: "o ns rpc respondeu num formato inesperado"
         default: "não consegui iniciar o ns rpc: \(error.localizedDescription)"
         }
+    }
+}
+
+extension NsWorkspace {
+    func setNickname(_ branch: String, to text: String) async {
+        let nickname = BranchNickname.normalized(text)
+        guard let index = status?.branches.firstIndex(where: { $0.branch == branch }),
+              status?.branches[index].nickname != nickname else { return }
+        status?.branches[index].nickname = nickname
+        savingNicknames[branch] = nickname
+        do {
+            try await saveNickname(branch, nickname ?? "")
+            actionProblems[branch] = nil
+        } catch {
+            actionProblems[branch] = Self.describe(error)
+        }
+        savingNicknames[branch] = nil
+        await refresh()
+    }
+
+    private func withSavingNicknames(_ status: NsStatus) -> NsStatus {
+        var status = status
+        for (branch, nickname) in savingNicknames {
+            if let index = status.branches.firstIndex(where: { $0.branch == branch }) {
+                status.branches[index].nickname = nickname
+            }
+        }
+        return status
     }
 }

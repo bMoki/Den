@@ -66,17 +66,12 @@ final class WorkspaceModel {
         chats[id]?.isLive ?? false
     }
 
-    enum SessionIndicator {
-        case unread, working, waiting, rateLimited
+    func state(for id: UUID) -> SessionState? {
+        chats[id]?.sessionState
     }
 
-    func indicator(for id: UUID) -> SessionIndicator? {
-        guard let chat = chats[id] else { return nil }
-        if chat.isRateLimited { return .rateLimited }
-        if chat.pending != nil || chat.pendingQuestion != nil { return .waiting }
-        if chat.isBusy { return .working }
-        if chat.hasUnread { return .unread }
-        return nil
+    func tally(_ sessions: [SessionSummary]) -> SessionTally {
+        SessionTally(total: sessions.count, prevailing: PrevailingState(sessions.map { state(for: $0.id) }))
     }
 
     private func adopt(_ chat: ChatModel) {

@@ -5,13 +5,22 @@ import Testing
 nonisolated private let created = NsClient.Created(paths: .init(root: "/w/NS-1"), missingRepos: [])
 
 private func operations(
-    create: @escaping @Sendable (String, [String], @escaping NsClient.Steps,
-                                 @escaping NsClient.Ask) async throws -> NsClient.Created = { _, _, _, _ in created },
+    create: @escaping @Sendable (NsClient.NewBranch, @escaping NsClient.Steps,
+                                 @escaping NsClient.Ask) async throws -> NsClient.Created = { _, _, _ in created },
     addRepo: @escaping @Sendable (String, String, @escaping NsClient.Steps) async throws -> Void = { _, _, _ in },
     prepare: @escaping @Sendable (String, @escaping NsClient.Steps,
                                   @escaping NsClient.Ask) async throws -> Void = { _, _, _ in }
 ) -> BranchCreation.Operations {
     BranchCreation.Operations(create: create, addRepo: addRepo, prepare: prepare)
+}
+
+nonisolated private final class SentRequests: @unchecked Sendable {
+    private let lock = NSLock()
+    private var entries: [NsClient.NewBranch] = []
+
+    var all: [NsClient.NewBranch] { lock.withLock { entries } }
+
+    func append(_ request: NsClient.NewBranch) { lock.withLock { entries.append(request) } }
 }
 
 @MainActor
@@ -20,6 +29,7 @@ private func operations(
 
     #expect(creation.repos == [.manager])
     #expect(creation.name.isEmpty)
+    #expect(creation.nickname.isEmpty)
     #expect(!creation.canCreate)
     creation.name = "NS 1"
     #expect(!creation.canCreate)
@@ -29,9 +39,9 @@ private func operations(
 
 @MainActor
 @Test func creatingSendsTheReposAndOpensTheSessionAtTheRoot() async {
-    let calls = Recorder()
-    let creation = BranchCreation(operations: operations(create: { branch, repos, steps, _ in
-        calls.append("\(branch) \(repos.joined(separator: ","))")
+    let sent = SentRequests()
+    let creation = BranchCreation(operations: operations(create: { request, steps, _ in
+        sent.append(request)
         steps(NsEvent(step: "new:repo", label: "Configurando Backend..."))
         steps(NsEvent(step: "database:start", label: "Iniciando PostgreSQL..."))
         return created
@@ -42,7 +52,7 @@ private func operations(
     var opened: URL?
     await creation.create { opened = $0 }
 
-    #expect(calls.all == ["NS-1 manager,parents"])
+    #expect(sent.all == [NsClient.NewBranch(branch: "NS-1", repos: ["manager", "parents"], nickname: nil)])
     #expect(opened == URL(fileURLWithPath: "/w/NS-1", isDirectory: true))
     #expect(creation.phase == .finished)
     #expect(creation.steps.map(\.id) == ["create", "add:parents", "database", "aliases", "deps"])
@@ -51,9 +61,25 @@ private func operations(
 }
 
 @MainActor
+@Test(arguments: [("  Guia TISS\nem lote  ", "Guia TISS em lote"), ("   ", nil)] as [(String, String?)])
+func theNicknameGoesToTheNsInOneLineAndBlankMeansNone(typed: String, expected: String?) async {
+    let sent = SentRequests()
+    let creation = BranchCreation(operations: operations(create: { request, _, _ in
+        sent.append(request)
+        return created
+    }))
+    creation.name = "NS-1"
+    creation.nickname = typed
+
+    await creation.create { _ in }
+
+    #expect(sent.all.map(\.nickname) == [expected])
+}
+
+@MainActor
 @Test func eachStepOfTheNsLightsUpItsRow() async {
     let gate = AsyncStream<Void>.makeStream()
-    let creation = BranchCreation(operations: operations(create: { _, _, steps, _ in
+    let creation = BranchCreation(operations: operations(create: { _, steps, _ in
         steps(NsEvent(step: "new:seed", label: "Seedando volume do banco..."))
         steps(NsEvent(step: "portless:aliases", label: "Registrando aliases Portless..."))
         for await _ in gate.stream { break }
@@ -75,7 +101,7 @@ private func operations(
 @MainActor
 @Test func aQuestionFromTheNsWaitsForTheAnswerAndReopensTheDialog() async {
     let answers = Recorder()
-    let creation = BranchCreation(operations: operations(create: { _, _, _, ask in
+    let creation = BranchCreation(operations: operations(create: { _, _, ask in
         let value = await ask(NsQuestion(message: "Instalar dependências agora?", default: true))
         answers.append(String(value))
         return created
@@ -99,7 +125,7 @@ private func operations(
 @Test func aMissingRepoKeepsTheBranchAndCanBeRetriedAlone() async {
     let calls = Recorder()
     let creation = BranchCreation(operations: operations(
-        create: { _, _, _, _ in
+        create: { _, _, _ in
             NsClient.Created(paths: .init(root: "/w/NS-1"),
                              missingRepos: [.init(repo: "report-server", message: "fatal: could not read")])
         },
@@ -126,7 +152,7 @@ private func operations(
 @MainActor
 @Test func aRetryThatFailsAgainShowsTheNewError() async {
     let creation = BranchCreation(operations: operations(
-        create: { _, _, _, _ in
+        create: { _, _, _ in
             NsClient.Created(paths: .init(root: "/w/NS-1"), missingRepos: [.init(repo: "parents", message: "x")])
         },
         addRepo: { _, _, _ in throw NsFailure(message: "Branch base 'origin/main' não existe no parents") }))
@@ -143,7 +169,7 @@ private func operations(
 @MainActor
 @Test func aFailureStopsTheCreationOnTheRunningRow() async {
     let failure = NsFailure(message: "docker parado", hint: "A branch foi criada. Para preparar de novo: ns prepare NS-1")
-    let creation = BranchCreation(operations: operations(create: { _, _, steps, _ in
+    let creation = BranchCreation(operations: operations(create: { _, steps, _ in
         steps(NsEvent(step: "database:start", label: "Iniciando PostgreSQL..."))
         throw failure
     }))
@@ -172,7 +198,7 @@ private func operations(
 @Test func plusBranchReturnsToTheCreationInProgress() async {
     let gate = AsyncStream<Void>.makeStream()
     let ns = NsWorkspace(fetch: { throw NsFailure(message: "x") },
-                         create: operations(create: { _, _, _, _ in
+                         create: operations(create: { _, _, _ in
                              for await _ in gate.stream { break }
                              return created
                          }))
@@ -198,7 +224,7 @@ private func operations(
     let refreshes = Recorder()
     let answers = Recorder()
     let answered = AsyncStream<Void>.makeStream()
-    let creation = BranchCreation(operations: operations(create: { _, _, _, ask in
+    let creation = BranchCreation(operations: operations(create: { _, _, ask in
         Task {
             answers.append(String(await ask(NsQuestion(message: "?", default: true))))
             answered.continuation.yield()
@@ -220,7 +246,7 @@ private func operations(
 @Test func aRetryWhosePrepareFailsKeepsTheRepoIncluded() async {
     let refreshes = Recorder()
     let creation = BranchCreation(operations: operations(
-        create: { _, _, _, _ in
+        create: { _, _, _ in
             NsClient.Created(paths: .init(root: "/w/NS-1"), missingRepos: [.init(repo: "parents", message: "x")])
         },
         addRepo: { _, _, steps in steps(NsEvent(step: "add:parents:worktree", label: "Criando worktree...")) },
@@ -241,7 +267,7 @@ private func operations(
 @MainActor
 @Test(.timeLimit(.minutes(1))) func aQuestionAfterTheCreationIsGoneTakesItsDefault() async {
     let kept = AsyncStream<NsClient.Ask>.makeStream()
-    var creation: BranchCreation? = BranchCreation(operations: operations(create: { _, _, _, ask in
+    var creation: BranchCreation? = BranchCreation(operations: operations(create: { _, _, ask in
         kept.continuation.yield(ask)
         return created
     }))

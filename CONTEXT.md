@@ -2,7 +2,7 @@
 
 Glossário da linguagem do domínio. Apenas termos e seus significados — sem detalhes de implementação.
 
-A linguagem do `ns` é herdada do glossário do cli ([`../cli/CONTEXT.md`](../cli/CONTEXT.md)) e não é redefinida aqui: **Branch de workspace**, **Repo**, **Snapshot**, **Restaurar**, **Branch principal (`@default`)**, **Serviço**, **Plano de serviços**, **Preparar**, **Iniciar**, **Núcleo**, **Adapter**. Este arquivo acrescenta apenas os termos próprios da IDE.
+A linguagem do `ns` é herdada do glossário do cli ([`../cli/CONTEXT.md`](../cli/CONTEXT.md)) e não é redefinida aqui: **Branch de workspace**, **Repo**, **Snapshot**, **Restaurar**, **Branch principal (`@default`)**, **Serviço**, **Plano de serviços**, **Preparar**, **Iniciar**, **Núcleo**, **Adapter**, **Apelido**. Este arquivo acrescenta apenas os termos próprios da IDE.
 
 ## Termos
 
@@ -42,6 +42,16 @@ Em que situação um Serviço está, do ponto de vista de quem trabalha na Branc
 - **Falhou** — foi iniciado e terminou sem ser parado; a saída do erro continua disponível no Console.
 
 O banco da Branch de workspace só tem Parado e Rodando, e não tem Console.
+
+### Estado de Sessão
+Em que situação uma Sessão está, ordenada por quanto ela precisa de quem trabalha nela:
+1. **Aguardando decisão** — o agente parou à espera de uma permissão ou de uma resposta.
+2. **Tokens esgotados** — o agente não consegue continuar até que se decida o que fazer.
+3. **Resposta nova** — o agente terminou e a vez é de quem trabalha na Sessão, que ainda não viu a resposta.
+4. **Pensando** — o agente está trabalhando; não precisa de ninguém.
+
+Uma Sessão sem nenhum desses está ociosa. Quando mais de um vale ao mesmo tempo, prevalece o de cima.
+_Evitar:_ "status da sessão" para o Estado de Serviço, e vice-versa.
 
 ### Repo opcional
 Um Repo que uma Branch de workspace pode ou não ter, escolhido ao criá-la: **manager** (incluído por padrão), **report-server** e **parents**. Backend, frontend e docs estão sempre presentes.

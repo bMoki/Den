@@ -6,7 +6,7 @@ struct BranchHeader: View {
     let activity: NsWorkspace.Activity?
     var problem: String?
     var pullRequests: [PullRequest] = []
-    let sessionCount: Int
+    let sessions: SessionTally
     let isOpen: Bool
     var toggle: () -> Void
     var newSession: () -> Void
@@ -14,23 +14,21 @@ struct BranchHeader: View {
     var stop: () -> Void
     var update: () -> Void
     var remove: () -> Void
+    var setNickname: (String) -> Void
 
     @State private var hovering = false
+    @State private var isEditing = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 8) {
                 DisclosureChevron(isOpen: isOpen)
-                Text(name)
-                    .font(.system(size: 12.5, weight: .medium, design: .monospaced))
-                    .lineLimit(1)
-                    .truncationMode(.middle)
+                title
                 Spacer(minLength: 4)
                 if hovering || activity != nil {
                     actions
-                } else if sessionCount > 0 {
-                    SessionCountLabel(count: sessionCount)
                 }
+                SessionTallyLabel(sessions: sessions)
             }
             .frame(height: 20)
             if let branch, !branch.services.isEmpty || !pullRequests.isEmpty {
@@ -75,6 +73,7 @@ struct BranchHeader: View {
             DenMenuSection(id: "branch", items: [
                 DenMenuItem(id: "update", title: BranchActionTitle.update, isEnabled: activity == nil, action: update),
                 DenMenuItem(id: "new-session", title: "Nova sessão aqui", action: newSession),
+                DenMenuItem(id: "nickname", title: BranchActionTitle.nickname) { isEditing = true },
             ]),
             DenMenuSection(id: "remove", items: [
                 DenMenuItem(id: "remove", title: BranchActionTitle.remove, isEnabled: activity == nil,
@@ -82,8 +81,38 @@ struct BranchHeader: View {
             ]),
         ])
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(name)
+        .accessibilityLabel(branch?.nickname.map { "\($0), \(name)" } ?? name)
         .accessibilityValue(isOpen ? "aberta" : "fechada")
+    }
+
+    @ViewBuilder
+    private var title: some View {
+        if isEditing {
+            InlineRenameField(initial: branch?.nickname ?? "", placeholder: name, limit: BranchNickname.maxLength,
+                              commit: setNickname) { isEditing = false }
+                .font(.system(size: 12.5, weight: .medium))
+                .padding(.horizontal, 5)
+                .frame(height: 20)
+                .background(Theme.field, in: RoundedRectangle(cornerRadius: 4, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 4, style: .continuous).strokeBorder(Theme.accent))
+        } else if let nickname = branch?.nickname {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text(nickname)
+                    .font(.system(size: 12.5, weight: .medium))
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                Text(name)
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundStyle(Theme.textTertiary)
+                    .lineLimit(1)
+                    .fixedSize()
+            }
+        } else {
+            Text(name)
+                .font(.system(size: 12.5, weight: .medium, design: .monospaced))
+                .lineLimit(1)
+                .truncationMode(.middle)
+        }
     }
 
     private func stateSummary(_ branch: NsStatus.Branch) -> String {

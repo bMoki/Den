@@ -193,7 +193,7 @@ private let answersStatus = #"""
 
     let steps = Recorder()
     let questions = Recorder()
-    let created = try await client.new(branch: "NS-1", repos: ["manager", "parents"],
+    let created = try await client.new(.init(branch: "NS-1", repos: ["manager", "parents"], nickname: "Guia TISS"),
                                        steps: { steps.append($0.step) },
                                        ask: { questions.append($0.message); return false })
 
@@ -205,6 +205,7 @@ private let answersStatus = #"""
     #expect(request.contains(#""op":"new""#))
     #expect(request.contains(#""repos":["manager","parents"]"#))
     #expect(request.contains(#""installMissingDeps":"ask""#))
+    #expect(request.contains(#""nickname":"Guia TISS""#))
     let answer = try String(contentsOf: folder.appending(path: "ns.answer"), encoding: .utf8)
     #expect(answer.contains(#""type":"answer""#))
     #expect(answer.contains(#""ask":"a1""#))
@@ -385,4 +386,21 @@ private let answersStatus = #"""
         "dbRestore branch=NS-1 ref=master:seed",
         "dbRmSnapshot branch=NS-1 name=antes",
     ])
+}
+
+@Test func nicknamingSendsTheBranchAndTheText() async throws {
+    let (client, folder) = try fakeNs(#"""
+        read -r line
+        printf '%s\n' "$line" > "$0.request"
+        echo '{"type":"result","id":"1","result":{"branch":"NS-1","nickname":"Agenda"}}'
+        cat >/dev/null
+        """#)
+    defer { try? FileManager.default.removeItem(at: folder) }
+
+    try await client.setNickname(branch: "NS-1", nickname: "Agenda")
+
+    let request = try String(contentsOf: folder.appending(path: "ns.request"), encoding: .utf8)
+    #expect(request.contains(#""op":"setNickname""#))
+    #expect(request.contains(#""branch":"NS-1""#))
+    #expect(request.contains(#""nickname":"Agenda""#))
 }

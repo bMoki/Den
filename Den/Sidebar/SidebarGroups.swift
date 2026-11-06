@@ -5,12 +5,14 @@ nonisolated struct SidebarGroups: Equatable {
     nonisolated struct Folder: Identifiable, Equatable {
         let id: String
         var name: String
+        var nickname: String?
         var path: URL
         var sessions: [SessionSummary]
 
-        init(group: String, name: String, path: URL, sessions: [SessionSummary]) {
+        init(group: String, name: String, nickname: String? = nil, path: URL, sessions: [SessionSummary]) {
             id = group + ":" + path.path
             self.name = name
+            self.nickname = nickname
             self.path = path
             self.sessions = sessions
         }
@@ -45,9 +47,11 @@ nonisolated struct SidebarGroups: Equatable {
 
         let keep = { (folder: Folder) in
             search.isEmpty || !folder.sessions.isEmpty || folder.name.localizedCaseInsensitiveContains(search)
+                || BranchNickname.matches(folder.nickname, search)
         }
         branches = (status?.branches ?? []).map {
-            Folder(group: "branch", name: $0.branch, path: URL(fileURLWithPath: $0.path), sessions: branchSessions[$0.branch] ?? [])
+            Folder(group: "branch", name: $0.branch, nickname: $0.nickname, path: URL(fileURLWithPath: $0.path),
+                   sessions: branchSessions[$0.branch] ?? [])
         }.filter(keep)
         baseRepos = (status?.baseRepos ?? []).map {
             Folder(group: "base", name: $0.repo, path: URL(fileURLWithPath: $0.path), sessions: baseSessions[$0.repo] ?? [])

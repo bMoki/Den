@@ -24,6 +24,22 @@ struct SessionCountLabel: View {
     }
 }
 
+struct SessionTallyLabel: View {
+    let sessions: SessionTally
+
+    var body: some View {
+        if let prevailing = sessions.prevailing {
+            HStack(spacing: 5) {
+                SessionStateDot(state: prevailing.state)
+                SessionCountLabel(count: prevailing.count)
+            }
+            .describedAs(prevailing.label)
+        } else if sessions.total > 0 {
+            SessionCountLabel(count: sessions.total)
+        }
+    }
+}
+
 extension View {
     func sidebarHeaderRow(hovering: Binding<Bool>, isOpen: Bool, toggle: @escaping () -> Void) -> some View {
         background(hovering.wrappedValue ? Theme.hover.opacity(0.7) : .clear,

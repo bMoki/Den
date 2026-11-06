@@ -99,3 +99,12 @@ nonisolated let sampleStatus = NsStatus(
     #expect(status.branches[0].gitBranch(of: "backend") == nil)
     #expect(status.branches[1].gitBranch(of: "backend") == "NS-2")
 }
+
+@Test func aBranchCarriesItsNicknameAndNullMeansNone() throws {
+    let json = #"""
+        {"baseRepos":[],"branches":[{"branch":"NS-1","nickname":"Agenda recorrente","path":"/w/NS-1"},
+                                     {"branch":"NS-2","nickname":null,"path":"/w/NS-2"}]}
+        """#
+    let status = try JSONDecoder().decode(NsStatus.self, from: Data(json.utf8))
+    #expect(status.branches.map(\.nickname) == ["Agenda recorrente", nil])
+}

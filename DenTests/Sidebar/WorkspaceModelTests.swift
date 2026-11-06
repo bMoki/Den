@@ -19,34 +19,39 @@ import HarnessCore
     }
 }
 
-@Test func indicatorRanksRateLimitAboveTheRest() async throws {
+@Test func stateRanksWhatNeedsAttentionFirst() async throws {
     try await withWorkspace { harness in
         let session = storedSession("busy")
         try await harness.store.saveMetadata(session)
         await harness.model.select(session.id)
         let chat = try #require(harness.model.active)
 
-        #expect(harness.model.indicator(for: session.id) == nil)
-
-        chat.hasUnread = true
-        #expect(harness.model.indicator(for: session.id) == .unread)
+        #expect(harness.model.state(for: session.id) == nil)
 
         chat.isBusy = true
-        #expect(harness.model.indicator(for: session.id) == .working)
+        #expect(harness.model.state(for: session.id) == .thinking)
 
-        chat.pendingQuestion = nil
-        chat.pending = PermissionRequest(id: "p1", toolName: "Bash",
-                                         input: .object([:]), options: [])
-        #expect(harness.model.indicator(for: session.id) == .waiting)
+        chat.hasUnread = true
+        #expect(harness.model.state(for: session.id) == .newReply)
 
         chat.isRateLimited = true
-        #expect(harness.model.indicator(for: session.id) == .rateLimited)
+        #expect(harness.model.state(for: session.id) == .outOfTokens)
+
+        chat.pending = PermissionRequest(id: "p1", toolName: "Bash",
+                                         input: .object([:]), options: [])
+        #expect(harness.model.state(for: session.id) == .awaitingDecision)
+
+        chat.pending = nil
+        chat.pendingQuestion = nil
+        chat.isRateLimited = false
+        chat.hasUnread = false
+        #expect(harness.model.state(for: session.id) == .thinking)
     }
 }
 
-@Test func indicatorIsQuietForASessionNeverOpened() async throws {
+@Test func stateIsQuietForASessionNeverOpened() async throws {
     try await withWorkspace { harness in
-        #expect(harness.model.indicator(for: UUID()) == nil)
+        #expect(harness.model.state(for: UUID()) == nil)
         #expect(harness.model.isLive(UUID()) == false)
     }
 }
@@ -101,5 +106,28 @@ import HarnessCore
         defaults.set("ghost-harness", forKey: "Den.defaultHarness")
     }) { harness in
         #expect(harness.model.defaultHarness == HarnessRegistry.standard.fallback)
+    }
+}
+
+@Test func tallyCountsEverySessionButOnlyLoadedOnesHaveAState() async throws {
+    try await withWorkspace { harness in
+        let waiting = storedSession("waiting")
+        let busy = storedSession("busy")
+        let untouched = storedSession("untouched")
+        for session in [waiting, busy, untouched] {
+            try await harness.store.saveMetadata(session)
+        }
+        await harness.model.refresh()
+        await harness.model.select(busy.id)
+        try #require(harness.model.active).isBusy = true
+        await harness.model.select(waiting.id)
+        try #require(harness.model.active).pending = PermissionRequest(id: "p1", toolName: "Bash",
+                                                                       input: .object([:]), options: [])
+
+        let tally = harness.model.tally(harness.model.summaries)
+        #expect(tally.total == 3)
+        #expect(tally.prevailing?.state == .awaitingDecision)
+        #expect(tally.prevailing?.count == 1)
+        #expect(harness.model.tally([]) == SessionTally(total: 0, prevailing: nil))
     }
 }

@@ -327,3 +327,79 @@ private func snapshotOperations(_ groups: [NsClient.SnapshotGroup], calls: Recor
     #expect(ns.snapshotGroups.isEmpty)
     #expect(ns.snapshotsProblem == "ns indisponível")
 }
+
+@Test func aNicknameShowsAtOnceAndIsSavedInNs() async {
+    let saved = Recorder()
+    let gate = AsyncStream<Void>.makeStream()
+    var named = sampleStatus
+    named.branches[0].nickname = "Agenda recorrente"
+    let replies = Replies([.success(sampleStatus), .success(named)])
+    let ns = NsWorkspace(fetch: { try replies.next() }, setNickname: { branch, nickname in
+        saved.append("\(branch) \(nickname)")
+        for await _ in gate.stream { break }
+    })
+    await ns.refresh()
+
+    let renaming = Task { await ns.setNickname("NS-12", to: "  Agenda recorrente ") }
+    while saved.all.isEmpty { await Task.yield() }
+    #expect(ns.branch(named: "NS-12")?.nickname == "Agenda recorrente")
+
+    gate.continuation.yield()
+    await renaming.value
+    #expect(saved.all == ["NS-12 Agenda recorrente"])
+    #expect(ns.actionProblems["NS-12"] == nil)
+}
+
+@Test func clearingANicknameSendsAnEmptyText() async {
+    let saved = Recorder()
+    var named = sampleStatus
+    named.branches[0].nickname = "Agenda"
+    let replies = Replies([.success(named), .success(sampleStatus)])
+    let ns = NsWorkspace(fetch: { try replies.next() }, setNickname: { saved.append("\($0) [\($1)]") })
+    await ns.refresh()
+
+    await ns.setNickname("NS-12", to: "   ")
+
+    #expect(saved.all == ["NS-12 []"])
+    #expect(ns.branch(named: "NS-12")?.nickname == nil)
+}
+
+@Test func aRefreshWhileSavingKeepsTheNewNickname() async {
+    let gate = AsyncStream<Void>.makeStream()
+    let saving = Recorder()
+    let ns = NsWorkspace(fetch: { sampleStatus }, setNickname: { _, _ in
+        saving.append("saving")
+        for await _ in gate.stream { break }
+    })
+    await ns.refresh()
+
+    let naming = Task { await ns.setNickname("NS-12", to: "Agenda") }
+    while saving.all.isEmpty { await Task.yield() }
+    await ns.refresh()
+    #expect(ns.branch(named: "NS-12")?.nickname == "Agenda")
+
+    gate.continuation.yield()
+    await naming.value
+}
+
+@Test func anUnchangedNicknameIsNotSaved() async {
+    let saved = Recorder()
+    let ns = NsWorkspace(fetch: { sampleStatus }, setNickname: { saved.append($0 + $1) })
+    await ns.refresh()
+
+    await ns.setNickname("NS-12", to: "")
+
+    #expect(saved.all.isEmpty)
+}
+
+@Test func aNicknameNsRefusesIsReportedAndNsDecides() async {
+    let replies = Replies([.success(sampleStatus), .success(sampleStatus)])
+    let ns = NsWorkspace(fetch: { try replies.next() },
+                         setNickname: { _, _ in throw NsFailure(message: "Branch 'NS-12' não encontrada") })
+    await ns.refresh()
+
+    await ns.setNickname("NS-12", to: "Agenda")
+
+    #expect(ns.actionProblems["NS-12"] == "Branch 'NS-12' não encontrada")
+    #expect(ns.branch(named: "NS-12")?.nickname == nil)
+}
