@@ -17,7 +17,7 @@ def exported(*files):
     ]}]}
 
 
-def reported(*files, target="Den Dev.app"):
+def reported(*files, target="Den.app"):
     return {"targets": [{"name": target, "files": [
         {"path": path, "coveredLines": covered, "executableLines": count}
         for path, covered, count in files
