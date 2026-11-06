@@ -43,6 +43,16 @@ Em que situação um Serviço está, do ponto de vista de quem trabalha na Branc
 
 O banco da Branch de workspace só tem Parado e Rodando, e não tem Console.
 
+### Estado de Sessão
+Em que situação uma Sessão está, ordenada por quanto ela precisa de quem trabalha nela:
+1. **Aguardando decisão** — o agente parou à espera de uma permissão ou de uma resposta.
+2. **Tokens esgotados** — o agente não consegue continuar até que se decida o que fazer.
+3. **Resposta nova** — o agente terminou e a vez é de quem trabalha na Sessão, que ainda não viu a resposta.
+4. **Pensando** — o agente está trabalhando; não precisa de ninguém.
+
+Uma Sessão sem nenhum desses está ociosa. Quando mais de um vale ao mesmo tempo, prevalece o de cima.
+_Evitar:_ "status da sessão" para o Estado de Serviço, e vice-versa.
+
 ### Repo opcional
 Um Repo que uma Branch de workspace pode ou não ter, escolhido ao criá-la: **manager** (incluído por padrão), **report-server** e **parents**. Backend, frontend e docs estão sempre presentes.
 

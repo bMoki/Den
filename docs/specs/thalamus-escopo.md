@@ -15,6 +15,10 @@ Escrito em linguagem de negócio. As regras são numeradas e estáveis: uma regr
 - **T-1.3** A lista de Branches de workspace vem do `ns`, não de um cadastro do Thalamus.
 - **T-1.4** Cada Branch de workspace mostra na sua linha o Estado dos seus Serviços e a situação dos PRs dos seus Repos.
 - **T-1.5** Quando uma Branch de workspace é removida (pelo Thalamus ou pelo terminal), suas Sessões viram Sessões arquivadas: continuam legíveis e não aceitam novas mensagens.
+- **T-1.6** Cada Sessão mostra seu Estado de Sessão. Quando mais de um vale ao mesmo tempo, prevalece o de cima na ordem: Aguardando decisão, Tokens esgotados, Resposta nova, Pensando. Dois estados são animados: Aguardando decisão, em âmbar, com um anel que se espalha a partir do indicador, para chamar quem trabalha na Sessão; e Pensando com um arco que gira em volta do indicador, para mostrar que algo está em curso. Os outros ficam parados. Com "Reduzir movimento" ligado no sistema, todos ficam parados e a cor basta para distingui-los.
+- **T-1.7** O cabeçalho de cada Branch de workspace, Repo base e pasta de Outras pastas resume o Estado de Sessão das suas Sessões: mostra o estado que prevalece entre elas e quantas Sessões estão nele, no lugar da contagem total de Sessões. Sem nenhuma Sessão com Estado de Sessão, volta a mostrar a contagem total. Arquivadas não tem resumo.
+- **T-1.8** O resumo aparece com o cabeçalho aberto ou fechado e continua visível com o mouse sobre ele, ao lado das ações. Clicar no resumo não faz nada.
+- **T-1.9** Só entram no resumo as Sessões do Thalamus. Sessões de agente abertas fora dele (por exemplo, no terminal) e avisos com o Thalamus em segundo plano estão fora de escopo agora (ver [pendencias.md](../pendencias.md)).
 
 ## 2. Nova Branch de workspace
 
