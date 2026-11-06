@@ -34,6 +34,12 @@ Escrito em linguagem de negócio. As regras são numeradas e estáveis: uma regr
 - **T-3.5** O Thalamus nunca é dono de um Serviço. Fechar o Thalamus não para nenhum Serviço, e o Thalamus acompanha Serviços iniciados pelo terminal ou antes de ele abrir.
 - **T-3.6** Num Serviço que Falhou, o Console mostra a saída do erro.
 - **T-3.7** O banco não tem Console. Tem o atalho "Abrir no app de banco" (DataGrip ou o app configurado no `ns`).
+- **T-3.8** Cada Serviço e o banco são marcados no Thalamus por um indicador. A cor do indicador é sempre o Estado; a forma identifica qual Serviço é. O mesmo indicador aparece em todo lugar onde o Serviço aparece: linha da Branch de workspace, painel de Serviços e abas de Console.
+- **T-3.9** Os Ajustes têm a aba **Indicadores**, com uma seção Serviços (backend, frontend, manager, report-server) e uma seção Banco. As linhas são sempre as mesmas, existam ou não Branches de workspace com aquele Serviço. O banco tem linha própria, mas continua não sendo um Serviço.
+- **T-3.10** A aba tem um Estilo geral: **Pontos** (um ponto por Serviço e um quadrado para o banco, sem distinguir qual é qual) ou **Ícones** (um ícone por Serviço). O padrão é Pontos. Voltar a Pontos guarda os ícones escolhidos para quando se voltar a Ícones.
+- **T-3.11** Cada linha escolhe um ícone entre as sugestões daquele Serviço, todos os ícones e logos que o Thalamus traz, ou um nome de símbolo do sistema digitado à mão. Um nome que não existe não é aceito; um nome aceito que deixa de existir aparece como ponto. Não há importação de logos próprios.
+- **T-3.12** Dois Serviços podem ter o mesmo ícone, sem aviso.
+- **T-3.13** Os ícones padrão são os logos da tecnologia de cada Serviço: Quarkus no backend, Vite no frontend, Tailwind no manager, Bun no report-server; o banco tem um cilindro. "Restaurar padrões" volta o Estilo a Pontos e os ícones a esses.
 
 ## 4. Banco: Snapshot e Restaurar
 

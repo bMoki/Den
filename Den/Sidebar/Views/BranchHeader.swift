@@ -36,8 +36,8 @@ struct BranchHeader: View {
             if let branch, !branch.services.isEmpty || !pullRequests.isEmpty {
                 HStack(spacing: 4) {
                     if !branch.services.isEmpty {
-                        ForEach(branch.services) { ServiceDot(state: $0.state) }
-                        ServiceDot(state: branch.database, isDatabase: true)
+                        ForEach(branch.services) { ServiceIndicator(.service($0.id), state: $0.state) }
+                        ServiceIndicator(.database, state: branch.database)
                             .padding(.leading, 2)
                     }
                     ForEach(pullRequests, id: \.url) { PullRequestChip(pullRequest: $0) }

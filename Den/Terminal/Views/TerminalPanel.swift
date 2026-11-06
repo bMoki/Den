@@ -29,7 +29,7 @@ struct TerminalPanel: View {
         HStack(spacing: 0) {
             ForEach(open) { terminal in
                 TerminalTab(title: terminal.title,
-                            state: state(of: terminal),
+                            console: console(of: terminal),
                             isSelected: terminal.id == current.id,
                             select: { terminals.select(terminal) },
                             close: { terminals.close(terminal) })
@@ -71,15 +71,15 @@ struct TerminalPanel: View {
         .overlay(alignment: .bottom) { Rectangle().fill(Theme.border).frame(height: 1) }
     }
 
-    private func state(of terminal: PanelTerminal) -> ServiceState? {
+    private func console(of terminal: PanelTerminal) -> NsStatus.Service? {
         guard case .console(let branch, let service) = terminal.kind else { return nil }
-        return ns.branch(named: branch)?.services.first { $0.id == service }?.state ?? .parado
+        return ns.branch(named: branch)?.services.first { $0.id == service } ?? NsStatus.Service(id: service, state: .parado)
     }
 }
 
 private struct TerminalTab: View {
     let title: String
-    let state: ServiceState?
+    let console: NsStatus.Service?
     let isSelected: Bool
     var select: () -> Void
     var close: () -> Void
@@ -88,8 +88,8 @@ private struct TerminalTab: View {
 
     var body: some View {
         HStack(spacing: 7) {
-            if let state {
-                ServiceDot(state: state)
+            if let console {
+                ServiceIndicator(.service(console.id), state: console.state)
             } else {
                 Image(systemName: "terminal")
                     .font(.system(size: 11))
@@ -104,7 +104,7 @@ private struct TerminalTab: View {
             }
             .buttonStyle(.denGhost(radius: 4))
             .opacity(isSelected || hovering ? 1 : 0)
-            .help(state == nil ? "Fechar Terminal livre" : "Fechar Console")
+            .help(console == nil ? "Fechar Terminal livre" : "Fechar Console")
             .accessibilityLabel("Fechar \(title)")
         }
         .font(.system(size: 12))
