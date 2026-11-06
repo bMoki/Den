@@ -111,7 +111,7 @@ final class NsWorkspace {
                            start: { try await client.start(branch: $0, service: $1, progress: $2) },
                            stop: { try await client.stop(branch: $0, service: $1, progress: $2) },
                            create: BranchCreation.Operations(
-                               create: { try await client.new(branch: $0, repos: $1, steps: $2, ask: $3) },
+                               create: { try await client.new($0, steps: $1, ask: $2) },
                                addRepo: { try await client.addRepo(branch: $0, repo: $1, steps: $2) },
                                prepare: { try await client.prepare(branch: $0, steps: $1, ask: $2) }),
                            update: { try await client.pull(branch: $0, progress: $1) },

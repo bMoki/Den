@@ -193,7 +193,7 @@ private let answersStatus = #"""
 
     let steps = Recorder()
     let questions = Recorder()
-    let created = try await client.new(branch: "NS-1", repos: ["manager", "parents"],
+    let created = try await client.new(.init(branch: "NS-1", repos: ["manager", "parents"], nickname: "Guia TISS"),
                                        steps: { steps.append($0.step) },
                                        ask: { questions.append($0.message); return false })
 
@@ -205,6 +205,7 @@ private let answersStatus = #"""
     #expect(request.contains(#""op":"new""#))
     #expect(request.contains(#""repos":["manager","parents"]"#))
     #expect(request.contains(#""installMissingDeps":"ask""#))
+    #expect(request.contains(#""nickname":"Guia TISS""#))
     let answer = try String(contentsOf: folder.appending(path: "ns.answer"), encoding: .utf8)
     #expect(answer.contains(#""type":"answer""#))
     #expect(answer.contains(#""ask":"a1""#))

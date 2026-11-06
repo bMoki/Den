@@ -42,9 +42,9 @@ struct DialogCancelButton: View {
 }
 
 extension View {
-    func dialogField(focused: Bool) -> some View {
+    func dialogField(focused: Bool, design: Font.Design = .monospaced) -> some View {
         textFieldStyle(.plain)
-            .font(.system(size: 13, design: .monospaced))
+            .font(.system(size: 13, design: design))
             .padding(.horizontal, 11)
             .frame(height: 34)
             .background(Theme.field, in: DialogBox.shape)

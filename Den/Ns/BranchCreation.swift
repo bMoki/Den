@@ -5,7 +5,7 @@ import Observation
 @Observable
 final class BranchCreation {
     nonisolated struct Operations: Sendable {
-        var create: @Sendable (_ branch: String, _ repos: [String], _ steps: @escaping NsClient.Steps,
+        var create: @Sendable (_ request: NsClient.NewBranch, _ steps: @escaping NsClient.Steps,
                                _ ask: @escaping NsClient.Ask) async throws -> NsClient.Created
         var addRepo: @Sendable (_ branch: String, _ repo: String,
                                 _ steps: @escaping NsClient.Steps) async throws -> Void
@@ -14,7 +14,7 @@ final class BranchCreation {
 
         static let unavailable: Operations = {
             let failure = NsFailure(message: "ns indisponível")
-            return Operations(create: { _, _, _, _ in throw failure },
+            return Operations(create: { _, _, _ in throw failure },
                               addRepo: { _, _, _ in throw failure },
                               prepare: { _, _, _ in throw failure })
         }()
@@ -52,6 +52,7 @@ final class BranchCreation {
     }
 
     var name = ""
+    var nickname = ""
     var repos: Set<Repo> = [.manager]
     var isPresented = true
     private(set) var phase = Phase.form
@@ -80,8 +81,10 @@ final class BranchCreation {
     func create(opened: @escaping @MainActor (URL) async -> Void) async {
         guard canCreate else { return }
         name = name.trimmingCharacters(in: .whitespaces)
-        let (branch, operations, ask) = (name, operations, asker())
+        let (operations, ask) = (operations, asker())
         let chosen = Repo.allCases.filter(repos.contains)
+        let request = NsClient.NewBranch(branch: name, repos: chosen.map(\.rawValue),
+                                         nickname: BranchNickname.normalized(nickname))
         steps = [Step(id: StepID.create, title: Self.createTitle(withManager: chosen.contains(.manager)))]
             + chosen.filter { $0 != .manager }.map { Step(id: StepID.add($0.rawValue), title: "Incluir \($0.rawValue)") }
             + [Step(id: StepID.database, title: "Subir o banco da branch"),
@@ -90,7 +93,7 @@ final class BranchCreation {
         phase = .running
         let advance: (NsEvent) -> Void = { self.advance(to: $0) }
         let result = await following(advance) { steps in
-            try await operations.create(branch, chosen.map(\.rawValue), steps, ask)
+            try await operations.create(request, steps, ask)
         }
         settleQuestion()
         switch result {

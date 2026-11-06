@@ -15,9 +15,7 @@ struct InlineRenameField: View {
         TextField(placeholder, text: $draft)
             .textFieldStyle(.plain)
             .focused($focused)
-            .onChange(of: draft) { _, text in
-                if let limit, text.count > limit { draft = String(text.prefix(limit)) }
-            }
+            .limiting($draft, to: limit)
             .onAppear {
                 draft = initial
                 DispatchQueue.main.async { focused = true }
@@ -34,5 +32,13 @@ struct InlineRenameField: View {
         finished = true
         if committing { commit(draft) }
         done()
+    }
+}
+
+extension View {
+    func limiting(_ text: Binding<String>, to limit: Int?) -> some View {
+        onChange(of: text.wrappedValue) { _, value in
+            if let limit, value.count > limit { text.wrappedValue = String(value.prefix(limit)) }
+        }
     }
 }

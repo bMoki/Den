@@ -5,6 +5,7 @@ struct NewBranchSheet: View {
     var start: () -> Void
 
     @FocusState private var nameFocused: Bool
+    @FocusState private var nicknameFocused: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -28,6 +29,7 @@ struct NewBranchSheet: View {
                         .dialogField(focused: nameFocused)
                         .accessibilityLabel("Nome da branch")
                 }
+                nicknameField
                 field("Base") {
                     HStack(spacing: 8) {
                         Image(systemName: "arrow.triangle.branch")
@@ -131,11 +133,38 @@ struct NewBranchSheet: View {
         }
     }
 
-    private func field(_ label: String, @ViewBuilder content: () -> some View) -> some View {
+    private var nicknameField: some View {
+        field("Apelido", note: "opcional",
+              counter: creation.nickname.isEmpty ? nil : "\(creation.nickname.count)/\(BranchNickname.maxLength)") {
+            TextField("", text: $creation.nickname)
+                .focused($nicknameFocused)
+                .onSubmit(start)
+                .limiting($creation.nickname, to: BranchNickname.maxLength)
+                .dialogField(focused: nicknameFocused, design: .default)
+                .accessibilityLabel("Apelido, opcional")
+        }
+    }
+
+    private func field(_ label: String, note: String? = nil, counter: String? = nil,
+                       @ViewBuilder content: () -> some View) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(label)
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(Theme.textSecondary)
+            HStack(spacing: 0) {
+                Text(label)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(Theme.textSecondary)
+                if let note {
+                    Text(" · \(note)")
+                        .font(.system(size: 12))
+                        .foregroundStyle(Theme.textTertiary)
+                }
+                Spacer(minLength: 4)
+                if let counter {
+                    Text(counter)
+                        .font(.system(size: 11, design: .monospaced))
+                        .foregroundStyle(Theme.textTertiary)
+                        .accessibilityHidden(true)
+                }
+            }
             content()
         }
     }

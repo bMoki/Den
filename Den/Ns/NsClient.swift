@@ -122,9 +122,10 @@ actor NsClient {
         let installMissingDeps = "always"
     }
 
-    private nonisolated struct NewInput: Encodable {
+    nonisolated struct NewBranch: Encodable, Equatable, Sendable {
         let branch: String
         let repos: [String]
+        let nickname: String?
         let installMissingDeps = "ask"
     }
 
@@ -220,8 +221,8 @@ actor NsClient {
                                         timeout: .seconds(120), progress: progress)
     }
 
-    func new(branch: String, repos: [String], steps: @escaping Steps, ask: @escaping Ask) async throws -> Created {
-        try await call("new", input: NewInput(branch: branch, repos: repos),
+    func new(_ request: NewBranch, steps: @escaping Steps, ask: @escaping Ask) async throws -> Created {
+        try await call("new", input: request,
                        timeout: .seconds(1800), steps: steps, ask: ask)
     }
 
