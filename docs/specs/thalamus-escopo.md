@@ -19,6 +19,11 @@ Escrito em linguagem de negócio. As regras são numeradas e estáveis: uma regr
 - **T-1.7** O cabeçalho de cada Branch de workspace, Repo base e pasta de Outras pastas resume o Estado de Sessão das suas Sessões: mostra o estado que prevalece entre elas e quantas Sessões estão nele, no lugar da contagem total de Sessões. Sem nenhuma Sessão com Estado de Sessão, volta a mostrar a contagem total. Arquivadas não tem resumo.
 - **T-1.8** O resumo aparece com o cabeçalho aberto ou fechado e continua visível com o mouse sobre ele, ao lado das ações. Clicar no resumo não faz nada.
 - **T-1.9** Só entram no resumo as Sessões do Thalamus. Sessões de agente abertas fora dele (por exemplo, no terminal) e avisos com o Thalamus em segundo plano estão fora de escopo agora (ver [pendencias.md](../pendencias.md)).
+- **T-1.10** Uma Branch de workspace pode ter um Apelido. Com Apelido, o cabeçalho mostra o Apelido como título e o nome da branch ao lado, menor e apagado; sem Apelido, mostra só o nome da branch. O cartão de hover da Branch de workspace mostra os dois do mesmo jeito. Repos base e Outras pastas não têm Apelido.
+- **T-1.11** O Apelido é guardado pelo `ns`, junto com a Branch de workspace, e some quando ela é removida; as Sessões arquivadas mostram só o nome da branch. O Apelido é só visual: não muda o nome da branch, a pasta, o banco, as portas nem as URLs, e não é aceito no lugar do nome da branch nos comandos do `ns`.
+- **T-1.12** A ação "Apelidar…", no menu do cabeçalho da Branch de workspace, edita o título no próprio lugar: Enter grava, Esc cancela, texto vazio tira o Apelido.
+- **T-1.13** O Apelido é texto livre numa linha, com até 40 caracteres; espaços nas pontas são descartados. Não precisa ser único.
+- **T-1.14** A busca da sidebar encontra a Branch de workspace pelo Apelido, sem diferenciar maiúsculas nem acentos, além do nome da branch.
 
 ## 2. Nova Branch de workspace
 
@@ -28,6 +33,7 @@ Escrito em linguagem de negócio. As regras são numeradas e estáveis: uma regr
 - **T-2.4** Perguntas que o `ns` fizer no meio da criação aparecem como diálogo no Thalamus.
 - **T-2.5** Se um Repo opcional falhar depois de a Branch de workspace ter sido criada, ela é mantida, o erro é mostrado e o Thalamus oferece repetir a inclusão daquele Repo.
 - **T-2.6** Ao terminar, abre uma Sessão do Claude Code na raiz da Branch de workspace, sem mensagem inicial.
+- **T-2.7** A ação "+ Branch" também oferece um campo opcional de Apelido (T-1.13). Em branco, a Branch de workspace nasce sem Apelido.
 
 ## 3. Serviços
 

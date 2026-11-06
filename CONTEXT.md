@@ -2,7 +2,7 @@
 
 Glossário da linguagem do domínio. Apenas termos e seus significados — sem detalhes de implementação.
 
-A linguagem do `ns` é herdada do glossário do cli ([`../cli/CONTEXT.md`](../cli/CONTEXT.md)) e não é redefinida aqui: **Branch de workspace**, **Repo**, **Snapshot**, **Restaurar**, **Branch principal (`@default`)**, **Serviço**, **Plano de serviços**, **Preparar**, **Iniciar**, **Núcleo**, **Adapter**. Este arquivo acrescenta apenas os termos próprios da IDE.
+A linguagem do `ns` é herdada do glossário do cli ([`../cli/CONTEXT.md`](../cli/CONTEXT.md)) e não é redefinida aqui: **Branch de workspace**, **Repo**, **Snapshot**, **Restaurar**, **Branch principal (`@default`)**, **Serviço**, **Plano de serviços**, **Preparar**, **Iniciar**, **Núcleo**, **Adapter**, **Apelido**. Este arquivo acrescenta apenas os termos próprios da IDE.
 
 ## Termos
 
