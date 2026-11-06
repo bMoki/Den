@@ -150,6 +150,7 @@ public enum OutboundControlRequest: Equatable, Sendable {
     case setPermissionMode(PermissionMode)
     case setModel(String?)
     case getContextUsage
+    case cancelAsyncMessage(UUID)
 
     var subtype: String {
         switch self {
@@ -158,6 +159,7 @@ public enum OutboundControlRequest: Equatable, Sendable {
         case .setPermissionMode: "set_permission_mode"
         case .setModel: "set_model"
         case .getContextUsage: "get_context_usage"
+        case .cancelAsyncMessage: "cancel_async_message"
         }
     }
 
@@ -173,6 +175,8 @@ public enum OutboundControlRequest: Equatable, Sendable {
             request["model"] = model.map(JSONValue.string) ?? .null
         case .getContextUsage:
             request["detail"] = .string("full")
+        case .cancelAsyncMessage(let turnID):
+            request["message_uuid"] = .string(turnID.uuidString.lowercased())
         }
         let envelope = JSONValue.object([
             "type": .string("control_request"),

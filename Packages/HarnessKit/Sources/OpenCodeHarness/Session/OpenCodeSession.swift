@@ -158,7 +158,7 @@ public actor OpenCodeSession: HarnessSession {
     static func replayable(_ output: MappedOutput) -> [SessionEvent] {
         output.events.filter { event in
             switch event {
-            case .turnStarted, .textDelta, .thinkingDelta, .toolInputDelta: false
+            case .turnStarted, .textDelta, .thinkingDelta, .toolInputDelta, .messageQueue: false
             default: true
             }
         }

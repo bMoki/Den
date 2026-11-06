@@ -1,7 +1,6 @@
 import Testing
 import Foundation
 import HarnessCore
-import HarnessTestSupport
 @testable import ClaudeHarness
 
 private func fixture() throws -> JSONValue {
@@ -95,25 +94,8 @@ while IFS= read -r l; do
 done
 """#
 
-private func session(running script: String) throws -> ClaudeSession {
-    let executable = URL(fileURLWithPath: NSTemporaryDirectory())
-        .appending(path: "fake-claude-\(UUID().uuidString)")
-    try script.write(to: executable, atomically: true, encoding: .utf8)
-    try FileManager.default.setAttributes([.posixPermissions: 0o755],
-                                          ofItemAtPath: executable.path)
-    return ClaudeSession(
-        installation: HarnessInstallation(executable: executable.path, version: "2.1.274"),
-        workingDirectory: URL(fileURLWithPath: NSTemporaryDirectory()))
-}
-
 @Test func theSessionAsksTheCLIWhatFillsTheContext() async throws {
-    let subject = try session(running: answeringCLI)
-    let updates = try await subject.start(.fresh)
-    let drain = Task { for await _ in updates {} }
-
-    let usage = try await withTimeout(seconds: 5) { await subject.contextUsage() }
-    await subject.stop()
-    drain.cancel()
+    let usage = try await askFakeClaude(running: answeringCLI) { await $0.contextUsage() }
 
     #expect(usage?.usedTokens == 4_200)
     #expect(usage?.windowTokens == 1_000_000)
@@ -121,13 +103,7 @@ private func session(running script: String) throws -> ClaudeSession {
 }
 
 @Test func aCLIThatCannotAnswerLeavesTheUsageUnknown() async throws {
-    let subject = try session(running: refusingCLI)
-    let updates = try await subject.start(.fresh)
-    let drain = Task { for await _ in updates {} }
-
-    let usage = try await withTimeout(seconds: 5) { await subject.contextUsage() }
-    await subject.stop()
-    drain.cancel()
+    let usage = try await askFakeClaude(running: refusingCLI) { await $0.contextUsage() }
 
     #expect(usage == nil)
 }

@@ -81,13 +81,22 @@ struct TranscriptRow: View {
     }
 
     private func userBubble(_ line: ChatLine) -> some View {
-        HStack(spacing: 0) {
-            Spacer(minLength: 96)
-            MessageBubble(text: line.text, moment: line.timestamp,
-                          style: .user,
-                          images: line.images, files: line.files, onZoom: onZoom,
-                          isOpen: expanded.contains(line.id),
-                          onToggle: LongText.isLong(line.text) ? { toggle(line.id) } : nil)
+        VStack(alignment: .trailing, spacing: 4) {
+            HStack(spacing: 0) {
+                Spacer(minLength: 96)
+                MessageBubble(text: line.text, moment: line.timestamp,
+                              style: .user,
+                              images: line.images, files: line.files, onZoom: onZoom,
+                              isOpen: expanded.contains(line.id),
+                              onToggle: LongText.isLong(line.text) ? { toggle(line.id) } : nil)
+                    .opacity(line.isQueued ? 0.6 : 1)
+            }
+            if line.isQueued {
+                Label("Na fila · ↑ para editar", systemImage: "clock")
+                    .font(.system(size: 11))
+                    .foregroundStyle(Theme.textTertiary)
+                    .accessibilityIdentifier("queued-message")
+            }
         }
     }
 

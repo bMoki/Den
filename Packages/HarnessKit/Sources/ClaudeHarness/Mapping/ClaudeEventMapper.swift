@@ -56,6 +56,8 @@ public struct ClaudeEventMapper: Sendable {
             return system(line)
         case "rate_limit_event":
             return rateLimit(line)
+        case "command_lifecycle":
+            return lifecycle(line)
         case "control_request", "control_response":
 
             return .empty
@@ -315,6 +317,19 @@ private extension ClaudeEventMapper {
         default:
             return MappedOutput(entries: [unrecognized("system/" + subtype, line)])
         }
+    }
+
+    func lifecycle(_ line: JSONValue) -> MappedOutput {
+        guard let turnID = line["command_uuid"]?.stringValue.flatMap(UUID.init(uuidString:)),
+              let state = line["state"]?.stringValue else { return .empty }
+        let queued: QueuedTurnState
+        switch state {
+        case "queued": queued = .waiting
+        case "started", "completed": queued = .received
+        case "cancelled", "discarded", "refused": queued = .dropped
+        default: return .empty
+        }
+        return MappedOutput(events: [.messageQueue(turnID: turnID, state: queued)])
     }
 
     func rateLimit(_ line: JSONValue) -> MappedOutput {

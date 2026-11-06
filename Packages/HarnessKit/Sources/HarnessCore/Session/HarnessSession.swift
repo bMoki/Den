@@ -1,3 +1,5 @@
+import Foundation
+
 public protocol HarnessSession: Actor {
 
     func start(_ start: SessionStart) async throws -> AsyncStream<SessionUpdate>
@@ -15,8 +17,12 @@ public protocol HarnessSession: Actor {
     func contextUsage() async -> ContextUsage?
 
     func stop() async
+
+    func withdraw(_ turnID: UUID) async -> Bool
 }
 
 public extension HarnessSession {
     func contextUsage() async -> ContextUsage? { nil }
+
+    func withdraw(_ turnID: UUID) async -> Bool { false }
 }

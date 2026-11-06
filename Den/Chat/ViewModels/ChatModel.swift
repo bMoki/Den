@@ -79,6 +79,8 @@ final class ChatModel {
 
     var suggestionTurn = 0
 
+    var composer = ComposerState()
+
     var branch: String?
 
     var catalog: CommandCatalog = .empty {
@@ -111,14 +113,14 @@ final class ChatModel {
     private let attachmentsRoot: URL
     var runner: any CommandRunner = SystemCommandRunner()
     var installation: HarnessInstallation?
-    private var session: (any HarnessSession)?
+    private(set) var session: (any HarnessSession)?
     private var consumer: Task<Void, Never>?
     private var hasTitle = false
     private var userRenamed = false
 
     private var harnessSessionID: String
 
-    private var entries: [TranscriptEntry] = []
+    var entries: [TranscriptEntry] = []
 
     private var segmentStart = 0
 
@@ -256,47 +258,13 @@ final class ChatModel {
             status = "pronta"
 
             consumer = Task { [weak self] in
-                for await update in updates { self?.apply(update) }
+                for await update in updates { self?.receive(update) }
             }
             Task { await refreshContextUsage() }
         } catch {
             status = "falhou: \(error)"
 
             append(.notice, "não consegui subir o harness: \(error)")
-        }
-    }
-
-    func attach(imageData: Data) {
-        pendingAttachments.append(PendingAttachment(data: imageData, mediaType: "image/png"))
-    }
-
-    func attach(fileData: Data, name: String, mediaType: String) {
-        pendingAttachments.append(
-            PendingAttachment(data: fileData, mediaType: mediaType, name: name))
-    }
-
-    func removeAttachment(_ id: UUID) {
-        pendingAttachments.removeAll { $0.id == id }
-    }
-
-    @discardableResult
-    func capturePaste(_ text: String) -> Bool {
-        guard LongText.isLong(text) else { return false }
-        pendingPastes.append(PastedText(text: text))
-        return true
-    }
-
-    func removePaste(_ id: UUID) {
-        pendingPastes.removeAll { $0.id == id }
-    }
-
-    func expandPaste(_ id: UUID) {
-        guard let index = pendingPastes.firstIndex(where: { $0.id == id }) else { return }
-        let text = pendingPastes.remove(at: index).text
-        if prompt.isEmpty || prompt.last?.isNewline == true {
-            prompt += text
-        } else {
-            prompt += "\n" + text
         }
     }
 
@@ -326,11 +294,15 @@ final class ChatModel {
         let attached = pendingAttachments
         guard !text.isEmpty || !attached.isEmpty else { return }
         dismissSuggestion()
+        composer.history.leave()
         prompt = ""
         if !keepingPastes { pendingPastes = [] }
         pendingAttachments = []
         if session == nil { await start() }
         guard let session else { return }
+        var turn = UserTurn(text: text, attachments: attached.map {
+            MediaAttachment(mediaType: $0.mediaType, data: $0.data)
+        })
 
         if text == SlashCatalog.compactCommand {
             compactingSince = Date()
@@ -341,20 +313,19 @@ final class ChatModel {
                 kind: .userMessage(text: text, attachments: stored),
                 raw: .object(["type": .string("user"), "text": .string(text)])
             )
-            render(entry, persist: true)
+            post(entry, as: turn.id, attachments: attached)
             await nameFromFirstTurn(text.isEmpty ? "Anexo" : text)
         }
 
-        let outgoing = pendingSeed.map { HandoffSeed.message(seed: $0, request: text) } ?? text
+        turn.text = pendingSeed.map { HandoffSeed.message(seed: $0, request: text) } ?? text
         pendingSeed = nil
 
         isBusy = true
         turnStartedAt = Date()
         do {
-            try await session.send(UserTurn(text: outgoing, attachments: attached.map {
-                MediaAttachment(mediaType: $0.mediaType, data: $0.data)
-            }))
+            try await session.send(turn)
         } catch {
+            restoreQueued(turn.id)
             append(.notice, "não consegui mandar o turno: \(error)")
             isBusy = false
             turnStartedAt = nil
@@ -531,6 +502,7 @@ final class ChatModel {
 
     func stop() async {
         dismissSuggestion()
+        settleQueue()
         consumer?.cancel()
         consumer = nil
         await session?.stop()
@@ -562,7 +534,7 @@ final class ChatModel {
 
     // MARK: - Rendering
 
-    private func apply(_ update: SessionUpdate) {
+    func apply(_ update: SessionUpdate) {
         switch update {
         case .event(let event):
             switch event {
@@ -597,7 +569,7 @@ final class ChatModel {
                            ? "não deu para compactar a conversa"
                            : "não deu para compactar: \(reason)")
                 }
-            case .thinkingDelta, .toolInputDelta:
+            case .thinkingDelta, .toolInputDelta, .messageQueue:
                 break
             }
 
@@ -636,14 +608,9 @@ final class ChatModel {
 
     private var questionCallIDs: Set<String> = []
 
-    private func render(_ entry: TranscriptEntry, persist: Bool) {
-
+    func render(_ entry: TranscriptEntry, persist: Bool) {
         entries.append(entry)
-        if persist {
-            Task { [store, sessionID, segmentID] in
-                try? await store.append(entry, to: segmentID, in: sessionID)
-            }
-        }
+        if persist { save(entry) }
 
         let moment = entry.timestamp
         switch entry.kind {
@@ -726,6 +693,12 @@ final class ChatModel {
                let subtype = entry.raw["subtype"]?.stringValue,
                subtype == "hook_started" || subtype == "hook_response" { return }
             append(.unknown, TranscriptFormatter.oneLine(entry.raw), at: moment)
+        }
+    }
+
+    func save(_ entry: TranscriptEntry) {
+        Task { [store, sessionID, segmentID] in
+            try? await store.append(entry, to: segmentID, in: sessionID)
         }
     }
 

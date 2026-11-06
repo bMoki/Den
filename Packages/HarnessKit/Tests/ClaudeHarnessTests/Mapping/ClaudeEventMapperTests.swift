@@ -431,6 +431,29 @@ private func json(_ text: String) throws -> JSONValue {
     #expect(out.entries[0].raw["rate_limit_info"]?["rateLimitType"]?.stringValue == "five_hour")
 }
 
+@Test(arguments: [("queued", QueuedTurnState.waiting), ("started", .received), ("completed", .received),
+                  ("cancelled", .dropped), ("discarded", .dropped), ("refused", .dropped)])
+func aCommandLifecycleReportsWhereTheMessageIsInTheQueue(state: String, queued: QueuedTurnState) throws {
+    let out = makeMapper().map(try json(#"""
+    {"type":"command_lifecycle","command_uuid":"964c66ae-0fcf-47a9-b028-55f65fd21a82",
+     "state":"\#(state)","uuid":"u","session_id":"s"}
+    """#))
+    let id = try #require(UUID(uuidString: "964c66ae-0fcf-47a9-b028-55f65fd21a82"))
+    #expect(out.events == [.messageQueue(turnID: id, state: queued)])
+    #expect(out.entries.isEmpty)
+}
+
+@Test func aCommandLifecycleInAStateNotYetKnownIsIgnored() throws {
+    let out = makeMapper().map(try json(
+        #"{"type":"command_lifecycle","command_uuid":"964c66ae-0fcf-47a9-b028-55f65fd21a82","state":"parked"}"#))
+    #expect(out == .empty)
+}
+
+@Test func aCommandLifecycleWithoutAUUIDIsDropped() throws {
+    let out = makeMapper().map(try json(#"{"type":"command_lifecycle","state":"queued"}"#))
+    #expect(out == .empty)
+}
+
 // MARK: - Permission entries
 
 @Test func aPermissionRequestBecomesAnEntryWithItsSuggestions() throws {

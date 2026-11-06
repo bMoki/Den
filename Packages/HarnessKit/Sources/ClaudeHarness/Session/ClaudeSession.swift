@@ -72,7 +72,7 @@ public actor ClaudeSession: HarnessSession {
 
     public func send(_ turn: UserTurn) async throws {
         var line = try JSONEncoder().encode(
-            Self.userTurn(text: turn.text, attachments: turn.attachments))
+            Self.userTurn(turn))
         line.append(0x0A)
         try await channel.writeTurn(line)
     }
@@ -89,17 +89,22 @@ public actor ClaudeSession: HarnessSession {
         _ = try await channel.send(.setPermissionMode(mode))
     }
 
+    public func withdraw(_ turnID: UUID) async -> Bool {
+        let response = try? await channel.send(.cancelAsyncMessage(turnID))
+        return response?["cancelled"]?.boolValue ?? false
+    }
+
     public func contextUsage() async -> ContextUsage? {
         guard let response = try? await channel.send(.getContextUsage) else { return nil }
         return ClaudeContextUsage.parse(response)
     }
 
-    static func userTurn(text: String, attachments: [MediaAttachment]) -> JSONValue {
+    static func userTurn(_ turn: UserTurn) -> JSONValue {
         let content: JSONValue
-        if attachments.isEmpty {
-            content = .string(text)
+        if turn.attachments.isEmpty {
+            content = .string(turn.text)
         } else {
-            var blocks: [JSONValue] = attachments.map { attachment in
+            var blocks: [JSONValue] = turn.attachments.map { attachment in
                 .object([
                     "type": .string(attachment.isImage ? "image" : "document"),
                     "source": .object([
@@ -109,13 +114,14 @@ public actor ClaudeSession: HarnessSession {
                     ]),
                 ])
             }
-            if !text.isEmpty {
-                blocks.append(.object(["type": .string("text"), "text": .string(text)]))
+            if !turn.text.isEmpty {
+                blocks.append(.object(["type": .string("text"), "text": .string(turn.text)]))
             }
             content = .array(blocks)
         }
         return .object([
             "type": .string("user"),
+            "uuid": .string(turn.id.uuidString.lowercased()),
             "message": .object([
                 "role": .string("user"),
                 "content": content,

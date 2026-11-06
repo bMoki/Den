@@ -6,6 +6,12 @@ public enum CompactionPhase: Sendable, Equatable {
     case failed(reason: String)
 }
 
+public enum QueuedTurnState: Sendable, Equatable {
+    case waiting
+    case received
+    case dropped
+}
+
 public enum SessionEvent: Sendable, Equatable {
 
     case sessionInitialized(model: String, harnessSessionID: String,
@@ -26,6 +32,8 @@ public enum SessionEvent: Sendable, Equatable {
     case catalogUpdated(CommandCatalog)
 
     case compaction(CompactionPhase)
+
+    case messageQueue(turnID: UUID, state: QueuedTurnState)
 }
 
 public struct MappedOutput: Sendable, Equatable {
