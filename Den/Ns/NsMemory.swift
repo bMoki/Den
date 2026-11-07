@@ -1,23 +1,16 @@
 import Foundation
 
-nonisolated struct NsMemory: Codable, Equatable, Sendable {
+nonisolated struct NsMemory: StoredInDefaults, Equatable, Sendable {
     static let key = "Den.nsMemory"
 
     var worktreesDir: String?
     var branches: [String: String] = [:]
 
+    init() {}
+
     init(worktreesDir: String? = nil, branches: [String: String] = [:]) {
         self.worktreesDir = worktreesDir
         self.branches = branches
-    }
-
-    init(defaults: UserDefaults?) {
-        self = defaults?.data(forKey: Self.key).flatMap { try? JSONDecoder().decode(Self.self, from: $0) } ?? Self()
-    }
-
-    func save(to defaults: UserDefaults?) {
-        guard let data = try? JSONEncoder().encode(self) else { return }
-        defaults?.set(data, forKey: Self.key)
     }
 
     func learned(from status: NsStatus) -> NsMemory {

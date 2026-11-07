@@ -7,6 +7,8 @@ struct FolderHeader: View {
     let isOpen: Bool
     var toggle: () -> Void
     var newSession: () -> Void
+    let isFavorite: Bool
+    var toggleFavorite: () -> Void
 
     @State private var hovering = false
 
@@ -38,6 +40,7 @@ struct FolderHeader: View {
         .denContextMenu([
             DenMenuSection(id: "new", items: [
                 DenMenuItem(id: "new-session", title: "Nova sessão aqui", action: newSession),
+                FavoriteTitle.item(isFavorite: isFavorite, toggle: toggleFavorite),
             ]),
         ])
         .accessibilityElement(children: .combine)

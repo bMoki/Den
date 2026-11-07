@@ -6,29 +6,34 @@ nonisolated struct SidebarGroups: Equatable {
         let id: String
         var name: String
         var nickname: String?
-        var path: URL
         var sessions: [SessionSummary]
+        let favorite: SidebarFavorite
 
-        init(group: String, name: String, nickname: String? = nil, path: URL, sessions: [SessionSummary]) {
-            id = group + ":" + path.path
+        var kind: SidebarFavorite.Kind { favorite.kind }
+        var path: URL { URL(fileURLWithPath: favorite.path) }
+
+        init(_ kind: SidebarFavorite.Kind, name: String, nickname: String? = nil, path: String,
+             createdAt: Date? = nil, sessions: [SessionSummary]) {
+            id = kind.group + ":" + URL(fileURLWithPath: path).path
             self.name = name
             self.nickname = nickname
-            self.path = path
             self.sessions = sessions
+            favorite = SidebarFavorite(kind: kind, path: path, createdAt: createdAt)
         }
     }
 
+    var favorites: [Folder] = []
     var branches: [Folder] = []
     var baseRepos: [Folder] = []
     var otherFolders: [Folder] = []
     var archived: [SessionSummary] = []
 
     var isEmpty: Bool {
-        branches.isEmpty && baseRepos.isEmpty && otherFolders.isEmpty && archived.isEmpty
+        favorites.isEmpty && branches.isEmpty && baseRepos.isEmpty && otherFolders.isEmpty && archived.isEmpty
     }
 
     init(sessions: [SessionSummary], status: NsStatus?, search: String = "",
-         place: ((URL) -> SessionPlace)? = nil) {
+         layout: SidebarLayout = SidebarLayout(), place: ((URL) -> SessionPlace)? = nil) {
         let place = place ?? { status?.place(of: $0) ?? .elsewhere }
         let matching = sessions
             .filter { search.isEmpty || Self.session($0, matches: search) }
@@ -49,17 +54,40 @@ nonisolated struct SidebarGroups: Equatable {
             search.isEmpty || !folder.sessions.isEmpty || folder.name.localizedCaseInsensitiveContains(search)
                 || BranchNickname.matches(folder.nickname, search)
         }
-        branches = (status?.branches ?? []).map {
-            Folder(group: "branch", name: $0.branch, nickname: $0.nickname, path: URL(fileURLWithPath: $0.path),
+        let branchFolders = (status?.branches ?? []).map {
+            Folder(.branch, name: $0.branch, nickname: $0.nickname, path: $0.path, createdAt: $0.createdAt,
                    sessions: branchSessions[$0.branch] ?? [])
-        }.filter(keep)
-        baseRepos = (status?.baseRepos ?? []).map {
-            Folder(group: "base", name: $0.repo, path: URL(fileURLWithPath: $0.path), sessions: baseSessions[$0.repo] ?? [])
-        }.filter(keep)
-        otherFolders = Dictionary(grouping: elsewhere) { $0.workingDirectory.standardizedFileURL.path }
-            .map { Folder(group: "other", name: URL(fileURLWithPath: $0.key).lastPathComponent,
-                          path: URL(fileURLWithPath: $0.key), sessions: $0.value) }
+        }
+        let baseFolders = (status?.baseRepos ?? []).map {
+            Folder(.baseRepo, name: $0.repo, path: $0.path, sessions: baseSessions[$0.repo] ?? [])
+        }
+        let elsewhereFolders = Dictionary(grouping: elsewhere) { $0.workingDirectory.standardizedFileURL.path }
+            .map { Folder(.folder, name: URL(fileURLWithPath: $0.key).lastPathComponent, path: $0.key, sessions: $0.value) }
             .sorted { ($0.sessions[0].updatedAt, $1.id) > ($1.sessions[0].updatedAt, $0.id) }
+
+        let isFavorite = { (folder: Folder) in layout.isFavorite(folder.favorite) }
+        favorites = Self.sorted((branchFolders + baseFolders + elsewhereFolders).filter(isFavorite),
+                                by: layout.order).filter(keep)
+        branches = Self.sorted(branchFolders.filter { !isFavorite($0) }, by: layout.order).filter(keep)
+        baseRepos = baseFolders.filter { !isFavorite($0) }.filter(keep)
+        otherFolders = elsewhereFolders.filter { !isFavorite($0) }
+    }
+
+    static func sorted(_ folders: [Folder], by order: SidebarOrder) -> [Folder] {
+        let byName = { (lhs: Folder, rhs: Folder) in
+            switch lhs.name.localizedStandardCompare(rhs.name) {
+            case .orderedAscending: true
+            case .orderedDescending: false
+            case .orderedSame: lhs.id < rhs.id
+            }
+        }
+        guard order == .recent else { return folders.sorted(by: byName) }
+        return folders.sorted { lhs, rhs in
+            let (left, right) = (lhs.kind == .branch, rhs.kind == .branch)
+            if left != right { return left }
+            let (newer, older) = (lhs.favorite.createdAt ?? .distantPast, rhs.favorite.createdAt ?? .distantPast)
+            return newer == older ? byName(lhs, rhs) : newer > older
+        }
     }
 
     private static func session(_ session: SessionSummary, matches search: String) -> Bool {

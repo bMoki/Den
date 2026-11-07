@@ -12,6 +12,7 @@ struct SidebarView: View {
 
     @State private var toggled: Set<String> = []
     @State private var archivedOpen = false
+    @State private var favoritesOpen = true
     @State private var pendingDelete: SessionSummary?
 
     @State private var tipTask: Task<Void, Never>?
@@ -86,7 +87,8 @@ struct SidebarView: View {
     // MARK: - List
 
     private var groups: SidebarGroups {
-        SidebarGroups(sessions: workspace.summaries, status: ns.status, search: workspace.search, place: ns.place(of:))
+        SidebarGroups(sessions: workspace.summaries, status: ns.status, search: workspace.search,
+                      layout: workspace.layout, place: ns.place(of:))
     }
 
     private var list: some View {
@@ -97,8 +99,13 @@ struct SidebarView: View {
                     NsProblemNotice(problem: problem, keepsLastBranches: ns.status != nil)
                 }
 
+                if !groups.favorites.isEmpty {
+                    favorites(groups.favorites)
+                }
+
                 if ns.status != nil {
-                    sectionTitle("Branches de workspace") {
+                    SidebarSectionTitle("Branches de workspace") {
+                        SidebarOrderMenu(layout: $workspace.layout)
                         Button(action: ns.newBranch) {
                             HStack(spacing: 4) {
                                 Image(systemName: "plus")
@@ -114,16 +121,17 @@ struct SidebarView: View {
                         .help("Nova Branch de workspace")
                         .accessibilityLabel("Nova Branch de workspace")
                     }
-                    ForEach(groups.branches) { folder($0, isBranch: true) }
+                    .padding(.top, groups.favorites.isEmpty ? 0 : 14)
+                    ForEach(groups.branches) { folder($0) }
                 }
 
                 if !groups.baseRepos.isEmpty {
-                    sectionTitle("Repos base") { EmptyView() }
+                    SidebarSectionTitle("Repos base") { EmptyView() }
                         .padding(.top, 14)
                     ForEach(groups.baseRepos) { folder($0) }
                 }
 
-                sectionTitle("Outras pastas") {
+                SidebarSectionTitle("Outras pastas") {
                     Button(action: workspace.openFolder) {
                         Image(systemName: "plus")
                             .font(.system(size: 11, weight: .semibold))
@@ -134,8 +142,8 @@ struct SidebarView: View {
                     .help("Abrir pasta")
                     .accessibilityLabel("Abrir pasta")
                 }
-                .padding(.top, ns.status == nil ? 0 : 14)
-                ForEach(groups.otherFolders) { folder($0, detail: Self.parent(of: $0.path)) }
+                .padding(.top, ns.status == nil && groups.favorites.isEmpty ? 0 : 14)
+                ForEach(groups.otherFolders) { folder($0) }
 
                 if !groups.archived.isEmpty {
                     archived(groups.archived)
@@ -152,6 +160,9 @@ struct SidebarView: View {
         .frame(maxHeight: .infinity)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("Sidebar")
+        .onChange(of: ns.status, initial: true) {
+            if let status = ns.status { workspace.layout = workspace.layout.pruned(by: status) }
+        }
         .onChange(of: workspace.summaries, initial: true) {
             monitor.noteActivity(Dictionary(workspace.summaries.compactMap { summary in
                 ns.branchName(of: summary.workingDirectory).map { ($0, summary.updatedAt) }
@@ -160,41 +171,32 @@ struct SidebarView: View {
     }
 
     @ViewBuilder
+    private func favorites(_ folders: [SidebarGroups.Folder]) -> some View {
+        let isOpen = favoritesOpen || !workspace.search.isEmpty
+        SidebarCollapsibleTitle(title: "Favoritos", count: folders.count, noun: .favorites, isOpen: isOpen) {
+            favoritesOpen.toggle()
+        }
+        if isOpen {
+            VStack(alignment: .leading, spacing: 1) {
+                ForEach(folders) { folder($0) }
+            }
+            .transition(.opacity)
+        }
+    }
+
+    @ViewBuilder
     private func archived(_ sessions: [SessionSummary]) -> some View {
         let isOpen = archivedOpen || !workspace.search.isEmpty
-        Button {
-            withAnimation(.easeInOut(duration: 0.22)) { archivedOpen.toggle() }
-        } label: {
-            sectionTitle("Arquivadas") {
-                SessionCountLabel(count: sessions.count)
-                DisclosureChevron(isOpen: isOpen)
-            }
-            .contentShape(Rectangle())
+        SidebarCollapsibleTitle(title: "Arquivadas", count: sessions.count, noun: .sessions, isOpen: isOpen) {
+            archivedOpen.toggle()
         }
-        .buttonStyle(.plain)
-        .padding(.top, 14)
-        .accessibilityLabel("Arquivadas")
-        .accessibilityValue(isOpen ? "aberta" : "fechada")
+            .padding(.top, 14)
         if isOpen {
             VStack(alignment: .leading, spacing: 1) {
                 ForEach(sessions) { row(for: $0) }
             }
             .transition(.opacity)
         }
-    }
-
-    private func sectionTitle(_ title: String,
-                              @ViewBuilder trailing: () -> some View) -> some View {
-        HStack(spacing: 4) {
-            Text(title)
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(Theme.textTertiary)
-            Spacer(minLength: 0)
-            trailing()
-        }
-        .padding(.leading, 10)
-        .padding(.trailing, 4)
-        .frame(height: 28)
     }
 
     private func isOpen(_ folder: SidebarGroups.Folder) -> Bool {
@@ -204,9 +206,11 @@ struct SidebarView: View {
     }
 
     @ViewBuilder
-    private func folder(_ folder: SidebarGroups.Folder, isBranch: Bool = false,
-                        detail: String? = nil) -> some View {
+    private func folder(_ folder: SidebarGroups.Folder) -> some View {
         let isOpen = isOpen(folder)
+        let isBranch = folder.kind == .branch
+        let isFavorite = workspace.layout.isFavorite(folder.favorite)
+        let toggleFavorite = { workspace.layout.toggle(folder.favorite) }
         Group {
             if isBranch {
                 BranchHeader(
@@ -223,16 +227,20 @@ struct SidebarView: View {
                     stop: { Task { await ns.stop(folder.name) } },
                     update: { Task { await ns.update(folder.name) } },
                     remove: { Task { await ns.askToRemove(folder.name) } },
-                    setNickname: { text in Task { await ns.setNickname(folder.name, to: text) } }
+                    setNickname: { text in Task { await ns.setNickname(folder.name, to: text) } },
+                    isFavorite: isFavorite,
+                    toggleFavorite: toggleFavorite
                 )
             } else {
                 FolderHeader(
                     name: folder.name,
-                    detail: detail,
+                    detail: folder.kind == .folder ? Self.parent(of: folder.path) : nil,
                     sessions: workspace.tally(folder.sessions),
                     isOpen: isOpen,
                     toggle: { toggle(folder) },
-                    newSession: { Task { await workspace.newSession(in: folder.path) } }
+                    newSession: { Task { await workspace.newSession(in: folder.path) } },
+                    isFavorite: isFavorite,
+                    toggleFavorite: toggleFavorite
                 )
             }
         }

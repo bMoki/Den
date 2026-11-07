@@ -108,3 +108,13 @@ nonisolated let sampleStatus = NsStatus(
     let status = try JSONDecoder().decode(NsStatus.self, from: Data(json.utf8))
     #expect(status.branches.map(\.nickname) == ["Agenda recorrente", nil])
 }
+
+@Test func aBranchCarriesWhenItWasCreatedWhenNsKnows() throws {
+    let json = #"""
+        {"baseRepos":[],"branches":[{"branch":"NS-1","path":"/w/NS-1","createdAt":"2026-11-01T12:30:00.250Z"},
+                                     {"branch":"NS-2","path":"/w/NS-2","createdAt":null},
+                                     {"branch":"NS-3","path":"/w/NS-3"}]}
+        """#
+    let status = try JSONDecoder().decode(NsStatus.self, from: Data(json.utf8))
+    #expect(status.branches.map(\.createdAt) == [Date(timeIntervalSince1970: 1_793_536_200.25), nil, nil])
+}

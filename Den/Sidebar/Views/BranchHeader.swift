@@ -15,6 +15,8 @@ struct BranchHeader: View {
     var update: () -> Void
     var remove: () -> Void
     var setNickname: (String) -> Void
+    let isFavorite: Bool
+    var toggleFavorite: () -> Void
 
     @State private var hovering = false
     @State private var isEditing = false
@@ -74,6 +76,7 @@ struct BranchHeader: View {
                 DenMenuItem(id: "update", title: BranchActionTitle.update, isEnabled: activity == nil, action: update),
                 DenMenuItem(id: "new-session", title: "Nova sessão aqui", action: newSession),
                 DenMenuItem(id: "nickname", title: BranchActionTitle.nickname) { isEditing = true },
+                FavoriteTitle.item(isFavorite: isFavorite, toggle: toggleFavorite),
             ]),
             DenMenuSection(id: "remove", items: [
                 DenMenuItem(id: "remove", title: BranchActionTitle.remove, isEnabled: activity == nil,
