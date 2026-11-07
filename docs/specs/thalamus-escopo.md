@@ -24,6 +24,11 @@ Escrito em linguagem de negócio. As regras são numeradas e estáveis: uma regr
 - **T-1.12** A ação "Apelidar…", no menu do cabeçalho da Branch de workspace, edita o título no próprio lugar: Enter grava, Esc cancela, texto vazio tira o Apelido.
 - **T-1.13** O Apelido é texto livre numa linha, com até 40 caracteres; espaços nas pontas são descartados. Não precisa ser único.
 - **T-1.14** A busca da sidebar encontra a Branch de workspace pelo Apelido, sem diferenciar maiúsculas nem acentos, além do nome da branch.
+- **T-1.15** Branches de workspace, Repos base e pastas de Outras pastas podem ser Favoritos, pela ação "Favoritar" no menu do cabeçalho ("Remover dos favoritos" desfaz). Sessões arquivadas não são favoritáveis.
+- **T-1.16** Os Favoritos formam um grupo próprio no topo da sidebar, acima das Branches de workspace, que só aparece com pelo menos um Favorito e abre e fecha como os demais. Um Favorito sai do seu grupo de origem; o cabeçalho é o mesmo de lá (Serviços, PRs, resumo de Sessões, Apelido, ações).
+- **T-1.17** Os Favoritos são uma preferência do Thalamus, não do `ns`. Uma Branch de workspace removida deixa de ser Favorito; recriada com o mesmo nome, nasce sem ser.
+- **T-1.18** A busca filtra os Favoritos com as mesmas regras dos outros grupos.
+- **T-1.19** As Branches de workspace têm uma opção de ordem, no cabeçalho do grupo: **Nome** (A→Z, o padrão) ou **Criadas recentemente** (a mais nova primeiro). A opção é única para todo o Thalamus e vale também para os Favoritos; neles, em Criadas recentemente, Repos base e pastas vêm depois das Branches de workspace, por nome.
 
 ## 2. Nova Branch de workspace
 
@@ -96,6 +101,10 @@ Escrito em linguagem de negócio. As regras são numeradas e estáveis: uma regr
 
 - **T-10.1** Claude Code e OpenCode continuam suportados, assim como a troca de harness dentro da Sessão.
 - **T-10.2** O Thalamus não acrescenta contexto próprio às Sessões; não há modo "raw".
+- **T-10.3** Os Ajustes têm o Padrão de Sessão de cada harness: modelo, esforço e modo. Cada controle pode ficar em "Padrão do harness", que é o comportamento de hoje.
+- **T-10.4** O Padrão de Sessão vale só para Sessões novas. Trocar modelo, esforço ou modo dentro de uma Sessão muda só aquela Sessão, e mudar o Padrão não altera as Sessões que já existem.
+- **T-10.5** Um controle do Padrão que o harness não oferece mais (por exemplo, um modelo de um provider retirado do OpenCode) é ignorado sozinho: a Sessão usa o padrão do harness para aquele controle e os demais continuam valendo. Abrir uma Sessão nunca falha por causa do Padrão; os Ajustes marcam o controle como indisponível.
+- **T-10.6** Ao trocar de harness dentro de uma Sessão, voltar a um harness pelo qual a Sessão já passou devolve o modelo, o esforço e o modo escolhidos nele; a primeira passagem por um harness usa o Padrão de Sessão dele.
 
 ## 11. O que sai do Den
 
@@ -114,3 +123,12 @@ Ficam: chat e composer, permissões, slash, menções, painel de contexto, alter
 - Modo "raw" ou controle do contexto carregado pelo harness.
 - Sincronizar a própria branch a partir do remoto.
 - LSP no editor (futuro).
+
+## 13. Composer
+
+- **T-13.1** Com o cursor na primeira linha do composer, ↑ percorre as mensagens já enviadas nesta Sessão, da mais recente para a mais antiga, e ↓ volta. Entram todas as mensagens da Sessão, de antes de reabrir o Thalamus e de qualquer harness, inclusive comandos `/` e respostas sugeridas aceitas. Num texto de várias linhas, ↑ primeiro sobe o cursor até a primeira linha.
+- **T-13.2** O que estava no composer ao começar a percorrer é guardado como rascunho e volta quando ↓ passa da mensagem mais recente. Mandar uma mensagem do histórico cria uma mensagem nova; nada do que já aconteceu na Sessão muda.
+- **T-13.3** Uma mensagem enviada com o agente trabalhando aparece no chat como Mensagem na fila enquanto o harness ainda não a recebeu no turno. Ela continua podendo ser absorvida pelo turno em curso, como hoje.
+- **T-13.4** Havendo Mensagem na fila, o primeiro ↑ a retira da fila e a devolve ao composer para editar, antes do histórico. Se o harness já a recebeu, o ↑ segue para o histórico. Num harness que não informa a fila, ↑ é só histórico.
+- **T-13.5** Com uma resposta sugerida à vista, Tab a coloca no composer para editar, e → continua aceitando e enviando de uma vez. Ao percorrer o histórico, a resposta sugerida some e volta quando se retorna ao rascunho vazio.
+- **T-13.6** Sem resposta sugerida e sem lista de `/` ou `@` aberta, Tab continua tirando o foco do composer.

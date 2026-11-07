@@ -53,18 +53,54 @@ nonisolated struct SessionCache {
         return knobs
     }
 
-    private let preferencesKey = "Den.sessionPreferences"
+    private let harnessPreferencesKey = "Den.sessionHarnessPreferences"
 
-    func preferences(for sessionID: UUID) -> [String: String] {
-        let all = defaults.dictionary(forKey: preferencesKey)
+    private let legacyPreferencesKey = "Den.sessionPreferences"
+
+    func preferences(for sessionID: UUID, harness: HarnessID) -> [String: String]? {
+        let all = defaults.dictionary(forKey: harnessPreferencesKey)
+            as? [String: [String: [String: String]]] ?? [:]
+        if let session = all[sessionID.uuidString] { return session[harness.rawValue] }
+        let legacy = defaults.dictionary(forKey: legacyPreferencesKey)
             as? [String: [String: String]] ?? [:]
-        return all[sessionID.uuidString] ?? [:]
+        return legacy[sessionID.uuidString]
     }
 
-    func setPreferences(_ values: [String: String], for sessionID: UUID) {
-        var all = defaults.dictionary(forKey: preferencesKey)
+    func setPreferences(_ values: [String: String], for sessionID: UUID, harness: HarnessID) {
+        var all = defaults.dictionary(forKey: harnessPreferencesKey)
+            as? [String: [String: [String: String]]] ?? [:]
+        all[sessionID.uuidString, default: [:]][harness.rawValue] = values
+        defaults.set(all, forKey: harnessPreferencesKey)
+
+        var legacy = defaults.dictionary(forKey: legacyPreferencesKey)
             as? [String: [String: String]] ?? [:]
-        all[sessionID.uuidString] = values.isEmpty ? nil : values
-        defaults.set(all, forKey: preferencesKey)
+        guard legacy.removeValue(forKey: sessionID.uuidString) != nil else { return }
+        defaults.set(legacy, forKey: legacyPreferencesKey)
+    }
+
+    func forgetPreferences(of sessionID: UUID) {
+        var all = defaults.dictionary(forKey: harnessPreferencesKey)
+            as? [String: [String: [String: String]]] ?? [:]
+        guard all.removeValue(forKey: sessionID.uuidString) != nil else { return }
+        defaults.set(all, forKey: harnessPreferencesKey)
+    }
+
+    private let sessionDefaultsKey = "Den.sessionDefaults"
+
+    func sessionDefault(for harness: HarnessID) -> [String: String] {
+        let all = defaults.dictionary(forKey: sessionDefaultsKey)
+            as? [String: [String: String]] ?? [:]
+        return all[harness.rawValue] ?? [:]
+    }
+
+    func setSessionDefault(_ value: String?, knob: String, for harness: HarnessID) {
+        var all = defaults.dictionary(forKey: sessionDefaultsKey)
+            as? [String: [String: String]] ?? [:]
+        all[harness.rawValue, default: [:]][knob] = value
+        defaults.set(all, forKey: sessionDefaultsKey)
+    }
+
+    func offeredSessionDefault(for harness: HarnessID, among knobs: [HarnessKnob]) -> [String: String] {
+        sessionDefault(for: harness).filter { id, value in knobs.contains { $0.id == id && $0.offers(value) } }
     }
 }

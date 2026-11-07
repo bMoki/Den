@@ -9,6 +9,7 @@ struct LiveChatHarness {
     let harness: FakeHarness
     let attachments: URL
     let store: FileTranscriptStore
+    let cache: SessionCache
 
     var session: FakeSession { harness.session }
     var log: HarnessLog { harness.log }
@@ -20,6 +21,7 @@ struct LiveChatHarness {
 func withLiveChat(configure: (inout FakeHarness) -> Void = { _ in },
                   alongside others: [FakeHarness] = [],
                   runner: any CommandRunner = SystemCommandRunner(),
+                  preparing prepare: (SessionCache) -> Void = { _ in },
                   _ body: (LiveChatHarness) async throws -> Void) async throws {
     var harness = FakeHarness()
     configure(&harness)
@@ -34,17 +36,19 @@ func withLiveChat(configure: (inout FakeHarness) -> Void = { _ in },
         try? FileManager.default.removeItem(at: root)
     }
 
+    let cache = SessionCache(defaults: defaults)
+    prepare(cache)
     let attachments = root.appending(path: "attachments")
     let store = FileTranscriptStore(root: root)
     let chat = ChatModel(store: store,
                          workingDirectory: root,
                          harness: harness.id,
-                         cache: SessionCache(defaults: defaults),
+                         cache: cache,
                          registry: HarnessRegistry(harnesses: [harness] + others),
                          attachmentsRoot: attachments)
     chat.runner = runner
     try await body(LiveChatHarness(chat: chat, harness: harness,
-                                   attachments: attachments, store: store))
+                                   attachments: attachments, store: store, cache: cache))
 }
 
 /// The update stream is consumed by a detached task, so assertions about events

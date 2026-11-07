@@ -20,6 +20,7 @@ extension ChatModel {
 
     func turnEnded(_ result: TurnResult) {
         Task { await refreshContextUsage() }
+        releaseUnreported()
         if !result.isError { suggestReply() }
     }
 

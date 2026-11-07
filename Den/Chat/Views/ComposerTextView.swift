@@ -11,6 +11,8 @@ struct ComposerTextView: NSViewRepresentable {
     var onPaste: (String) -> Bool
     var onAcceptGhost: () -> Void = {}
     var onDismissGhost: () -> Void = {}
+    var onTakeGhost: () -> Void = {}
+    var history = ComposerHistoryKeys()
 
     static let font = NSFont.systemFont(ofSize: 13)
     static let maxLines = 6
@@ -110,7 +112,19 @@ struct ComposerTextView: NSViewRepresentable {
                 parent.onSubmit()
                 return true
             case #selector(NSResponder.insertTab(_:)):
-                textView.window?.selectNextKeyView(nil)
+                if textView.string.isEmpty, !parent.ghost.isEmpty {
+                    parent.onTakeGhost()
+                } else {
+                    textView.window?.selectNextKeyView(nil)
+                }
+                return true
+            case #selector(NSResponder.moveUp(_:)):
+                guard textView.isOnFirstLine, parent.history.canGoOlder() else { return false }
+                parent.history.older()
+                return true
+            case #selector(NSResponder.moveDown(_:)):
+                guard textView.isOnLastLine, parent.history.isBrowsing else { return false }
+                parent.history.newer()
                 return true
             case #selector(NSResponder.moveRight(_:)):
                 guard textView.string.isEmpty, !parent.ghost.isEmpty else { return false }
@@ -147,4 +161,11 @@ final class PromptTextView: NSTextView {
         guard let window, window.firstResponder === window else { return }
         window.makeFirstResponder(self)
     }
+}
+
+struct ComposerHistoryKeys {
+    var isBrowsing = false
+    var canGoOlder: () -> Bool = { false }
+    var older: () -> Void = {}
+    var newer: () -> Void = {}
 }

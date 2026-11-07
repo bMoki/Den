@@ -136,3 +136,71 @@ private func composer(ghost: String, log: GhostLog) -> ComposerTextView.Coordina
     #expect(handled)
     #expect(log.dismissed == 1)
 }
+
+@MainActor
+private final class KeyLog {
+    var taken = 0
+    var older = 0
+    var newer = 0
+}
+
+@MainActor
+private func press(_ selector: Selector, in text: String, caret: Int? = nil, width: CGFloat = 400,
+                   ghost: String = "", browsing: Bool = false, log: KeyLog) -> Bool {
+    let field = ComposerTextView(
+        text: .constant(text), focusRequested: .constant(false), placeholder: "",
+        ghost: ghost, onSubmit: {}, onPaste: { _ in false },
+        onTakeGhost: { log.taken += 1 },
+        history: ComposerHistoryKeys(isBrowsing: browsing, canGoOlder: { true },
+                                     older: { log.older += 1 }, newer: { log.newer += 1 }))
+    let view = PromptTextView(usingTextLayoutManager: false)
+    view.frame = NSRect(x: 0, y: 0, width: width, height: 200)
+    view.textContainer?.lineFragmentPadding = 0
+    view.textContainer?.widthTracksTextView = true
+    view.font = ComposerTextView.font
+    view.string = text
+    view.setSelectedRange(NSRange(location: caret ?? (text as NSString).length, length: 0))
+    return field.makeCoordinator().textView(view, doCommandBy: selector)
+}
+
+@MainActor
+@Test func tabWithASuggestionTakesItIntoTheComposer() {
+    let log = KeyLog()
+    #expect(press(#selector(NSResponder.insertTab(_:)), in: "", ghost: "Sim", log: log))
+    #expect(log.taken == 1)
+}
+
+@MainActor
+@Test func tabWithoutASuggestionLeavesTheSuggestionAlone() {
+    let log = KeyLog()
+    #expect(press(#selector(NSResponder.insertTab(_:)), in: "texto", ghost: "Sim", log: log))
+    #expect(press(#selector(NSResponder.insertTab(_:)), in: "", log: log))
+    #expect(log.taken == 0)
+}
+
+@MainActor
+@Test func upOnTheFirstLineRecallsTheHistory() {
+    let log = KeyLog()
+    #expect(press(#selector(NSResponder.moveUp(_:)), in: "", log: log))
+    #expect(press(#selector(NSResponder.moveUp(_:)), in: "uma\nduas", caret: 2, log: log))
+    #expect(log.older == 2)
+}
+
+@MainActor
+@Test func upBelowTheFirstLineMovesTheCaretFirst() {
+    let log = KeyLog()
+    #expect(!press(#selector(NSResponder.moveUp(_:)), in: "uma\nduas", log: log))
+    #expect(!press(#selector(NSResponder.moveUp(_:)), in: "uma\n", log: log))
+    let wrapped = String(repeating: "palavra ", count: 30)
+    #expect(!press(#selector(NSResponder.moveUp(_:)), in: wrapped, width: 120, log: log))
+    #expect(log.older == 0)
+}
+
+@MainActor
+@Test func downOnTheLastLineGoesForwardOnlyWhileBrowsing() {
+    let log = KeyLog()
+    #expect(!press(#selector(NSResponder.moveDown(_:)), in: "uma", log: log))
+    #expect(!press(#selector(NSResponder.moveDown(_:)), in: "uma\nduas", caret: 0, browsing: true, log: log))
+    #expect(press(#selector(NSResponder.moveDown(_:)), in: "uma\nduas", browsing: true, log: log))
+    #expect(log.newer == 1)
+}

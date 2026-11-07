@@ -232,6 +232,31 @@ func anUnusableQuickPromptLeavesNoSuggestionAndNoNotice(_ output: UnusableOutput
     }
 }
 
+@Test func tabPutsTheSuggestionInTheComposerWithoutSendingIt() async throws {
+    try await withSuggestingChat { live, runner in
+        await suggested(live, runner)
+        let sentBefore = await live.session.sent.count
+
+        live.chat.takeSuggestion()
+
+        #expect(live.chat.prompt == suggestion)
+        #expect(live.chat.visibleSuggestion == nil)
+        #expect(await live.session.sent.count == sentBefore)
+    }
+}
+
+@Test func walkingTheHistoryHidesTheSuggestionUntilTheEmptyDraftReturns() async throws {
+    try await withSuggestingChat { live, runner in
+        await suggested(live, runner)
+
+        await live.chat.recallOlder()
+        #expect(live.chat.visibleSuggestion == nil)
+
+        live.chat.recallNewer()
+        #expect(live.chat.visibleSuggestion == suggestion)
+    }
+}
+
 @Test func dismissingClearsWithoutSending() async throws {
     try await withSuggestingChat { live, runner in
         await suggested(live, runner)

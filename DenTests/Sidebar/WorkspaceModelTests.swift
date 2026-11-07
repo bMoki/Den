@@ -77,11 +77,14 @@ import HarnessCore
         await harness.model.refresh()
 
         harness.model.selectedID = session.id
+        let cache = SessionCache(defaults: harness.defaults)
+        cache.setPreferences(["model": "opus"], for: session.id, harness: HarnessRegistry.standard.fallback)
 
         await harness.model.deleteSession(session.id)
 
         #expect(harness.model.summaries.isEmpty)
         #expect(harness.model.selectedID == nil)
+        #expect(cache.preferences(for: session.id, harness: HarnessRegistry.standard.fallback) == nil)
     }
 }
 

@@ -27,9 +27,11 @@ nonisolated struct NsStatus: Decodable, Equatable, Sendable {
         var database: ServiceState
         var databasePort: Int?
         var repos: [Repo]?
+        var createdAt: Date?
 
         init(branch: String, nickname: String? = nil, path: String, services: [Service] = [],
-             database: ServiceState = .parado, databasePort: Int? = nil, repos: [Repo]? = nil) {
+             database: ServiceState = .parado, databasePort: Int? = nil, repos: [Repo]? = nil,
+             createdAt: Date? = nil) {
             self.branch = branch
             self.nickname = nickname
             self.path = path
@@ -37,6 +39,7 @@ nonisolated struct NsStatus: Decodable, Equatable, Sendable {
             self.database = database
             self.databasePort = databasePort
             self.repos = repos
+            self.createdAt = createdAt
         }
 
         func gitBranch(of repo: String) -> String? {
@@ -45,7 +48,7 @@ nonisolated struct NsStatus: Decodable, Equatable, Sendable {
         }
 
         private enum CodingKeys: String, CodingKey {
-            case branch, nickname, path, services, ports, sessions, errors, repos
+            case branch, nickname, path, services, ports, sessions, errors, repos, createdAt
         }
 
         private enum Key: String, CodingKey, CaseIterable {
@@ -61,6 +64,8 @@ nonisolated struct NsStatus: Decodable, Equatable, Sendable {
             branch = try container.decode(String.self, forKey: .branch)
             nickname = try? container.decodeIfPresent(String.self, forKey: .nickname)
             path = try container.decode(String.self, forKey: .path)
+            createdAt = (try? container.decodeIfPresent(String.self, forKey: .createdAt))
+                .flatMap(NsDate.parse)
             repos = container.contains(.repos) ? (try? container.decode([Repo].self, forKey: .repos)) ?? [] : nil
             let states = try? container.nestedContainer(keyedBy: Key.self, forKey: .services)
             let ports = try? container.nestedContainer(keyedBy: Key.self, forKey: .ports)
@@ -114,6 +119,12 @@ nonisolated struct NsStatus: Decodable, Equatable, Sendable {
             }
         }
         return nil
+    }
+}
+
+nonisolated enum NsDate {
+    static func parse(_ text: String) -> Date? {
+        try? Date.ISO8601FormatStyle(includingFractionalSeconds: true).parse(text)
     }
 }
 

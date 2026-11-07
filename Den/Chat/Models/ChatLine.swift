@@ -27,4 +27,6 @@ struct ChatLine: Identifiable {
     var title: String?
 
     var harness: HarnessID?
+
+    var isQueued = false
 }

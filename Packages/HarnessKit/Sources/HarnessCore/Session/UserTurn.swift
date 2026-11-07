@@ -12,11 +12,13 @@ public struct MediaAttachment: Sendable, Equatable {
     public var isImage: Bool { mediaType.hasPrefix("image/") }
 }
 
-public struct UserTurn: Sendable, Equatable {
+public struct UserTurn: Sendable, Equatable, Identifiable {
+    public var id: UUID
     public var text: String
     public var attachments: [MediaAttachment]
 
-    public init(text: String, attachments: [MediaAttachment] = []) {
+    public init(id: UUID = UUID(), text: String, attachments: [MediaAttachment] = []) {
+        self.id = id
         self.text = text
         self.attachments = attachments
     }

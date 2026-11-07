@@ -56,9 +56,12 @@ private func argument(after flag: String, in launch: FakeCLI.Launch?) -> String?
         #expect(chat.lines.map(\.role) == [.user, .assistant])
         #expect(chat.lines.map(\.text) == ["Diga apenas OK e nada mais.", "OK"])
         #expect(chat.model == "claude-opus-5")
-        #expect(try e2e.claude.received.map(json) == [
-            json(#"{"type":"user","message":{"role":"user","content":"Diga apenas OK e nada mais."}}"#),
-        ])
+        let received = try e2e.claude.received.map(json)
+        let id = try #require(received.first?["uuid"]?.stringValue)
+        #expect(UUID(uuidString: id) != nil)
+        #expect(try received == [json(#"""
+            {"type":"user","uuid":"\#(id)","message":{"role":"user","content":"Diga apenas OK e nada mais."}}
+            """#)])
     }
 }
 

@@ -96,9 +96,9 @@ struct ChatView: View {
         .task(id: chat.workingDirectory) { await mentions.loadIndex(under: chat.workingDirectory) }
         .onChange(of: chat.prompt) {
             mentions.selection = 0
-            mentions.dismissed = false
+            mentions.dismissed = chat.isBrowsingHistory
             slash.selection = 0
-            slash.dismissed = false
+            slash.dismissed = chat.isBrowsingHistory
             if SlashCatalog.query(in: chat.prompt) == nil { slash.group = nil }
         }
         .onChange(of: "\(chat.sessionID)|\(isEditing)", initial: true) {

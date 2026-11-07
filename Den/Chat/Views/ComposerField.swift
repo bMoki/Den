@@ -14,7 +14,13 @@ struct ComposerField: View {
                          onSubmit: submit,
                          onPaste: { chat.capturePaste($0) },
                          onAcceptGhost: acceptSuggestion,
-                         onDismissGhost: chat.dismissSuggestion)
+                         onDismissGhost: chat.dismissSuggestion,
+                         onTakeGhost: chat.takeSuggestion,
+                         history: ComposerHistoryKeys(
+                            isBrowsing: chat.isBrowsingHistory,
+                            canGoOlder: { chat.canRecallOlder },
+                            older: { Task { await chat.recallOlder() } },
+                            newer: chat.recallNewer))
             .overlay(alignment: .topLeading) {
                 if let suggestion = chat.visibleSuggestion {
                     suggestedReply(suggestion)
@@ -37,7 +43,7 @@ struct ComposerField: View {
             .padding(.trailing, ComposerTextView.ghostTrailing)
             .frame(maxWidth: .infinity, alignment: .leading)
             .allowsHitTesting(false)
-            .accessibilityLabel("Resposta sugerida: \(suggestion). Seta para a direita envia.")
+            .accessibilityLabel("Resposta sugerida: \(suggestion). Tab coloca para editar, seta para a direita envia.")
             .accessibilityIdentifier("suggested-reply")
             .overlay(alignment: .topTrailing) {
                 Button(action: acceptSuggestion) {

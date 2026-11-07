@@ -13,14 +13,26 @@ struct DisclosureChevron: View {
 }
 
 struct SessionCountLabel: View {
+    enum Noun {
+        case sessions, favorites
+
+        func describe(_ count: Int) -> String {
+            switch self {
+            case .sessions: count == 1 ? "1 sessão" : "\(count) sessões"
+            case .favorites: count == 1 ? "1 favorito" : "\(count) favoritos"
+            }
+        }
+    }
+
     let count: Int
+    var noun = Noun.sessions
 
     var body: some View {
         Text("\(count)")
             .font(.system(size: 11))
             .monospacedDigit()
             .foregroundStyle(Theme.textTertiary)
-            .accessibilityLabel(count == 1 ? "1 sessão" : "\(count) sessões")
+            .accessibilityLabel(noun.describe(count))
     }
 }
 
@@ -37,6 +49,61 @@ struct SessionTallyLabel: View {
         } else if sessions.total > 0 {
             SessionCountLabel(count: sessions.total)
         }
+    }
+}
+
+struct SidebarSectionTitle<Trailing: View>: View {
+    let title: String
+    @ViewBuilder var trailing: () -> Trailing
+
+    init(_ title: String, @ViewBuilder trailing: @escaping () -> Trailing) {
+        self.title = title
+        self.trailing = trailing
+    }
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Text(title)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(Theme.textTertiary)
+            Spacer(minLength: 0)
+            trailing()
+        }
+        .padding(.leading, 10)
+        .padding(.trailing, 4)
+        .frame(height: 28)
+    }
+}
+
+struct SidebarCollapsibleTitle: View {
+    let title: String
+    let count: Int
+    let noun: SessionCountLabel.Noun
+    let isOpen: Bool
+    var toggle: () -> Void
+
+    var body: some View {
+        Button {
+            withAnimation(.easeInOut(duration: 0.22)) { toggle() }
+        } label: {
+            SidebarSectionTitle(title) {
+                SessionCountLabel(count: count, noun: noun)
+                DisclosureChevron(isOpen: isOpen)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(title)
+        .accessibilityValue(isOpen ? "aberta" : "fechada")
+    }
+}
+
+enum FavoriteTitle {
+    static let add = "Favoritar"
+    static let remove = "Remover dos favoritos"
+
+    static func item(isFavorite: Bool, toggle: @escaping () -> Void) -> DenMenuItem {
+        DenMenuItem(id: "favorite", title: isFavorite ? remove : add, action: toggle)
     }
 }
 

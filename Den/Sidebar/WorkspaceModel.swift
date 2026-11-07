@@ -9,6 +9,9 @@ final class WorkspaceModel {
     var summaries: [SessionSummary] = []
     var selectedID: UUID?
     var search: String = ""
+    var layout: SidebarLayout {
+        didSet { if layout != oldValue { layout.save(to: defaults) } }
+    }
 
     var workingDirectory: URL = URL(fileURLWithPath: NSHomeDirectory())
 
@@ -46,6 +49,7 @@ final class WorkspaceModel {
         self.cache = cache
         self.registry = registry
         self.attachmentsRoot = attachmentsRoot
+        layout = SidebarLayout(defaults: defaults)
     }
 
     func renameSession(_ id: UUID, to title: String) async {
@@ -131,6 +135,7 @@ final class WorkspaceModel {
         chats[id] = nil
         if selectedID == id { selectedID = nil }
         try? await store.delete(id)
+        cache.forgetPreferences(of: id)
         await refresh()
     }
 

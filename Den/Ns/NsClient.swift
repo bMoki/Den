@@ -73,7 +73,7 @@ actor NsClient {
         var id: String { ref }
 
         var created: Date? {
-            try? Date.ISO8601FormatStyle(includingFractionalSeconds: true).parse(createdAt)
+            NsDate.parse(createdAt)
         }
 
         var age: String? {

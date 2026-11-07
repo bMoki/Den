@@ -195,3 +195,11 @@ private func fixtureLines(_ name: String) throws -> [Data] {
     #expect(decoded["request"]?["subtype"] == .string("get_context_usage"))
     #expect(decoded["request"]?["detail"] == .string("full"))
 }
+
+@Test func encodesTheWithdrawalOfAQueuedMessageByItsLowercaseUUID() throws {
+    let id = try #require(UUID(uuidString: "964C66AE-0FCF-47A9-B028-55F65FD21A82"))
+    let data = try OutboundControlRequest.cancelAsyncMessage(id).requestData(requestID: "out-4")
+    let decoded = try JSONDecoder().decode(JSONValue.self, from: data)
+    #expect(decoded["request"]?["subtype"] == .string("cancel_async_message"))
+    #expect(decoded["request"]?["message_uuid"] == .string("964c66ae-0fcf-47a9-b028-55f65fd21a82"))
+}
