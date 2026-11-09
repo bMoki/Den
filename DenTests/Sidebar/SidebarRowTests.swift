@@ -122,3 +122,17 @@ import HarnessCore
         #expect(model.page == .archived)
     }
 }
+
+@MainActor
+@Test func aSessionInsideARepoOfABranchSharesTheBranchRowAndItsRoot() async {
+    let ns = NsWorkspace(fetch: { sampleStatus })
+    await ns.refresh()
+    let row = ns.row(of: URL(fileURLWithPath: "/dev/worktrees/NS-123/frontend"))
+
+    #expect(row == .branch("NS-123"))
+    #expect(ns.root(of: row)?.path == "/dev/worktrees/NS-123")
+    #expect(ns.root(of: .baseRepo("backend"))?.path == "/dev/scalemed-backend")
+    #expect(ns.root(of: .folder("/Users/me/notes"))?.path == "/Users/me/notes")
+    #expect(ns.root(of: .branch("NS-9")) == nil)
+    #expect(ns.root(of: .archived) == nil)
+}

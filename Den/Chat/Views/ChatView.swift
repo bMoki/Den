@@ -33,9 +33,9 @@ struct ChatView: View {
         InspectorSplit(isShown: pane != .closed) {
             VStack(spacing: 0) {
                 ChatHeader(chat: chat, openPage: openPage)
-                EditorTabStrip(tabs: editors, session: chat.sessionID, files: files)
-                if let document = editors.selection(in: chat.sessionID) {
-                    EditorView(document: document, folder: chat.workingDirectory) { editors.close(document, in: chat.sessionID) }
+                EditorTabStrip(tabs: editors, row: row, files: files, home: .session)
+                if let document = editors.selection(in: row) {
+                    EditorView(document: document, folder: ns.rowRoot(of: chat.workingDirectory)) { editors.close(document, in: row) }
                 } else {
                     transcript
                     if let removedBranch {
@@ -45,7 +45,7 @@ struct ChatView: View {
                                      keys: keys) { nearBottom = true }
                     }
                 }
-                TerminalPanel(sessionID: chat.sessionID, directory: chat.workingDirectory)
+                TerminalPanel(row: row, root: ns.rowRoot(of: chat.workingDirectory))
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Theme.canvas)
@@ -54,16 +54,6 @@ struct ChatView: View {
         }
         .navigationTitle(chat.title)
         .focusedSceneValue(\.chat, chat)
-        .task(id: "\(shownPane == .changes)|\(chat.workingDirectory.path)") {
-            guard shownPane == .changes else { return }
-            await gitChanges.load(directory: chat.workingDirectory)
-            while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(4))
-                guard !Task.isCancelled else { return }
-                await gitChanges.load(directory: chat.workingDirectory)
-            }
-        }
-
         .task(id: chat.sessionID) { await chat.loadBranch() }
         .task(id: chat.workingDirectory) { await mentions.loadIndex(under: chat.workingDirectory) }
         .onChange(of: chat.prompt) {
@@ -105,16 +95,18 @@ struct ChatView: View {
 
     private var branch: String? { ns.branchName(of: chat.workingDirectory) }
 
-    private var isEditing: Bool { editors.selection(in: chat.sessionID) != nil }
+    private var row: SidebarRow { ns.row(of: chat.workingDirectory) }
+
+    private var isEditing: Bool { editors.selection(in: row) != nil }
 
     private var removedBranch: String? { ns.removedBranch(of: chat.workingDirectory) }
 
     private var shownPane: InspectorPane { pane.shown(inBranch: branch != nil) }
 
     private var inspector: some View {
-        InspectorView(pane: $pane, gitChanges: gitChanges, files: files, sessionID: chat.sessionID,
+        InspectorView(pane: $pane, gitChanges: gitChanges, files: files,
                       directory: chat.workingDirectory, branch: branch, removedBranch: removedBranch,
-                      open: { editors.open($0, in: chat.sessionID) },
+                      open: { editors.open($0, in: row) },
                       mention: { path, isDirectory in mentions.mention(path, isDirectory: isDirectory, in: chat) })
     }
 

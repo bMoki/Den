@@ -4,23 +4,21 @@ struct InspectorView: View {
     @Binding var pane: InspectorPane
     let gitChanges: GitChangesModel
     let files: FileTree
-    let sessionID: UUID?
     let directory: URL
     let branch: String?
     let removedBranch: String?
     var open: (URL) -> Void
-    var mention: (_ path: String, _ isDirectory: Bool) -> Void
+    var mention: ((_ path: String, _ isDirectory: Bool) -> Void)?
 
     var body: some View {
-        let shown = sessionID == nil ? .services : pane.shown(inBranch: branch != nil)
+        let shown = pane.shown(inBranch: branch != nil)
         VStack(spacing: 0) {
             TopBar(leadingInset: 12) {
                 HStack(spacing: 2) {
                     if branch != nil {
                         tab(.services, title: "Serviços", symbol: "server.rack", shown: shown)
                     }
-                    if sessionID != nil {
-                        tab(.files, title: "Arquivos", symbol: "folder", shown: shown)
+                    tab(.files, title: "Arquivos", symbol: "folder", shown: shown)
                         tab(.changes, title: "Alterações", symbol: "plus.forwardslash.minus", shown: shown) {
                             if gitChanges.changeCount > 0 {
                                 Text("\(gitChanges.changeCount)")
@@ -32,7 +30,6 @@ struct InspectorView: View {
                                     .background(Theme.hoverRaised, in: Capsule())
                             }
                         }
-                    }
                 }
                 Spacer(minLength: 4)
                 Button {
@@ -50,7 +47,7 @@ struct InspectorView: View {
 
             Group {
                 if shown == .services, let branch {
-                    ServicesPanel(branch: branch, sessionID: sessionID, directory: directory)
+                    ServicesPanel(branch: branch, directory: directory)
                 } else if shown == .files {
                     FilesPanel(tree: files, directory: directory, removedBranch: removedBranch, open: open, mention: mention)
                 } else {
@@ -60,6 +57,15 @@ struct InspectorView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .background(Theme.panel)
+        .task(id: "\(shown == .changes)|\(directory.path)") {
+            guard shown == .changes else { return }
+            await gitChanges.load(directory: directory)
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(4))
+                guard !Task.isCancelled else { return }
+                await gitChanges.load(directory: directory)
+            }
+        }
     }
 
     private func tab(_ target: InspectorPane, title: String, symbol: String, shown: InspectorPane,

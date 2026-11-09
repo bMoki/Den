@@ -1,4 +1,5 @@
 import Foundation
+@testable import Den
 
 func makeTree(_ directories: [String], files: [String] = []) throws -> URL {
     let root = FileManager.default.temporaryDirectory
@@ -15,4 +16,8 @@ func makeTree(_ directories: [String], files: [String] = []) throws -> URL {
         try Data().write(to: file)
     }
     return root.standardizedFileURL
+}
+
+func anyRow() -> SidebarRow {
+    .folder("/rows/" + UUID().uuidString)
 }

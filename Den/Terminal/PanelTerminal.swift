@@ -16,14 +16,14 @@ final class PanelTerminal: Identifiable {
     }
 
     let id = UUID()
-    let sessionID: UUID
+    let row: SidebarRow
     let kind: Kind
     let view: LocalProcessTerminalView
     var wantsFocus = true
     private let watcher: ExitWatcher
 
-    init(sessionID: UUID, kind: Kind, launch: Launch, ended: @escaping (UUID) -> Void) {
-        self.sessionID = sessionID
+    init(row: SidebarRow, kind: Kind, launch: Launch, ended: @escaping (UUID) -> Void) {
+        self.row = row
         self.kind = kind
         view = LocalProcessTerminalView(frame: CGRect(x: 0, y: 0, width: 640, height: 220))
         watcher = ExitWatcher(id: id, ended: ended)

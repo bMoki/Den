@@ -1,6 +1,5 @@
 import AppKit
 import Foundation
-import HarnessCore
 import SwiftTerm
 import Testing
 @testable import Den
@@ -14,12 +13,12 @@ private func isAlive(_ pid: pid_t) -> Bool {
 }
 
 @MainActor
-@Test func aPanelTerminalOpensAShellInTheSessionFolder() async throws {
+@Test func aPanelTerminalOpensAShellInTheRowRoot() async throws {
     let folder = try makeTree([])
     let terminals = PanelTerminals(shell: "/bin/sh")
-    let session = UUID()
+    let row = anyRow()
 
-    let terminal = terminals.open(for: session, in: folder)
+    let terminal = terminals.open(for: row, in: folder)
     type("pwd -P > here.txt\n", into: terminal)
 
     let here = folder.appending(path: "here.txt")
@@ -31,20 +30,20 @@ private func isAlive(_ pid: pid_t) -> Bool {
 }
 
 @MainActor
-@Test func aSessionCanHoldSeveralPanelTerminals() throws {
+@Test func aRowCanHoldSeveralPanelTerminals() throws {
     let folder = try makeTree([])
     let terminals = PanelTerminals(shell: "/bin/sh")
-    let session = UUID()
-    let other = UUID()
+    let row = anyRow()
+    let other = anyRow()
 
-    let first = terminals.open(for: session, in: folder)
-    let second = terminals.open(for: session, in: folder)
+    let first = terminals.open(for: row, in: folder)
+    let second = terminals.open(for: row, in: folder)
     terminals.open(for: other, in: folder)
 
-    #expect(terminals.terminals(of: session).map(\.id) == [first.id, second.id])
-    #expect(terminals.selected(in: session)?.id == second.id)
+    #expect(terminals.terminals(of: row).map(\.id) == [first.id, second.id])
+    #expect(terminals.selected(in: row)?.id == second.id)
     terminals.select(first)
-    #expect(terminals.selected(in: session)?.id == first.id)
+    #expect(terminals.selected(in: row)?.id == first.id)
     terminals.closeAll()
 }
 
@@ -52,17 +51,17 @@ private func isAlive(_ pid: pid_t) -> Bool {
 @Test func closingATerminalEndsItsShell() async throws {
     let folder = try makeTree([])
     let terminals = PanelTerminals(shell: "/bin/sh")
-    let session = UUID()
-    let kept = terminals.open(for: session, in: folder)
-    let closed = terminals.open(for: session, in: folder)
+    let row = anyRow()
+    let kept = terminals.open(for: row, in: folder)
+    let closed = terminals.open(for: row, in: folder)
     #expect(await eventually { isAlive(closed.pid) })
     let pid = closed.pid
 
     terminals.close(closed)
 
     #expect(await eventually { !isAlive(pid) })
-    #expect(terminals.terminals(of: session).map(\.id) == [kept.id])
-    #expect(terminals.selected(in: session)?.id == kept.id)
+    #expect(terminals.terminals(of: row).map(\.id) == [kept.id])
+    #expect(terminals.selected(in: row)?.id == kept.id)
     terminals.closeAll()
 }
 
@@ -71,7 +70,7 @@ private func isAlive(_ pid: pid_t) -> Bool {
     let folder = try makeTree([])
     let center = NotificationCenter()
     let terminals = PanelTerminals(shell: "/bin/sh", center: center)
-    let opened = [terminals.open(for: UUID(), in: folder), terminals.open(for: UUID(), in: folder)]
+    let opened = [terminals.open(for: anyRow(), in: folder), terminals.open(for: anyRow(), in: folder)]
     #expect(await eventually { opened.allSatisfy { isAlive($0.pid) } })
     let pids = opened.map(\.pid)
 
@@ -85,49 +84,49 @@ private func isAlive(_ pid: pid_t) -> Bool {
 @Test func aShellThatExitsLeavesThePanel() async throws {
     let folder = try makeTree([])
     let terminals = PanelTerminals(shell: "/bin/sh")
-    let session = UUID()
-    let terminal = terminals.open(for: session, in: folder)
+    let row = anyRow()
+    let terminal = terminals.open(for: row, in: folder)
 
     type("exit\n", into: terminal)
 
-    #expect(await eventually { terminals.terminals(of: session).isEmpty })
+    #expect(await eventually { terminals.terminals(of: row).isEmpty })
 }
 
 @MainActor
-@Test func theToggleOpensATerminalWhenTheSessionHasNone() throws {
+@Test func theToggleOpensATerminalWhenTheRowHasNone() throws {
     let folder = try makeTree([])
     let terminals = PanelTerminals(shell: "/bin/sh")
-    let session = UUID()
+    let row = anyRow()
 
-    terminals.togglePanel(for: session, in: folder)
+    terminals.togglePanel(for: row, in: folder)
     #expect(terminals.isPanelOpen)
-    #expect(terminals.terminals(of: session).count == 1)
+    #expect(terminals.terminals(of: row).count == 1)
 
-    terminals.togglePanel(for: session, in: folder)
+    terminals.togglePanel(for: row, in: folder)
     #expect(!terminals.isPanelOpen)
-    #expect(terminals.terminals(of: session).count == 1)
+    #expect(terminals.terminals(of: row).count == 1)
 
-    terminals.togglePanel(for: session, in: folder)
+    terminals.togglePanel(for: row, in: folder)
     #expect(terminals.isPanelOpen)
-    #expect(terminals.terminals(of: session).count == 1)
+    #expect(terminals.terminals(of: row).count == 1)
     terminals.closeAll()
 }
 
 @MainActor
-@Test func deletingASessionEndsOnlyItsShells() async throws {
+@Test func closingARowEndsOnlyItsShells() async throws {
     let folder = try makeTree([])
     let terminals = PanelTerminals(shell: "/bin/sh")
-    let session = UUID()
-    let deleted = terminals.open(for: session, in: folder)
-    let kept = terminals.open(for: UUID(), in: folder)
-    #expect(await eventually { isAlive(deleted.pid) && isAlive(kept.pid) })
-    let pid = deleted.pid
+    let row = anyRow()
+    let closed = terminals.open(for: row, in: folder)
+    let kept = terminals.open(for: anyRow(), in: folder)
+    #expect(await eventually { isAlive(closed.pid) && isAlive(kept.pid) })
+    let pid = closed.pid
 
-    terminals.close(sessionID: session)
+    terminals.close(row)
 
     #expect(await eventually { !isAlive(pid) })
     #expect(terminals.all.map(\.id) == [kept.id])
-    #expect(!terminals.isPanelShown(for: session))
+    #expect(!terminals.isPanelShown(for: row))
     terminals.closeAll()
 }
 
@@ -151,9 +150,8 @@ private func contents(_ file: URL) -> String {
 }
 
 @MainActor
-private func openAttachedConsole(_ terminals: PanelTerminals, for session: UUID, in folder: URL) async -> PanelTerminal {
-    let console = await terminals.openConsole(for: session, branch: "NS-1", service: "backend",
-                                              session: "ns-ns-1-backend", in: folder)
+private func openAttachedConsole(_ terminals: PanelTerminals, in folder: URL) async -> PanelTerminal {
+    let console = await terminals.openConsole(branch: "NS-1", service: "backend", session: "ns-ns-1-backend", in: folder)
     _ = await eventually { !contents(folder.appending(path: "tmux.pid")).isEmpty }
     return console
 }
@@ -162,19 +160,18 @@ private func openAttachedConsole(_ terminals: PanelTerminals, for session: UUID,
 @Test func aConsoleAttachesToTheServiceSessionAndTakesTheKeyboard() async throws {
     let folder = try makeTree([])
     let terminals = try fakeTmux(in: folder)
-    let session = UUID()
+    let row = SidebarRow.branch("NS-1")
 
-    let console = await openAttachedConsole(terminals, for: session, in: folder)
+    let console = await openAttachedConsole(terminals, in: folder)
     #expect(console.title == "Console · backend")
     #expect(contents(folder.appending(path: "tmux.args")) == "attach-session\n-t\n=ns-ns-1-backend\n")
 
     type("r\n", into: console)
     #expect(await eventually { contents(folder.appending(path: "tmux.keys")) == "r\n" })
 
-    let again = await terminals.openConsole(for: session, branch: "NS-1", service: "backend",
-                                            session: "ns-ns-1-backend", in: folder)
+    let again = await terminals.openConsole(branch: "NS-1", service: "backend", session: "ns-ns-1-backend", in: folder)
     #expect(again.id == console.id)
-    #expect(terminals.terminals(of: session).count == 1)
+    #expect(terminals.terminals(of: row).count == 1)
     terminals.closeAll()
 }
 
@@ -182,47 +179,35 @@ private func openAttachedConsole(_ terminals: PanelTerminals, for session: UUID,
 @Test func closingAConsoleOnlyDetachesItsClient() async throws {
     let folder = try makeTree([])
     let terminals = try fakeTmux(in: folder)
-    let session = UUID()
-    let console = await openAttachedConsole(terminals, for: session, in: folder)
+    let row = SidebarRow.branch("NS-1")
+    let console = await openAttachedConsole(terminals, in: folder)
     let pidFile = folder.appending(path: "tmux.pid")
     let client = try #require(pid_t(contents(pidFile).trimmingCharacters(in: .whitespacesAndNewlines)))
 
     terminals.close(console)
 
     #expect(await eventually { !isAlive(client) })
-    #expect(terminals.terminals(of: session).isEmpty)
+    #expect(terminals.terminals(of: row).isEmpty)
 }
 
 @MainActor
 @Test func aConsoleWithoutASessionSaysSoAndStaysUntilEnter() async throws {
     let folder = try makeTree([])
     let terminals = try fakeTmux(in: folder)
-    let session = UUID()
+    let row = SidebarRow.branch("NS-1")
 
-    let console = await terminals.openConsole(for: session, branch: "NS-1", service: "frontend",
-                                              session: "ns-ns-1-frontend", in: folder)
+    let console = await terminals.openConsole(branch: "NS-1", service: "frontend", session: "ns-ns-1-frontend", in: folder)
     #expect(await eventually { contents(folder.appending(path: "tmux.args")).contains("=ns-ns-1-frontend") })
     try await Task.sleep(for: .milliseconds(300))
-    #expect(terminals.terminals(of: session).map(\.id) == [console.id])
+    #expect(terminals.terminals(of: row).map(\.id) == [console.id])
 
     type("\n", into: console)
-    #expect(await eventually { terminals.terminals(of: session).isEmpty })
+    #expect(await eventually { terminals.terminals(of: row).isEmpty })
 }
 
 @MainActor
-@Test func archivingASessionEndsItsShells() async throws {
-    let folder = try makeTree([])
-    let terminals = PanelTerminals(shell: "/bin/sh")
-    let archived = summary("gone", in: "/dev/worktrees/NS-1234")
-    let active = summary("here", in: "/dev/worktrees/NS-12")
-    let ended = terminals.open(for: archived.id, in: folder)
-    let kept = terminals.open(for: active.id, in: folder)
-    #expect(await eventually { isAlive(ended.pid) && isAlive(kept.pid) })
-    let pid = ended.pid
+@Test func removingABranchFindsOnlyItsRowsToClose() {
+    let rows: Set<SidebarRow> = [.branch("NS-12"), .branch("NS-1234"), .folder("/code/project"), .baseRepo("backend")]
 
-    SidebarGroups(sessions: [archived, active], status: sampleStatus).archived.forEach { terminals.close(sessionID: $0.id) }
-
-    #expect(await eventually { !isAlive(pid) })
-    #expect(terminals.all.map(\.id) == [kept.id])
-    terminals.closeAll()
+    #expect(sampleStatus.removed(among: rows) == [.branch("NS-1234")])
 }

@@ -31,6 +31,12 @@ nonisolated enum SidebarRow: Hashable, Sendable {
     }
 }
 
+extension NsStatus {
+    func removed(among rows: Set<SidebarRow>) -> [SidebarRow] {
+        rows.filter { row in row.branch.map { branch(named: $0) == nil } ?? false }
+    }
+}
+
 extension WorkspaceModel {
     func groups(in ns: NsWorkspace, search: String = "") -> SidebarGroups {
         SidebarGroups(sessions: summaries, status: ns.status, search: search, layout: layout, place: ns.place(of:))
@@ -46,6 +52,20 @@ extension WorkspaceModel {
 extension NsWorkspace {
     func row(of directory: URL) -> SidebarRow {
         SidebarRow(place(of: directory), directory: directory)
+    }
+
+    func rowRoot(of directory: URL) -> URL {
+        root(of: row(of: directory)) ?? directory
+    }
+
+    func root(of row: SidebarRow) -> URL? {
+        let path: String? = switch row {
+        case .branch(let name): branch(named: name)?.path
+        case .baseRepo(let repo): status?.baseRepos.first { $0.repo == repo }?.path
+        case .folder(let path): path
+        case .archived: nil
+        }
+        return path.map { URL(fileURLWithPath: $0) }
     }
 
     func title(of row: SidebarRow) -> String {

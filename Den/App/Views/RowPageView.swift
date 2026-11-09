@@ -6,38 +6,38 @@ struct RowPageView: View {
     let workspace: WorkspaceModel
     let gitChanges: GitChangesModel
     let files: FileTree
+    let editors: EditorTabs
 
     @Environment(NsWorkspace.self) private var ns
-    @Environment(PanelTerminals.self) private var terminals
     @Environment(\.chrome) private var chrome
     @AppStorage(InspectorPane.storageKey) private var pane: InspectorPane = .closed
     @State private var pendingDelete: SessionSummary?
-    private let editors = EditorWindows.shared
 
     var body: some View {
         let groups = workspace.groups(in: ns, search: workspace.search)
         let sessions = row == .archived ? groups.archived : groups.folder(row)?.sessions ?? []
-        InspectorSplit(isShown: branch != nil && pane != .closed) {
+        InspectorSplit(isShown: root != nil && pane != .closed) {
             VStack(spacing: 0) {
                 header
-                ScrollView {
-                    content(sessions: sessions, directory: directory(in: groups))
-                        .frame(maxWidth: 720, alignment: .leading)
-                        .padding(.horizontal, 28)
-                        .padding(.vertical, 24)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                if let root {
+                    EditorTabStrip(tabs: editors, row: row, files: files, home: .page)
+                    if let document = editors.selection(in: row) {
+                        EditorView(document: document, folder: root) { editors.close(document, in: row) }
+                    } else {
+                        list(sessions: sessions)
+                    }
+                    TerminalPanel(row: row, root: root)
+                } else {
+                    list(sessions: sessions)
                 }
-                .scrollIndicators(.never)
-                .accessibilityElement(children: .contain)
-                .accessibilityIdentifier("RowPage")
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Theme.canvas)
         } inspector: {
-            if let branch, let directory = directory(in: groups) {
-                InspectorView(pane: $pane, gitChanges: gitChanges, files: files, sessionID: nil,
-                              directory: directory, branch: branch, removedBranch: nil,
-                              open: { _ in }, mention: { _, _ in })
+            if let root {
+                InspectorView(pane: $pane, gitChanges: gitChanges, files: files,
+                              directory: root, branch: branch, removedBranch: nil,
+                              open: { editors.open($0, in: row) }, mention: nil)
             }
         }
         .navigationTitle(ns.title(of: row))
@@ -49,17 +49,28 @@ struct RowPageView: View {
             ),
             titleVisibility: .visible
         ) {
-            if pendingUnsaved.isEmpty {
-                Button("Apagar", role: .destructive) { delete(.discard) }
-            } else {
-                Button("Salvar e apagar") { delete(.saveAll) }
-                Button("Apagar sem salvar", role: .destructive) { delete(.discard) }
-            }
+            Button("Apagar", role: .destructive, action: delete)
             Button("Cancelar", role: .cancel) { pendingDelete = nil }
         } message: {
-            let unsaved = pendingUnsaved.isEmpty ? "" : " \(UnsavedAlert.listing(pendingUnsaved))"
-            Text("A conversa e o histórico dela serão removidos permanentemente.\(unsaved)")
+            Text("A conversa e o histórico dela serão removidos permanentemente.")
         }
+    }
+
+    private var root: URL? {
+        row == .archived ? nil : ns.root(of: row)
+    }
+
+    private func list(sessions: [SessionSummary]) -> some View {
+        ScrollView {
+            content(sessions: sessions)
+                .frame(maxWidth: 720, alignment: .leading)
+                .padding(.horizontal, 28)
+                .padding(.vertical, 24)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .scrollIndicators(.never)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("RowPage")
     }
 
     private var branchStatus: NsStatus.Branch? {
@@ -70,15 +81,6 @@ struct RowPageView: View {
         branchStatus?.branch
     }
 
-    private func directory(in groups: SidebarGroups) -> URL? {
-        switch row {
-        case .branch: branchStatus.map { URL(fileURLWithPath: $0.path) }
-        case .baseRepo: groups.folder(row)?.path
-        case .folder(let path): URL(fileURLWithPath: path)
-        case .archived: nil
-        }
-    }
-
     private var header: some View {
         TopBar(leadingInset: chrome.headerInset) {
             SidebarToggle()
@@ -86,15 +88,19 @@ struct RowPageView: View {
                 .font(.system(size: 14, weight: .medium))
                 .lineLimit(1)
             Spacer(minLength: 12)
-            if branch != nil {
-                InspectorToggle(isOpen: pane != .closed) {
-                    withAnimation(.easeInOut(duration: 0.2)) { pane = pane == .closed ? .opening(inBranch: true) : .closed }
-                }
+            if let root {
+                TerminalToggle(row: row, root: root)
+                InspectorToggle(isOpen: pane != .closed, action: toggleInspector)
             }
         }
+        .onKeyboardShortcut("0", modifiers: [.option, .command]) { if root != nil { toggleInspector() } }
     }
 
-    private func content(sessions: [SessionSummary], directory: URL?) -> some View {
+    private func toggleInspector() {
+        withAnimation(.easeInOut(duration: 0.2)) { pane = pane == .closed ? .opening(inBranch: branch != nil) : .closed }
+    }
+
+    private func content(sessions: [SessionSummary]) -> some View {
         VStack(alignment: .leading, spacing: 18) {
             VStack(alignment: .leading, spacing: 4) {
                 title
@@ -113,8 +119,8 @@ struct RowPageView: View {
                     }
                 }
             }
-            if row != .archived, let directory {
-                NewSessionRow(workspace: workspace, directory: directory)
+            if let root {
+                NewSessionRow(workspace: workspace, directory: root)
                     .frame(maxWidth: 220, alignment: .leading)
             }
         }
@@ -142,21 +148,9 @@ struct RowPageView: View {
         return count == 0 ? "Nenhuma sessão ainda" : sessions
     }
 
-    private var pendingUnsaved: [EditorDocument] {
-        pendingDelete.map { editors.unsaved(in: $0.id) } ?? []
-    }
-
-    private func delete(_ choice: UnsavedChoice) {
+    private func delete() {
         guard let summary = pendingDelete else { return }
         pendingDelete = nil
-        let unsaved = editors.unsaved(in: summary.id)
-        guard editors.settle(choice, in: summary.id) else {
-            UnsavedAlert.tellFailure(unsaved.filter(\.isDirty))
-            Task { await workspace.select(summary.id) }
-            return
-        }
-        editors.closeSession(summary.id)
-        terminals.close(sessionID: summary.id)
         Task { await workspace.deleteSession(summary.id) }
     }
 }

@@ -30,7 +30,9 @@ struct SidebarView: View {
             }
         }
         .sheet(item: Binding(get: { ns.removal }, set: { if $0 == nil { ns.cancelRemoval() } })) { removal in
-            RemoveBranchSheet(removal: removal, cancel: ns.cancelRemoval) { purge in
+            RemoveBranchSheet(removal: removal, editors: .shared, root: ns.root(of: .branch(removal.branch)),
+                              cancel: ns.cancelRemoval) { purge in
+                guard EditorWindows.shared.unsaved(in: .branch(removal.branch)).isEmpty else { return }
                 Task { await ns.remove(removal.branch, purge: purge) }
             }
         }

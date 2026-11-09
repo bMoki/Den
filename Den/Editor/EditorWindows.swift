@@ -6,7 +6,7 @@ final class EditorWindows {
 
     private struct Place {
         let tabs: EditorTabs
-        let session: UUID
+        let row: SidebarRow
         let document: EditorDocument
     }
 
@@ -20,8 +20,8 @@ final class EditorWindows {
         places.first { $0.document.url == url }?.document
     }
 
-    func unsaved(in session: UUID? = nil, window: EditorTabs? = nil) -> [EditorDocument] {
-        let inside = Self.inside(session, window)
+    func unsaved(in row: SidebarRow? = nil, window: EditorTabs? = nil) -> [EditorDocument] {
+        let inside = Self.inside(row, window)
         let elsewhere = places.filter { !inside($0) }.map(\.document)
         var found: [EditorDocument] = []
         for place in places where inside(place) && place.document.isDirty {
@@ -33,35 +33,35 @@ final class EditorWindows {
         return found
     }
 
-    func settle(_ choice: UnsavedChoice, in session: UUID? = nil, window: EditorTabs? = nil) -> Bool {
+    func settle(_ choice: UnsavedChoice, in row: SidebarRow? = nil, window: EditorTabs? = nil) -> Bool {
         switch choice {
         case .cancel:
             return false
         case .discard:
             return true
         case .saveAll:
-            let unsaved = unsaved(in: session, window: window)
+            let unsaved = unsaved(in: row, window: window)
             unsaved.filter { $0.changedOnDisk == nil }.forEach { $0.save() }
             guard let failed = unsaved.first(where: \.isDirty) else { return true }
-            let inside = Self.inside(session, window)
+            let inside = Self.inside(row, window)
             if let place = places.first(where: { inside($0) && $0.document === failed }) {
-                place.tabs.select(failed, in: place.session)
+                place.tabs.select(failed, in: place.row)
             }
             return false
         }
     }
 
-    func closeSession(_ session: UUID) {
-        windows.allObjects.forEach { $0.closeSession(session) }
+    func close(_ row: SidebarRow) {
+        windows.allObjects.forEach { $0.close(row) }
     }
 
     private var places: [Place] {
         windows.allObjects.flatMap { tabs in
-            tabs.held.map { Place(tabs: tabs, session: $0.session, document: $0.document) }
+            tabs.held.map { Place(tabs: tabs, row: $0.row, document: $0.document) }
         }
     }
 
-    private static func inside(_ session: UUID?, _ window: EditorTabs?) -> (Place) -> Bool {
-        { place in (session.map { $0 == place.session } ?? true) && (window.map { $0 === place.tabs } ?? true) }
+    private static func inside(_ row: SidebarRow?, _ window: EditorTabs?) -> (Place) -> Bool {
+        { place in (row.map { $0 == place.row } ?? true) && (window.map { $0 === place.tabs } ?? true) }
     }
 }

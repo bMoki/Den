@@ -5,7 +5,7 @@ struct FilesPanel: View {
     let directory: URL
     let removedBranch: String?
     var open: (URL) -> Void
-    var mention: (_ path: String, _ isDirectory: Bool) -> Void
+    var mention: ((_ path: String, _ isDirectory: Bool) -> Void)?
 
     @State private var naming: FileNameRequest?
     @State private var dropOnRoot = false
@@ -104,7 +104,8 @@ struct FilesPanel: View {
                 .padding(.horizontal, 6)
                 .onTapGesture { tree.problem = nil }
         } else {
-            Text("Clique com o botão direito num arquivo para criar, renomear, mover, excluir ou mencioná-lo na Sessão.")
+            Text(mention == nil ? "Clique com o botão direito num arquivo para criar, renomear, mover ou excluir."
+                : "Clique com o botão direito num arquivo para criar, renomear, mover, excluir ou mencioná-lo na Sessão.")
                 .font(.system(size: 11.5))
                 .foregroundStyle(Theme.textFaint)
                 .padding(.horizontal, 6)
@@ -144,12 +145,14 @@ struct FilesPanel: View {
     }
 
     private func menu(for node: FileNode) -> [DenMenuSection] {
-        [
+        let mentioning = mention.map { mention in
             DenMenuSection(id: "mention", items: [
                 DenMenuItem(id: "mention", title: "Mencionar na Sessão", icon: icon("at")) {
                     mention(tree.relativePath(of: node), node.isDirectory)
                 },
-            ]),
+            ])
+        }
+        return [mentioning].compactMap { $0 } + [
             DenMenuSection(id: "edit", items: [
                 DenMenuItem(id: "new-file", title: "Novo arquivo", icon: icon("doc.badge.plus")) { ask(.newFile, at: node) },
                 DenMenuItem(id: "new-folder", title: "Nova pasta", icon: icon("folder.badge.plus")) { ask(.newFolder, at: node) },

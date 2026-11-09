@@ -2,7 +2,6 @@ import SwiftUI
 
 struct ServicesPanel: View {
     let branch: String
-    let sessionID: UUID?
     let directory: URL
 
     @Environment(NsWorkspace.self) private var ns
@@ -253,7 +252,7 @@ struct ServicesPanel: View {
             }
             .disabled(service.state == .parado)
             iconAction("terminal", title: "Abrir console de \(service.id)") { await openConsole(service) }
-                .disabled(service.session == nil || service.state == .parado || sessionID == nil)
+                .disabled(service.session == nil || service.state == .parado)
         }
         .disabled(ns.activity[branch] != nil || ns.dependencies.isInstalling(in: branch))
     }
@@ -280,7 +279,7 @@ struct ServicesPanel: View {
                 .truncationMode(.tail)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .help(service.error ?? "")
-            if service.session != nil, sessionID != nil {
+            if service.session != nil {
                 Button("Ver no Console") { Task { await openConsole(service) } }
                     .buttonStyle(.plain)
                     .font(.system(size: 11.5, weight: .medium))
@@ -302,9 +301,9 @@ struct ServicesPanel: View {
     }
 
     private func openConsole(_ service: NsStatus.Service) async {
-        guard let session = service.session, let sessionID else { return }
-        await terminals.openConsole(for: sessionID, branch: branch, service: service.id,
-                                    session: session, in: directory)
+        guard let session = service.session else { return }
+        await terminals.openConsole(branch: branch, service: service.id, session: session,
+                                    in: ns.root(of: .branch(branch)) ?? directory)
     }
 }
 

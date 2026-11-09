@@ -6,7 +6,6 @@ struct ChatHeader: View {
 
     @AppStorage(InspectorPane.storageKey) private var pane: InspectorPane = .closed
     @Environment(\.chrome) private var chrome
-    @Environment(PanelTerminals.self) private var terminals
     @Environment(NsWorkspace.self) private var ns
 
     var body: some View {
@@ -18,44 +17,13 @@ struct ChatHeader: View {
             }
             Spacer(minLength: 12)
             HarnessSwitcher(chat: chat)
-            terminalToggle
+            TerminalToggle(row: ns.row(of: chat.workingDirectory), root: ns.rowRoot(of: chat.workingDirectory))
             InspectorToggle(isOpen: pane != .closed, action: toggle)
         }
         .onKeyboardShortcut("0", modifiers: [.option, .command]) { toggle() }
-        .onKeyboardShortcut("`", modifiers: .control) { toggleTerminals() }
     }
-
-    private var terminalsShown: Bool { terminals.isPanelShown(for: chat.sessionID) && !isArchived }
 
     private var removedBranch: String? { ns.removedBranch(of: chat.workingDirectory) }
-
-    private var isArchived: Bool { removedBranch != nil }
-
-    private var terminalToggle: some View {
-        Button(action: toggleTerminals) {
-            Image(systemName: "rectangle.bottomthird.inset.filled")
-                .font(.system(size: 14))
-                .foregroundStyle(terminalsShown ? Theme.text : Theme.textSecondary)
-                .iconLabel(size: 32)
-        }
-        .buttonStyle(DenButtonStyle(kind: .secondary))
-        .disabled(isArchived)
-        .help(terminalHelp)
-        .accessibilityLabel(terminalsShown ? "Ocultar Terminais livres" : "Mostrar Terminais livres")
-        .accessibilityHint(isArchived ? Self.archivedFolderReason : "")
-    }
-
-    private static let archivedFolderReason = "Sessão arquivada: a pasta desta Sessão não existe mais."
-
-    private var terminalHelp: String {
-        if isArchived { return "Terminal livre indisponível. \(Self.archivedFolderReason)" }
-        return terminalsShown ? "Ocultar Terminais livres (⌃`)" : "Terminal livre (⌃`)"
-    }
-
-    private func toggleTerminals() {
-        guard !isArchived else { return }
-        terminals.togglePanel(for: chat.sessionID, in: chat.workingDirectory)
-    }
 
     private func breadcrumb(branch: Bool) -> some View {
         HStack(spacing: 8) {

@@ -47,17 +47,20 @@ struct ContentView: View {
         .frame(minWidth: 860, minHeight: 560)
         .task { await workspace.refresh() }
         .onChange(of: workspace.summaries) { closeVanishedPage() }
-        .onChange(of: ns.status) { closeVanishedPage() }
-        .onChange(of: archivedSessions, initial: true) { _, archived in
-            archived.forEach(terminals.close(sessionID:))
+        .onChange(of: ns.status) {
+            closeVanishedPage()
+            closeRemovedBranches()
         }
         .sheet(item: Binding(get: { ns.updateReports.first }, set: { if $0 == nil { ns.dismissUpdateReport() } })) { report in
             BranchUpdateSheet(report: report, close: ns.dismissUpdateReport)
         }
     }
 
-    private var archivedSessions: [UUID] {
-        workspace.groups(in: ns).archived.map(\.id)
+    private func closeRemovedBranches() {
+        for row in ns.status?.removed(among: terminals.rows.union(editors.rows)) ?? [] {
+            terminals.close(row)
+            editors.close(row)
+        }
     }
 
     private func closeVanishedPage() {
@@ -73,7 +76,7 @@ struct ContentView: View {
     @ViewBuilder
     private var detail: some View {
         if let page = workspace.page {
-            RowPageView(row: page, workspace: workspace, gitChanges: gitChanges, files: files)
+            RowPageView(row: page, workspace: workspace, gitChanges: gitChanges, files: files, editors: editors)
         } else if let chat = workspace.active {
             ChatView(chat: chat, gitChanges: gitChanges, files: files, editors: editors,
                      openPage: workspace.showPage)
