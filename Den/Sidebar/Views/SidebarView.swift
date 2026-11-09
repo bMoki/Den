@@ -24,7 +24,9 @@ struct SidebarView: View {
             set: { if !$0 { ns.creation?.isPresented = false } }
         )) {
             if let creation = ns.creation {
-                NewBranchSheet(creation: creation) { create(with: creation) }
+                NewBranchSheet(creation: creation, start: { create(with: creation) },
+                               retry: { repo in continuing(creation) { await creation.retry(repo) } },
+                               prepareAgain: { continuing(creation) { await creation.prepareAgain() } })
             }
         }
         .sheet(item: Binding(get: { ns.removal }, set: { if $0 == nil { ns.cancelRemoval() } })) { removal in
@@ -32,6 +34,10 @@ struct SidebarView: View {
                 Task { await ns.remove(removal.branch, purge: purge) }
             }
         }
+    }
+
+    private func continuing(_ creation: BranchCreation, _ work: @escaping @MainActor () async -> Void) {
+        Task { await ns.holdingBranch(of: creation, while: work) }
     }
 
     private func create(with creation: BranchCreation) {
@@ -170,7 +176,7 @@ struct SidebarView: View {
                     branch: ns.branch(named: folder.name),
                     activity: ns.activity[folder.name],
                     problem: ns.actionProblems[folder.name],
-                    pullRequests: monitor.pullRequests(for: folder.name).map(\.pullRequest),
+                    pullRequests: monitor.bars(for: folder.name).map(\.pullRequest),
                     sessions: workspace.tally(folder.sessions),
                     isSelected: isSelected,
                     open: { open(folder) },
@@ -178,6 +184,8 @@ struct SidebarView: View {
                     start: { Task { await ns.start(folder.name) } },
                     stop: { Task { await ns.stop(folder.name) } },
                     update: { Task { await ns.update(folder.name) } },
+                    addableRepos: ns.addableRepos(of: folder.name),
+                    addRepo: { repo in Task { await ns.addRepo(repo, to: folder.name) } },
                     remove: { Task { await ns.askToRemove(folder.name) } },
                     setNickname: { text in Task { await ns.setNickname(folder.name, to: text) } },
                     isFavorite: isFavorite,
@@ -201,7 +209,7 @@ struct SidebarView: View {
                     caption: folder.nickname.map { _ in folder.name },
                     detail: tipDetail(for: folder, isBranch: isBranch),
                     state: nil, anchor: anchor,
-                    lines: isBranch ? PaneTip.Line.pullRequests(monitor.pullRequests(for: folder.name)) : [])
+                    lines: isBranch ? PaneTip.Line.pullRequests(monitor.bars(for: folder.name)) : [])
         }, update: { scheduleTip($0) })
     }
 

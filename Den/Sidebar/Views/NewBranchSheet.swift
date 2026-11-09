@@ -3,6 +3,8 @@ import SwiftUI
 struct NewBranchSheet: View {
     @Bindable var creation: BranchCreation
     var start: () -> Void
+    var retry: (String) -> Void
+    var prepareAgain: () -> Void
 
     @FocusState private var nameFocused: Bool
     @FocusState private var nicknameFocused: Bool
@@ -75,8 +77,9 @@ struct NewBranchSheet: View {
 
     @ViewBuilder
     private var progress: some View {
-        DialogHeading(title: Text("Criando \(Text(creation.name).font(.system(size: 14, weight: .semibold, design: .monospaced)))"),
-                      subtitle: Text("Pode fechar esta janela; a criação continua e aparece na barra lateral."))
+        let wording = Wording(adding: creation.adding)
+        DialogHeading(title: Text("\(wording.heading) \(Text(creation.name).font(.system(size: 14, weight: .semibold, design: .monospaced)))"),
+                      subtitle: Text(wording.subtitle))
             VStack(alignment: .leading, spacing: 14) {
                 VStack(alignment: .leading, spacing: 2) {
                     ForEach(creation.steps) { StepRow(step: $0) }
@@ -85,12 +88,13 @@ struct NewBranchSheet: View {
                     QuestionBox(question: question, reply: creation.reply)
                 }
                 ForEach(creation.missing) { missing in
-                    FailureBox(title: "\(missing.repo) não foi incluído.", detail: "A branch foi mantida sem ele.",
+                    FailureBox(title: "\(missing.repo) não foi incluído.",
+                               detail: wording.missingDetail,
                                message: missing.message) {
                         if missing.retrying {
                             ProgressView().controlSize(.small)
                         } else {
-                            Button { Task { await creation.retry(missing.repo) } } label: {
+                            Button { retry(missing.repo) } label: {
                                 Text("Repetir \(missing.repo)").pillLabel()
                             }
                                 .buttonStyle(.denSecondary)
@@ -101,13 +105,16 @@ struct NewBranchSheet: View {
                     FailureBox(title: stopped.title, detail: nil,
                                message: [stopped.failure.message, stopped.failure.hint].compactMap(\.self)
                                    .joined(separator: "\n")) {
-                        EmptyView()
+                        if case .notPrepared = creation.phase {
+                            Button(action: prepareAgain) { Text("Preparar de novo").pillLabel() }
+                                .buttonStyle(.denSecondary)
+                        }
                     }
                 }
             }
             .padding(EdgeInsets(top: 14, leading: 20, bottom: 4, trailing: 20))
             DialogFooter {
-                Text(footerNote)
+                Text(footerNote(wording))
                     .font(.system(size: 12))
                     .foregroundStyle(Theme.textTertiary)
                 Spacer(minLength: 0)
@@ -125,11 +132,32 @@ struct NewBranchSheet: View {
         }
     }
 
-    private var footerNote: String {
+    private func footerNote(_ wording: Wording) -> String {
         switch creation.phase {
         case .form, .running: "Preparando…"
-        case .finished: "Pronto. A Sessão abriu na raiz da branch."
-        case .failed, .notPrepared: ""
+        case .finished where creation.missing.isEmpty: wording.finished
+        case .finished, .failed, .notPrepared: ""
+        }
+    }
+
+    private struct Wording {
+        let heading: String
+        let subtitle: String
+        let missingDetail: String
+        let finished: String
+
+        init(adding: BranchCreation.Repo?) {
+            if let adding {
+                heading = "Incluindo \(adding.rawValue) em"
+                subtitle = "Pode fechar esta janela; a inclusão continua. O Serviço novo fica Parado."
+                missingDetail = "A branch segue sem ele."
+                finished = "Pronto. Nenhum Serviço foi iniciado."
+            } else {
+                heading = "Criando"
+                subtitle = "Pode fechar esta janela; a criação continua e aparece na barra lateral."
+                missingDetail = "A branch foi mantida sem ele."
+                finished = "Pronto. A Sessão abriu na raiz da branch."
+            }
         }
     }
 

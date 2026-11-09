@@ -15,15 +15,27 @@ final class PullRequestLedger {
     func pullRequest(for key: BranchRepo.Key) -> PullRequest? { entries[key]?.pullRequest }
 
     func setPullRequest(_ pr: PullRequest?, for key: BranchRepo.Key) {
-        guard entries[key]?.pullRequest != pr else { return }
+        let previous = entries[key]?.pullRequest
+        guard previous != pr else { return }
         entries[key, default: PullRequestStore.Entry()].pullRequest = pr
+        if previous?.number != pr?.number { entries[key]?.dismissed = nil }
         persist()
     }
 
-    func dismissedSignature(for key: BranchRepo.Key) -> String? { entries[key]?.dismissed }
+    func isDismissed(_ key: BranchRepo.Key) -> Bool {
+        guard let entry = entries[key], let pr = entry.pullRequest else { return false }
+        return PullRequestStatus.isDismissed(pr, by: entry.dismissed)
+    }
 
-    func dismiss(_ key: BranchRepo.Key, signature: String) {
-        entries[key, default: PullRequestStore.Entry()].dismissed = signature
+    func dismiss(_ key: BranchRepo.Key) {
+        guard let pr = entries[key]?.pullRequest else { return }
+        entries[key]?.dismissed = PullRequestStatus.signature(pr)
+        persist()
+    }
+
+    func restore(_ key: BranchRepo.Key) {
+        guard entries[key]?.dismissed != nil else { return }
+        entries[key]?.dismissed = nil
         persist()
     }
 

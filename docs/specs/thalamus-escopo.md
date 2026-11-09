@@ -148,7 +148,6 @@ Ficam: chat e composer, permissões, slash, menções, painel de contexto, alter
 - **T-14.1** Um PR pode ser dispensado até mudar de estado: pela ação na linha dele, na seção PRs da aba Serviços, ou pelo "×" da barra de PR da Sessão.
 - **T-14.2** A dispensa é uma só. Um PR dispensado some da barra de PR da Sessão e da linha da Branch de workspace na sidebar. Na seção PRs continua listado, apagado e marcado como dispensado, e a mesma ação desfaz.
 - **T-14.3** O PR dispensado volta sozinho quando muda de estado: review, checks, conflito, merge ou fechamento. Um PR mergeado não muda mais e, dispensado, não volta; um PR novo no mesmo Repo aparece normalmente.
-- **T-14.4** O título da seção PRs tem **Dispensar mergeados**, que dispensa de uma vez os PRs mergeados da Branch de workspace. Sem nenhum mergeado à vista, a ação fica desabilitada.
 - **T-14.5** Dispensar é uma preferência do Thalamus e não age sobre o PR no GitHub.
 
 ## 15. Dependências dos Repos

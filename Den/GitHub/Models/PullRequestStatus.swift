@@ -56,6 +56,12 @@ nonisolated enum PullRequestStatus {
         "\(pr.state.rawValue)|\(pr.isDraft)|\(checks(pr).key)|\(pr.review.rawValue)|\(pr.mergeable.rawValue)"
     }
 
+    static func isDismissed(_ pr: PullRequest, by dismissed: String?) -> Bool {
+        guard let dismissed else { return false }
+        if pr.state == .merged { return dismissed.hasPrefix("\(PullRequest.State.merged.rawValue)|") }
+        return dismissed == signature(pr)
+    }
+
     static func number(_ pr: PullRequest) -> String { "#\(pr.number)" }
 
     static func label(_ pr: PullRequest) -> String {

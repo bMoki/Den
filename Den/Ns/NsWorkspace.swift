@@ -30,7 +30,7 @@ final class NsWorkspace {
     }
 
     struct Activity: Equatable {
-        enum Kind { case start, stop, restart, update, remove, openDatabase, snapshot, restore, removeSnapshot }
+        enum Kind { case start, stop, restart, update, addRepo, remove, openDatabase, snapshot, restore, removeSnapshot }
 
         var kind: Kind
         var label: String
@@ -131,8 +131,12 @@ final class NsWorkspace {
         if let creation, creation.isRunning {
             creation.isPresented = true
         } else {
-            creation = BranchCreation(operations: creationOperations) { [weak self] in await self?.refresh() }
+            creation = makeCreation()
         }
+    }
+
+    private func makeCreation() -> BranchCreation {
+        BranchCreation(operations: creationOperations) { [weak self] in await self?.refresh() }
     }
 
     func place(of directory: URL) -> SessionPlace {
@@ -342,6 +346,40 @@ final class NsWorkspace {
 }
 
 extension NsWorkspace {
+    func addableRepos(of branch: String) -> [BranchCreation.Repo] {
+        guard let present = self.branch(named: branch)?.repos?.map(\.repo) else { return [] }
+        return BranchCreation.Repo.allCases.filter { !present.contains($0.rawValue) }
+    }
+
+    func addRepo(_ repo: BranchCreation.Repo, to branch: String) async {
+        if let creation, creation.isRunning {
+            creation.isPresented = true
+            return
+        }
+        guard activity[branch] == nil else { return }
+        let creation = makeCreation()
+        self.creation = creation
+        await holding(branch, adding: repo) { await creation.add(repo, to: branch) }
+    }
+
+    func holdingBranch(of creation: BranchCreation, while work: () async -> Void) async {
+        guard let repo = creation.adding else {
+            await work()
+            return
+        }
+        await holding(creation.name, adding: repo, while: work)
+    }
+
+    private func holding(_ branch: String, adding repo: BranchCreation.Repo, while work: () async -> Void) async {
+        let isFree = activity[branch] == nil
+        if isFree {
+            activity[branch] = Activity(kind: .addRepo, label: "Incluindo \(repo.rawValue)...")
+            actionProblems[branch] = nil
+        }
+        await work()
+        if isFree { activity[branch] = nil }
+    }
+
     func setNickname(_ branch: String, to text: String) async {
         let nickname = BranchNickname.normalized(text)
         guard let index = status?.branches.firstIndex(where: { $0.branch == branch }),

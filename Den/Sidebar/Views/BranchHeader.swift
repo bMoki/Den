@@ -13,6 +13,8 @@ struct BranchHeader: View {
     var start: () -> Void
     var stop: () -> Void
     var update: () -> Void
+    let addableRepos: [BranchCreation.Repo]
+    var addRepo: (BranchCreation.Repo) -> Void
     var remove: () -> Void
     var setNickname: (String) -> Void
     let isFavorite: Bool
@@ -64,24 +66,37 @@ struct BranchHeader: View {
         .padding(.trailing, 6)
         .padding(.vertical, 6)
         .sidebarHeaderRow(hovering: $hovering, isSelected: isSelected, open: open)
-        .denContextMenu([
+        .denContextMenu(menu)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(branch?.nickname.map { "\($0), \(name)" } ?? name)
+    }
+
+    private var menu: [DenMenuSection] {
+        let idle = activity == nil
+        let adding = addableRepos.isEmpty ? [] : [
+            DenMenuItem(id: "add-repo", title: BranchActionTitle.addRepo, isEnabled: idle, children: [
+                DenMenuSection(items: addableRepos.map { repo in
+                    DenMenuItem(id: repo.rawValue, title: repo.rawValue) { addRepo(repo) }
+                }),
+            ]),
+        ]
+        return [
             DenMenuSection(id: "services", items: [
-                DenMenuItem(id: "start", title: BranchActionTitle.start, isEnabled: activity == nil, action: start),
-                DenMenuItem(id: "stop", title: BranchActionTitle.stop, isEnabled: activity == nil, action: stop),
+                DenMenuItem(id: "start", title: BranchActionTitle.start, isEnabled: idle, action: start),
+                DenMenuItem(id: "stop", title: BranchActionTitle.stop, isEnabled: idle, action: stop),
             ]),
             DenMenuSection(id: "branch", items: [
-                DenMenuItem(id: "update", title: BranchActionTitle.update, isEnabled: activity == nil, action: update),
+                DenMenuItem(id: "update", title: BranchActionTitle.update, isEnabled: idle, action: update),
+            ] + adding + [
                 DenMenuItem(id: "new-session", title: "Nova sessão aqui", action: newSession),
                 DenMenuItem(id: "nickname", title: BranchActionTitle.nickname) { isEditing = true },
                 FavoriteTitle.item(isFavorite: isFavorite, toggle: toggleFavorite),
             ]),
             DenMenuSection(id: "remove", items: [
-                DenMenuItem(id: "remove", title: BranchActionTitle.remove, isEnabled: activity == nil,
+                DenMenuItem(id: "remove", title: BranchActionTitle.remove, isEnabled: idle,
                             isDestructive: true, action: remove),
             ]),
-        ])
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel(branch?.nickname.map { "\($0), \(name)" } ?? name)
+        ]
     }
 
     @ViewBuilder
