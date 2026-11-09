@@ -63,6 +63,10 @@ Uma mensagem mandada numa Sessão enquanto o agente trabalha e que o agente aind
 ### Favorito
 Uma Branch de workspace, Repo base ou pasta de Outras pastas que o desenvolvedor fixou no topo da sidebar. É uma preferência de quem usa o Thalamus, não um atributo da Branch de workspace.
 
+### Grupo encolhido
+Um grupo da sidebar (Favoritos, Branches de workspace, Repos base ou Outras pastas) que mostra só o título e, se for dele, a linha em foco. Continua encolhido até ser expandido, inclusive entre aberturas do Thalamus; a busca mostra as linhas encontradas sem expandi-lo. É uma preferência de quem usa o Thalamus.
+_Evitar:_ "grupo fechado", "recolhido", "colapsado".
+
 ### Página da linha
 O que o centro mostra para uma linha da sidebar (uma Branch de workspace, um Repo base ou uma pasta de Outras pastas): as Sessões dela e a ação de começar outra, junto com o que é da linha e não de uma Sessão (abas de arquivo, Consoles, Terminais livres). Clicar na linha abre a Sessão aberta por último ali; clicar de novo, a página.
 _Evitar:_ "pasta expandida", "árvore de Sessões".

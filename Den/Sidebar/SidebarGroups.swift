@@ -79,6 +79,15 @@ nonisolated struct SidebarGroups: Equatable {
         otherFolders = elsewhereFolders.filter { !isFavorite($0) }
     }
 
+    subscript(group: SidebarGroup) -> [Folder] {
+        switch group {
+        case .favorites: favorites
+        case .branches: branches
+        case .baseRepos: baseRepos
+        case .otherFolders: otherFolders
+        }
+    }
+
     static func sorted(_ folders: [Folder], by order: SidebarOrder) -> [Folder] {
         let byName = { (lhs: Folder, rhs: Folder) in
             switch lhs.name.localizedStandardCompare(rhs.name) {

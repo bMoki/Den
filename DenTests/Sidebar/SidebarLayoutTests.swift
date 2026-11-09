@@ -127,3 +127,49 @@ private func layout(favoriting folders: [SidebarGroups.Folder?], order: SidebarO
         #expect(harness.model.layout.favorites.isEmpty)
     }
 }
+
+@Test func aCollapsedGroupShowsOnlyTheRowInFocus() {
+    let branches = SidebarGroups(sessions: [], status: datedStatus).branches
+    let expanded = SidebarLayout()
+    let collapsed = SidebarLayout(collapsed: [.branches])
+
+    #expect(expanded.shown(branches, in: .branches, focus: .branch("NS-12"), searching: false) == branches)
+    #expect(collapsed.shown(branches, in: .branches, focus: .branch("NS-12"), searching: false).map(\.name)
+        == ["NS-12"])
+    #expect(collapsed.shown(branches, in: .branches, focus: .baseRepo("backend"), searching: false).isEmpty)
+    #expect(collapsed.shown(branches, in: .branches, focus: nil, searching: false).isEmpty)
+    #expect(collapsed.shown(branches, in: .favorites, focus: nil, searching: false) == branches)
+}
+
+@Test func searchingShowsEveryGroupWithoutForgettingWhichAreCollapsed() {
+    let branches = SidebarGroups(sessions: [], status: datedStatus).branches
+    let collapsed = SidebarLayout(collapsed: [.branches])
+
+    #expect(collapsed.isExpanded(.branches, searching: true))
+    #expect(collapsed.shown(branches, in: .branches, focus: nil, searching: true) == branches)
+    #expect(!collapsed.isExpanded(.branches, searching: false))
+    #expect(collapsed.collapsed == [.branches])
+}
+
+@Test func collapsedGroupsSurviveReopeningTheApp() async throws {
+    try await withWorkspace { harness in
+        #expect(harness.model.layout.collapsed.isEmpty)
+
+        harness.model.layout.toggleCollapsed(.branches)
+        harness.model.layout.toggleCollapsed(.favorites)
+        #expect(SidebarLayout(defaults: harness.defaults).collapsed == [.branches, .favorites])
+
+        harness.model.layout.toggleCollapsed(.branches)
+        #expect(SidebarLayout(defaults: harness.defaults).collapsed == [.favorites])
+    }
+}
+
+@Test func aLayoutSavedBeforeGroupsCollapsedKeepsItsFavoritesAndOrder() throws {
+    let saved = Data(#"{"favorites":[{"kind":"baseRepo","path":"/dev/backend"}],"order":"recent"}"#.utf8)
+
+    let layout = try JSONDecoder().decode(SidebarLayout.self, from: saved)
+
+    #expect(layout.favorites == [SidebarFavorite(kind: .baseRepo, path: "/dev/backend")])
+    #expect(layout.order == .recent)
+    #expect(layout.collapsed.isEmpty)
+}
