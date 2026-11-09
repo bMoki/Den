@@ -40,12 +40,11 @@ private struct DependencyRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
+                icon
                 Text(row.id)
                     .font(.system(size: 12, design: .monospaced))
                     .foregroundStyle(Theme.textSecondary)
                     .lineLimit(1)
-                    .frame(width: 104, alignment: .leading)
-                pill
                 Spacer(minLength: 4)
                 action
             }
@@ -65,10 +64,10 @@ private struct DependencyRow: View {
                     }
                     CopyableCommand(command: row.repo.command)
                 }
-                .padding(.leading, 112)
+                .padding(.leading, 26)
             }
         }
-        .padding(.leading, 12)
+        .padding(.leading, 10)
         .padding(.trailing, 8)
         .padding(.vertical, 8)
         .overlay(alignment: .top) {
@@ -104,22 +103,22 @@ private struct DependencyRow: View {
         }
     }
 
-    private var pill: some View {
-        let (title, color, fill) = Self.style(of: row.repo.state)
-        return Text(title)
-            .font(.system(size: 11, weight: .medium))
+    private var icon: some View {
+        let (symbol, title, color) = Self.style(of: row.repo.state)
+        return Image(systemName: symbol)
+            .font(.system(size: 11, weight: .semibold))
             .foregroundStyle(color)
-            .padding(.horizontal, 8)
-            .frame(height: 19)
-            .background(fill, in: Capsule())
+            .frame(width: 18, height: 18)
+            .help(title)
+            .accessibilityLabel(title)
     }
 
-    static func style(of state: NsClient.RepoDependencies.State) -> (String, Color, Color) {
+    static func style(of state: NsClient.RepoDependencies.State) -> (symbol: String, title: String, color: Color) {
         switch state {
-        case .installed: ("Instaladas", Theme.added, Theme.addedFill)
-        case .reused: ("Da master", Theme.accent, Theme.accentFill)
-        case .divergent: ("Da master, divergentes", Theme.alertText, Theme.alertFill)
-        case .missing: ("Faltando", Theme.removed, Theme.removedFill)
+        case .installed: ("checkmark", "Instaladas", Theme.added)
+        case .reused: ("arrow.triangle.branch", "Da master", Theme.textTertiary)
+        case .divergent: ("exclamationmark.triangle", "Da master, divergentes", Theme.alertText)
+        case .missing: ("xmark", "Faltando", Theme.removed)
         }
     }
 }
