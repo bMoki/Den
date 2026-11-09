@@ -14,12 +14,12 @@ struct DisclosureChevron: View {
 
 struct SessionCountLabel: View {
     enum Noun {
-        case sessions, favorites
+        case sessions, hiddenRows
 
         func describe(_ count: Int) -> String {
             switch self {
             case .sessions: count == 1 ? "1 sessão" : "\(count) sessões"
-            case .favorites: count == 1 ? "1 favorito" : "\(count) favoritos"
+            case .hiddenRows: count == 1 ? "1 linha escondida" : "\(count) linhas escondidas"
             }
         }
     }
@@ -53,48 +53,87 @@ struct SessionTallyLabel: View {
 }
 
 struct SidebarSectionTitle<Trailing: View>: View {
+    struct Expansion {
+        let isExpanded: Bool
+        let isEnabled: Bool
+        let toggle: () -> Void
+    }
+
     let title: String
+    var expansion: Expansion?
     @ViewBuilder var trailing: () -> Trailing
 
-    init(_ title: String, @ViewBuilder trailing: @escaping () -> Trailing) {
+    init(_ title: String, expansion: Expansion? = nil, @ViewBuilder trailing: @escaping () -> Trailing) {
         self.title = title
+        self.expansion = expansion
         self.trailing = trailing
     }
 
     var body: some View {
         HStack(spacing: 4) {
-            Text(title)
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(Theme.textTertiary)
-            Spacer(minLength: 0)
-            trailing()
+            if let expansion {
+                Button(action: expansion.toggle) { label.contentShape(Rectangle()) }
+                    .buttonStyle(.plain)
+                    .disabled(!expansion.isEnabled)
+                    .accessibilityLabel(title)
+                    .accessibilityValue(expansion.isExpanded ? "expandido" : "encolhido")
+            } else {
+                label
+            }
+            HStack(spacing: 4, content: trailing)
+                .fixedSize()
         }
         .padding(.leading, 10)
         .padding(.trailing, 4)
         .frame(height: 28)
     }
+
+    private var label: some View {
+        HStack(spacing: 4) {
+            Text(title)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(Theme.textTertiary)
+                .lineLimit(1)
+                .truncationMode(.tail)
+            Spacer(minLength: 0)
+        }
+        .frame(maxHeight: .infinity)
+    }
 }
 
-struct SidebarCollapsibleTitle: View {
+struct SidebarCollapsibleTitle<Actions: View>: View {
     let title: String
-    let count: Int
-    let noun: SessionCountLabel.Noun
-    let isOpen: Bool
+    let hidden: Int
+    let isExpanded: Bool
+    let isEnabled: Bool
     var toggle: () -> Void
+    @ViewBuilder var actions: () -> Actions
 
     var body: some View {
-        Button {
-            withAnimation(.easeInOut(duration: 0.22)) { toggle() }
-        } label: {
-            SidebarSectionTitle(title) {
-                SessionCountLabel(count: count, noun: noun)
-                DisclosureChevron(isOpen: isOpen)
+        SidebarSectionTitle(title, expansion: .init(isExpanded: isExpanded, isEnabled: isEnabled,
+                                                    toggle: animatedToggle)) {
+            actions()
+            Button(action: animatedToggle) {
+                HStack(spacing: 4) {
+                    ZStack(alignment: .trailing) {
+                        Text("999").font(.system(size: 11)).monospacedDigit().hidden()
+                        SessionCountLabel(count: hidden, noun: .hiddenRows)
+                            .opacity(hidden > 0 ? 1 : 0)
+                    }
+                    DisclosureChevron(isOpen: isExpanded)
+                }
+                .frame(maxHeight: .infinity)
+                .contentShape(Rectangle())
             }
-            .contentShape(Rectangle())
+            .buttonStyle(.plain)
+            .disabled(!isEnabled)
+            .focusable(false)
+            .accessibilityHidden(true)
         }
-        .buttonStyle(.plain)
-        .accessibilityLabel(title)
-        .accessibilityValue(isOpen ? "aberta" : "fechada")
+    }
+
+    private func animatedToggle() {
+        withAnimation(.easeInOut(duration: 0.22)) { toggle() }
     }
 }
 
