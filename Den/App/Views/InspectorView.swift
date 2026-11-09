@@ -4,7 +4,7 @@ struct InspectorView: View {
     @Binding var pane: InspectorPane
     let gitChanges: GitChangesModel
     let files: FileTree
-    let sessionID: UUID
+    let sessionID: UUID?
     let directory: URL
     let branch: String?
     let removedBranch: String?
@@ -12,23 +12,25 @@ struct InspectorView: View {
     var mention: (_ path: String, _ isDirectory: Bool) -> Void
 
     var body: some View {
-        let shown = pane.shown(inBranch: branch != nil)
+        let shown = sessionID == nil ? .services : pane.shown(inBranch: branch != nil)
         VStack(spacing: 0) {
             TopBar(leadingInset: 12) {
                 HStack(spacing: 2) {
                     if branch != nil {
                         tab(.services, title: "Serviços", symbol: "server.rack", shown: shown)
                     }
-                    tab(.files, title: "Arquivos", symbol: "folder", shown: shown)
-                    tab(.changes, title: "Alterações", symbol: "plus.forwardslash.minus", shown: shown) {
-                        if gitChanges.changeCount > 0 {
-                            Text("\(gitChanges.changeCount)")
-                                .font(.system(size: 11, weight: .medium))
-                                .monospacedDigit()
-                                .foregroundStyle(Theme.textSecondary)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 1)
-                                .background(Theme.hoverRaised, in: Capsule())
+                    if sessionID != nil {
+                        tab(.files, title: "Arquivos", symbol: "folder", shown: shown)
+                        tab(.changes, title: "Alterações", symbol: "plus.forwardslash.minus", shown: shown) {
+                            if gitChanges.changeCount > 0 {
+                                Text("\(gitChanges.changeCount)")
+                                    .font(.system(size: 11, weight: .medium))
+                                    .monospacedDigit()
+                                    .foregroundStyle(Theme.textSecondary)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 1)
+                                    .background(Theme.hoverRaised, in: Capsule())
+                            }
                         }
                     }
                 }

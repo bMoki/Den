@@ -4,8 +4,8 @@ struct FolderHeader: View {
     let name: String
     var detail: String?
     let sessions: SessionTally
-    let isOpen: Bool
-    var toggle: () -> Void
+    let isSelected: Bool
+    var open: () -> Void
     var newSession: () -> Void
     let isFavorite: Bool
     var toggleFavorite: () -> Void
@@ -14,8 +14,6 @@ struct FolderHeader: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            DisclosureChevron(isOpen: isOpen)
-                .opacity(sessions.total == 0 ? 0 : 1)
             Image(systemName: sessions.total > 0 ? "folder.fill" : "folder")
                 .font(.system(size: 13))
                 .foregroundStyle(sessions.total > 0 ? Theme.accent : Theme.textTertiary)
@@ -36,7 +34,7 @@ struct FolderHeader: View {
         }
         .padding(.horizontal, 10)
         .frame(height: 32)
-        .sidebarHeaderRow(hovering: $hovering, isOpen: isOpen, toggle: toggle)
+        .sidebarHeaderRow(hovering: $hovering, isSelected: isSelected, open: open)
         .denContextMenu([
             DenMenuSection(id: "new", items: [
                 DenMenuItem(id: "new-session", title: "Nova sessão aqui", action: newSession),
@@ -44,7 +42,7 @@ struct FolderHeader: View {
             ]),
         ])
         .accessibilityElement(children: .combine)
+        .accessibilityLabel(name)
         .accessibilityAddTraits(.isButton)
-        .accessibilityValue(isOpen ? "aberta" : "fechada")
     }
 }

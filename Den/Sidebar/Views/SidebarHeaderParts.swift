@@ -108,12 +108,38 @@ enum FavoriteTitle {
 }
 
 extension View {
-    func sidebarHeaderRow(hovering: Binding<Bool>, isOpen: Bool, toggle: @escaping () -> Void) -> some View {
-        background(hovering.wrappedValue ? Theme.hover.opacity(0.7) : .clear,
-                   in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-            .animation(.easeInOut(duration: 0.2), value: isOpen)
+    func sidebarHeaderRow(hovering: Binding<Bool>, isSelected: Bool, open: @escaping () -> Void) -> some View {
+        hoverFill(hovering.wrappedValue, selected: isSelected)
             .contentShape(Rectangle())
             .onHover { hovering.wrappedValue = $0 }
-            .onTapGesture(perform: toggle)
+            .onTapGesture(perform: open)
+            .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+}
+
+struct ArchivedRow: View {
+    let count: Int
+    let isSelected: Bool
+    var open: () -> Void
+
+    @State private var hovering = false
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "archivebox")
+                .font(.system(size: 12))
+                .foregroundStyle(Theme.textTertiary)
+                .frame(width: 16)
+            Text(SidebarRow.archivedTitle)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(Theme.textSecondary)
+            Spacer(minLength: 4)
+            SessionCountLabel(count: count)
+        }
+        .padding(.horizontal, 10)
+        .frame(height: 32)
+        .sidebarHeaderRow(hovering: $hovering, isSelected: isSelected, open: open)
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isButton)
     }
 }

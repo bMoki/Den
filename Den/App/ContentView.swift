@@ -46,6 +46,8 @@ struct ContentView: View {
         .preferredColorScheme(.dark)
         .frame(minWidth: 860, minHeight: 560)
         .task { await workspace.refresh() }
+        .onChange(of: workspace.summaries) { closeVanishedPage() }
+        .onChange(of: ns.status) { closeVanishedPage() }
         .onChange(of: archivedSessions, initial: true) { _, archived in
             archived.forEach(terminals.close(sessionID:))
         }
@@ -55,7 +57,11 @@ struct ContentView: View {
     }
 
     private var archivedSessions: [UUID] {
-        SidebarGroups(sessions: workspace.summaries, status: ns.status, place: ns.place(of:)).archived.map(\.id)
+        workspace.groups(in: ns).archived.map(\.id)
+    }
+
+    private func closeVanishedPage() {
+        workspace.closePageIfGone(from: workspace.groups(in: ns), statusKnown: ns.status != nil)
     }
 
     private var lightsInset: CGFloat { isFullScreen ? 0 : Theme.trafficLightsInset }
@@ -66,8 +72,11 @@ struct ContentView: View {
 
     @ViewBuilder
     private var detail: some View {
-        if let chat = workspace.active {
-            ChatView(chat: chat, gitChanges: gitChanges, files: files, editors: editors)
+        if let page = workspace.page {
+            RowPageView(row: page, workspace: workspace, gitChanges: gitChanges, files: files)
+        } else if let chat = workspace.active {
+            ChatView(chat: chat, gitChanges: gitChanges, files: files, editors: editors,
+                     openPage: workspace.showPage)
         } else if workspace.selectedID != nil {
             sessionLoading
         } else {
@@ -112,7 +121,7 @@ struct ContentView: View {
                 VStack(spacing: 4) {
                     Text("Nenhuma conversa aberta")
                         .font(.system(size: 15, weight: .semibold))
-                    Text("Comece uma sessão nova ou escolha uma na barra lateral.")
+                    Text("Comece uma sessão nova ou abra uma branch ou pasta na barra lateral.")
                         .font(.system(size: 13))
                         .foregroundStyle(Theme.textTertiary)
                 }
@@ -134,6 +143,8 @@ struct Chrome {
     var leadingInset: CGFloat = 0
     var sidebarHidden = false
     var showSidebar: () -> Void = {}
+
+    var headerInset: CGFloat { leadingInset + (sidebarHidden ? 8 : 20) }
 }
 
 extension EnvironmentValues {

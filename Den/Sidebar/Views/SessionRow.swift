@@ -5,6 +5,8 @@ struct SessionRow: View {
     let summary: SessionSummary
     let state: SessionState?
     var isSelected = false
+    var showsActivity = false
+    var isReadOnly = false
     var select: () -> Void
     var rename: (String) -> Void
     var delete: () -> Void = {}
@@ -31,6 +33,13 @@ struct SessionRow: View {
 
             Spacer(minLength: 4)
 
+            if showsActivity {
+                Text(summary.updatedAt.formatted(.relative(presentation: .named).locale(Locale(identifier: "pt_BR"))))
+                    .font(.system(size: 11.5))
+                    .foregroundStyle(Theme.textTertiary)
+                    .lineLimit(1)
+            }
+
             if let state {
                 SessionStateDot(state: state)
                     .describedAs(state.name)
@@ -46,6 +55,7 @@ struct SessionRow: View {
             select()
         })
         .simultaneousGesture(TapGesture(count: 2).onEnded {
+            guard !isReadOnly else { return }
             Task { @MainActor in isEditing = true }
         })
         .denContextMenu(menuSections)
@@ -53,10 +63,10 @@ struct SessionRow: View {
     }
 
     private var menuSections: [DenMenuSection] {
-        [
-            DenMenuSection(id: "edit", items: [
-                DenMenuItem(id: "rename", title: "Renomear") { isEditing = true },
-            ]),
+        let rename = DenMenuSection(id: "edit", items: [
+            DenMenuItem(id: "rename", title: "Renomear") { isEditing = true },
+        ])
+        return (isReadOnly ? [] : [rename]) + [
             DenMenuSection(id: "danger", items: [
                 DenMenuItem(id: "delete", title: "Apagar sessão…",
                             isDestructive: true, action: delete),

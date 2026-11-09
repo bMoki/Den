@@ -62,6 +62,12 @@ final class ConversationUITests: XCTestCase {
     @MainActor
     private func sidebarRow(_ title: String, in app: XCUIApplication) -> XCUIElement {
         app.descendants(matching: .any).matching(identifier: "Sidebar").firstMatch
+            .descendants(matching: .any).matching(NSPredicate(format: "label == %@", title)).firstMatch
+    }
+
+    @MainActor
+    private func pageRow(_ title: String, in app: XCUIApplication) -> XCUIElement {
+        app.descendants(matching: .any).matching(identifier: "RowPage").firstMatch
             .staticTexts[title]
     }
 
@@ -92,7 +98,8 @@ final class ConversationUITests: XCTestCase {
         startConversation("Diga apenas OK e nada mais.", in: app)
 
         require(app.staticTexts["OK"], in: app)
-        require(sidebarRow("Saudação curta", in: app), in: app)
+        require(app.staticTexts["Saudação curta"], in: app)
+        require(sidebarRow("project", in: app), in: app)
         XCTAssertEqual(claude.launches.count, 1)
     }
 
@@ -142,11 +149,11 @@ final class ConversationUITests: XCTestCase {
         try claude.answerTitles(with: "Saudação curta")
         var app = launch()
         startConversation("Diga apenas OK e nada mais.", in: app)
-        require(sidebarRow("Saudação curta", in: app), in: app)
+        require(app.staticTexts["Saudação curta"], in: app)
         app.terminate()
 
         app = launch()
-        let row = sidebarRow("Saudação curta", in: app)
+        let row = sidebarRow("project", in: app)
         require(row, in: app)
         row.click()
 
@@ -232,7 +239,9 @@ final class ConversationUITests: XCTestCase {
     @MainActor
     private func sessionMenu(in app: XCUIApplication) -> XCUIElement {
         startConversation("Diga apenas OK e nada mais.", in: app)
-        let row = sidebarRow("Saudação curta", in: app)
+        require(app.staticTexts["Saudação curta"], in: app)
+        sidebarRow("project", in: app).click()
+        let row = pageRow("Saudação curta", in: app)
         require(row, in: app)
         row.rightClick()
         let menu = app.popovers.firstMatch
@@ -241,7 +250,7 @@ final class ConversationUITests: XCTestCase {
     }
 
     @MainActor
-    func testRenamingASessionFromTheSidebar() throws {
+    func testRenamingASessionFromItsRowPage() throws {
         try claude.on(FakeCLI.userTurn, reply: RecordedSession.claude("hello"))
         try claude.answerTitles(with: "Saudação curta")
         let app = launch()
@@ -250,8 +259,8 @@ final class ConversationUITests: XCTestCase {
         app.typeKey("a", modifierFlags: .command)
         app.typeText("Renomeada\n")
 
-        require(sidebarRow("Renomeada", in: app), in: app)
-        XCTAssertFalse(sidebarRow("Saudação curta", in: app).exists)
+        require(pageRow("Renomeada", in: app), in: app)
+        XCTAssertFalse(pageRow("Saudação curta", in: app).exists)
     }
 
     @MainActor
@@ -267,7 +276,7 @@ final class ConversationUITests: XCTestCase {
         confirm.click()
 
         require(app.staticTexts["Nenhuma conversa aberta"], in: app)
-        XCTAssertFalse(sidebarRow("Saudação curta", in: app).exists)
+        XCTAssertFalse(sidebarRow("project", in: app).exists)
     }
 
     @MainActor

@@ -15,14 +15,11 @@ struct ChatView: View {
     @State private var tableLock = TableScrollLock()
 
     @AppStorage(InspectorPane.storageKey) private var pane: InspectorPane = .closed
-    @AppStorage("Den.inspectorWidth") private var inspectorWidth: Double = 480
     let gitChanges: GitChangesModel
     let files: FileTree
     let editors: EditorTabs
+    var openPage: (SidebarRow) -> Void
     @Environment(NsWorkspace.self) private var ns
-
-    private static let minimumChatWidth: CGFloat = 420
-    private static let minimumInspectorWidth: Double = 320
 
     private struct ScrollEdgeState: Equatable {
         var isNearBottom: Bool
@@ -33,53 +30,28 @@ struct ChatView: View {
     }
 
     var body: some View {
-        GeometryReader { geometry in
-            let room = Double(geometry.size.width - Self.minimumChatWidth)
-            let docked = room >= Self.minimumInspectorWidth
-            HStack(spacing: 0) {
-                VStack(spacing: 0) {
-                    ChatHeader(chat: chat)
-                    EditorTabStrip(tabs: editors, session: chat.sessionID, files: files)
-                    if let document = editors.selection(in: chat.sessionID) {
-                        EditorView(document: document, folder: chat.workingDirectory) { editors.close(document, in: chat.sessionID) }
+        InspectorSplit(isShown: pane != .closed) {
+            VStack(spacing: 0) {
+                ChatHeader(chat: chat, openPage: openPage)
+                EditorTabStrip(tabs: editors, session: chat.sessionID, files: files)
+                if let document = editors.selection(in: chat.sessionID) {
+                    EditorView(document: document, folder: chat.workingDirectory) { editors.close(document, in: chat.sessionID) }
+                } else {
+                    transcript
+                    if let removedBranch {
+                        ArchivedSessionBar(branch: removedBranch)
                     } else {
-                        transcript
-                        if let removedBranch {
-                            ArchivedSessionBar(branch: removedBranch)
-                        } else {
-                            ChatComposer(chat: chat, slash: slash, mentions: mentions,
-                                         keys: keys) { nearBottom = true }
-                        }
+                        ChatComposer(chat: chat, slash: slash, mentions: mentions,
+                                     keys: keys) { nearBottom = true }
                     }
-                    TerminalPanel(sessionID: chat.sessionID, directory: chat.workingDirectory)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Theme.canvas)
-
-                if pane != .closed, docked {
-                    ResizeHandle(width: $inspectorWidth,
-                                 range: Self.minimumInspectorWidth...room,
-                                 growsTowardTrailing: false)
-                    inspector
-                        .frame(width: min(max(inspectorWidth, Self.minimumInspectorWidth), room))
-                        .transition(.move(edge: .trailing).combined(with: .opacity))
-                }
+                TerminalPanel(sessionID: chat.sessionID, directory: chat.workingDirectory)
             }
-            .overlay(alignment: .trailing) {
-                if pane != .closed, !docked {
-                    inspector
-                        .frame(width: min(max(inspectorWidth, Self.minimumInspectorWidth),
-                                          Double(geometry.size.width) - 56))
-                        .overlay(alignment: .leading) {
-                            Rectangle().fill(Theme.borderStrong).frame(width: 1)
-                        }
-                        .shadow(color: .black.opacity(0.5), radius: 28, x: -8)
-                        .transition(.move(edge: .trailing).combined(with: .opacity))
-                }
-            }
-            .frame(width: geometry.size.width, height: geometry.size.height)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Theme.canvas)
+        } inspector: {
+            inspector
         }
-
         .navigationTitle(chat.title)
         .focusedSceneValue(\.chat, chat)
         .task(id: "\(shownPane == .changes)|\(chat.workingDirectory.path)") {

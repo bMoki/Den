@@ -7,8 +7,8 @@ struct BranchHeader: View {
     var problem: String?
     var pullRequests: [PullRequest] = []
     let sessions: SessionTally
-    let isOpen: Bool
-    var toggle: () -> Void
+    let isSelected: Bool
+    var open: () -> Void
     var newSession: () -> Void
     var start: () -> Void
     var stop: () -> Void
@@ -24,7 +24,6 @@ struct BranchHeader: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 8) {
-                DisclosureChevron(isOpen: isOpen)
                 title
                 Spacer(minLength: 4)
                 if hovering || activity != nil {
@@ -50,7 +49,6 @@ struct BranchHeader: View {
                             .padding(.leading, 4)
                     }
                 }
-                .padding(.leading, 20)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(stateSummary(branch))
             }
@@ -60,13 +58,12 @@ struct BranchHeader: View {
                     .foregroundStyle(Theme.removed)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
-                    .padding(.leading, 20)
             }
         }
         .padding(.leading, 10)
         .padding(.trailing, 6)
         .padding(.vertical, 6)
-        .sidebarHeaderRow(hovering: $hovering, isOpen: isOpen, toggle: toggle)
+        .sidebarHeaderRow(hovering: $hovering, isSelected: isSelected, open: open)
         .denContextMenu([
             DenMenuSection(id: "services", items: [
                 DenMenuItem(id: "start", title: BranchActionTitle.start, isEnabled: activity == nil, action: start),
@@ -85,7 +82,6 @@ struct BranchHeader: View {
         ])
         .accessibilityElement(children: .contain)
         .accessibilityLabel(branch?.nickname.map { "\($0), \(name)" } ?? name)
-        .accessibilityValue(isOpen ? "aberta" : "fechada")
     }
 
     @ViewBuilder

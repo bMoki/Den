@@ -63,6 +63,10 @@ Uma mensagem mandada numa Sessão enquanto o agente trabalha e que o agente aind
 ### Favorito
 Uma Branch de workspace, Repo base ou pasta de Outras pastas que o desenvolvedor fixou no topo da sidebar. É uma preferência de quem usa o Thalamus, não um atributo da Branch de workspace.
 
+### Página da linha
+O que o centro mostra para uma linha da sidebar (uma Branch de workspace, um Repo base ou uma pasta de Outras pastas): as Sessões dela e a ação de começar outra. Clicar na linha abre a Sessão aberta por último ali; clicar de novo, a página.
+_Evitar:_ "pasta expandida", "árvore de Sessões".
+
 ### PR dispensado
 Um PR que quem trabalha na Branch de workspace tirou da vista até ele mudar de estado (review, checks, conflito, merge ou fechamento). Ao mudar, volta sozinho. Um PR mergeado não muda mais, então, dispensado, não volta. Dispensar é uma preferência do Thalamus e não age sobre o PR no GitHub.
 _Evitar:_ "PR arquivado", "PR oculto".
