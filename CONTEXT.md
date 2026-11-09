@@ -28,11 +28,11 @@ _Evitar:_ "sessão órfã", "sessão apagada".
 _Evitar_ como sinônimo de Serviço. Quando se fala de backend, frontend, manager ou report-server no ar para uma Branch de workspace, o termo é **Serviço** — e sua identidade é a porta, não o processo do sistema operacional.
 
 ### Console (de Serviço)
-A vista interativa de um Serviço em execução: o mesmo terminal em que o Serviço roda, com entrada de teclado. Abrir ou fechar o Console não inicia nem para o Serviço.
+A vista interativa de um Serviço em execução: o mesmo terminal em que o Serviço roda, com entrada de teclado. Abrir ou fechar o Console não inicia nem para o Serviço. Pertence à Branch de workspace, como o Serviço, e não a uma Sessão.
 _Evitar:_ "terminal do serviço", "log" (o log é só a saída gravada; o Console é interativo).
 
 ### Terminal livre
-Um shell aberto na pasta de uma Sessão, sem relação com nenhum Serviço. Pertence ao Thalamus e se encerra com ele.
+Um shell aberto na pasta de uma linha da sidebar (Branch de workspace, Repo base ou pasta de Outras pastas), sem relação com nenhum Serviço. Pertence à linha, não a uma Sessão: aparece em todas as Sessões dela e na sua página. Pertence ao Thalamus e se encerra com ele.
 
 ### Estado de Serviço
 Em que situação um Serviço está, do ponto de vista de quem trabalha na Branch de workspace:
@@ -64,12 +64,16 @@ Uma mensagem mandada numa Sessão enquanto o agente trabalha e que o agente aind
 Uma Branch de workspace, Repo base ou pasta de Outras pastas que o desenvolvedor fixou no topo da sidebar. É uma preferência de quem usa o Thalamus, não um atributo da Branch de workspace.
 
 ### Página da linha
-O que o centro mostra para uma linha da sidebar (uma Branch de workspace, um Repo base ou uma pasta de Outras pastas): as Sessões dela e a ação de começar outra. Clicar na linha abre a Sessão aberta por último ali; clicar de novo, a página.
+O que o centro mostra para uma linha da sidebar (uma Branch de workspace, um Repo base ou uma pasta de Outras pastas): as Sessões dela e a ação de começar outra, junto com o que é da linha e não de uma Sessão (abas de arquivo, Consoles, Terminais livres). Clicar na linha abre a Sessão aberta por último ali; clicar de novo, a página.
 _Evitar:_ "pasta expandida", "árvore de Sessões".
 
 ### PR dispensado
 Um PR que quem trabalha na Branch de workspace tirou da vista até ele mudar de estado (review, checks, conflito, merge ou fechamento). Ao mudar, volta sozinho. Um PR mergeado não muda mais, então, dispensado, não volta. Dispensar é uma preferência do Thalamus e não age sobre o PR no GitHub.
 _Evitar:_ "PR arquivado", "PR oculto".
+
+### Dependências da master
+As dependências de um Repo que uma Branch de workspace reaproveitou da Branch de workspace `master` em vez de instalar. Podem ser iguais ao que a branch declara ou divergir dele; divergindo, a branch pode não funcionar até instalar as diferenças.
+_Evitar:_ "node_modules copiado", "cache da master".
 
 ### Repo opcional
 Um Repo que uma Branch de workspace pode ou não ter: **manager** (incluído por padrão), **report-server** e **parents**. É escolhido ao criá-la e pode ser adicionado depois; uma vez adicionado, não sai. Backend, frontend e docs estão sempre presentes.

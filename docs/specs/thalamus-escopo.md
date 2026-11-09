@@ -3,7 +3,7 @@
 **Data:** 2026-11-04
 **Status:** decidido, aguardando plano de implementação
 
-Decisões de produto: [ADR-0001](../adr/0001-thalamus-ide-do-ns.md), [ADR-0002](../adr/0002-thalamus-adapter-do-nucleo-ns.md), [ADR-0003](../adr/0003-dependencias-de-terceiros-terminal-e-editor.md).
+Decisões de produto: [ADR-0001](../adr/0001-thalamus-ide-do-ns.md), [ADR-0002](../adr/0002-thalamus-adapter-do-nucleo-ns.md), [ADR-0003](../adr/0003-dependencias-de-terceiros-terminal-e-editor.md), [ADR-0004](../adr/0004-terminais-e-abas-pertencem-a-linha.md).
 Linguagem: [CONTEXT.md](../../CONTEXT.md). Dependências do `ns` ainda não resolvidas: [pendencias.md](../pendencias.md).
 
 Escrito em linguagem de negócio. As regras são numeradas e estáveis: uma regra que muda ganha número novo, não é reescrita.
@@ -36,6 +36,7 @@ Escrito em linguagem de negócio. As regras são numeradas e estáveis: uma regr
 - **T-1.24** A aba Serviços do inspetor mostra os Serviços, o banco e os PRs da Branch de workspace selecionada, com ou sem uma Sessão aberta.
 - **T-1.25** O resumo de Estado de Sessão (T-1.7) aparece sempre na linha e continua visível com o mouse sobre ela, ao lado das ações.
 - **T-1.26** O grupo **Arquivadas** fica no fim da sidebar. Clicar nele abre a página com as Sessões arquivadas, só para leitura.
+- **T-1.27** A página da linha tem tudo que a Sessão tem, menos a conversa: a primeira aba do centro é **Página** (a lista de T-1.22) no lugar da aba Sessão, ao lado das abas de arquivo da linha (T-7.8); o inspetor tem Serviços (só em Branch de workspace), Arquivos e Alterações, na raiz da linha; e o painel de terminais tem os Consoles (T-3.14) e os Terminais livres (T-8.1) da linha. A página de Arquivadas continua só com a lista, para leitura.
 
 ## 2. Nova Branch de workspace
 
@@ -58,6 +59,7 @@ Escrito em linguagem de negócio. As regras são numeradas e estáveis: uma regr
 - **T-3.4** O Console é o terminal interativo do Serviço: aceita teclado (por exemplo, `r` no `quarkus:dev`). Fechar o Console não para o Serviço.
 - **T-3.5** O Thalamus nunca é dono de um Serviço. Fechar o Thalamus não para nenhum Serviço, e o Thalamus acompanha Serviços iniciados pelo terminal ou antes de ele abrir.
 - **T-3.6** Num Serviço que Falhou, o Console mostra a saída do erro.
+- **T-3.14** O Console pertence à Branch de workspace, não à Sessão. Aberto uma vez, aparece no painel de terminais de todas as Sessões da branch e na página dela; fechar fecha em todos os lugares. A página da Branch de workspace tem painel de terminais, com os Consoles dela.
 - **T-3.7** O banco não tem Console. Tem o atalho "Abrir no app de banco" (DataGrip ou o app configurado no `ns`).
 - **T-3.8** Cada Serviço e o banco são marcados no Thalamus por um indicador. A cor do indicador é sempre o Estado; a forma identifica qual Serviço é. O mesmo indicador aparece em todo lugar onde o Serviço aparece: linha da Branch de workspace, painel de Serviços e abas de Console.
 - **T-3.9** Os Ajustes têm a aba **Indicadores**, com uma seção Serviços (backend, frontend, manager, report-server) e uma seção Banco. As linhas são sempre as mesmas, existam ou não Branches de workspace com aquele Serviço. O banco tem linha própria, mas continua não sendo um Serviço.
@@ -82,9 +84,10 @@ Escrito em linguagem de negócio. As regras são numeradas e estáveis: uma regr
 
 ## 6. Remover branch
 
-- **T-6.1** A ação **Remover branch** pede confirmação e lista os Repos com alterações não commitadas.
+- **T-6.1** A ação **Remover branch** pede confirmação. Ela lista, Repo por Repo, os arquivos com alterações não commitadas, pelo nome inteiro, e as abas do editor daquela Branch de workspace com alterações não salvas.
 - **T-6.2** Se houver alterações não commitadas, a remoção é bloqueada; o Thalamus não força.
 - **T-6.3** A confirmação tem a opção "Apagar também o banco", desmarcada por padrão.
+- **T-6.4** Abas do editor com alterações não salvas também bloqueiam a remoção: é preciso salvar ou descartar antes. Removida a Branch de workspace, as abas dela fecham.
 
 ## 7. Arquivos
 
@@ -97,11 +100,12 @@ Escrito em linguagem de negócio. As regras são numeradas e estáveis: uma regr
   - com alterações não salvas, o editor avisa e oferece Recarregar, Comparar ou Manter a minha.
 - **T-7.6** O Thalamus nunca bloqueia o agente de escrever num arquivo aberto no editor.
 - **T-7.7** Autocomplete, ir para a definição e erros inline (LSP) estão fora de escopo agora e previstos para o futuro.
+- **T-7.8** As abas abertas do editor pertencem à linha da sidebar (Branch de workspace, Repo base ou pasta de Outras pastas), não à Sessão: todas as Sessões daquela linha mostram as mesmas abas, na mesma ordem e com a mesma selecionada. Apagar uma Sessão não fecha abas nem pergunta por alterações não salvas.
 
 ## 8. Terminal livre
 
-- **T-8.1** Qualquer Sessão, inclusive avulsa, pode abrir Terminais livres na sua pasta.
-- **T-8.2** Terminais livres se encerram quando o Thalamus fecha.
+- **T-8.1** Cada linha da sidebar (Branch de workspace, Repo base ou pasta de Outras pastas) tem seus Terminais livres. Eles abrem sempre na raiz da linha, de onde quer que sejam abertos (uma Sessão da linha ou a página dela), e aparecem no painel de terminais de todas as Sessões da linha e na página.
+- **T-8.2** Terminais livres se encerram quando o Thalamus fecha, e os de uma Branch de workspace também quando ela é removida.
 
 ## 9. Sessão avulsa
 
@@ -159,3 +163,7 @@ Regras do `ns`: valem no terminal e no Thalamus.
 - **T-15.3** Se for diferente, o `ns` reaproveita e instala só as diferenças, seguindo o mesmo critério de cada caminho para instalar dependências: onde hoje instala sem perguntar, instala; onde pergunta, pergunta ("As dependências do frontend diferem da master. Instalar as diferenças agora?", com Sim como padrão); onde nunca instala, não instala. Sem a instalação, a Branch de workspace fica com as dependências da `master`, e o `ns` avisa que ela pode não funcionar.
 - **T-15.4** Quando a `master` não tem as dependências daquele Repo instaladas, quando a Branch de workspace preparada é a própria `master` ou quando o reaproveitamento falha, o `ns` instala do zero, como antes.
 - **T-15.5** Dependências já instaladas numa Branch de workspace não são tocadas.
+- **T-15.6** O `ns` informa, por Repo com dependências, o estado delas na Branch de workspace: **Instaladas** (instaladas pela própria branch, ou vindas da `master` e já com as diferenças instaladas; como em Preparar, T-15.5, uma instalação da própria branch não é comparada com o que ela declara), **Da master** (reaproveitadas e iguais ao que a branch declara), **Da master, divergentes** (reaproveitadas e diferentes do que a branch declara) ou **Faltando** (a instalação foi recusada ou falhou). Para dizer "da master", o `ns` marca a instalação no momento em que a reaproveita.
+- **T-15.7** O `ns` instala as dependências de um Repo isolado de uma Branch de workspace, com o comando daquele Repo, também quando elas vieram da `master` e divergem (o que Preparar não faz, por T-15.5). Vale no terminal e no Thalamus.
+- **T-15.8** A aba Serviços da Branch de workspace tem a seção **Dependências**, com uma linha por Repo e o estado de T-15.6. Em "Da master, divergentes" e "Faltando", a linha diz o motivo e oferece **Instalar** (T-15.7), com o progresso, e o comando para rodar à mão, que dá para copiar. Se a instalação falhar, a linha mostra o erro e oferece repetir.
+- **T-15.9** O estado é conferido quando a aba Serviços abre e depois de Preparar, Iniciar ou Instalar naquela branch. A sidebar não mostra o estado das dependências, e a criação não termina com um aviso delas: durante a criação, valem as perguntas do `ns` (T-15.3).
