@@ -25,7 +25,7 @@ Escrito em linguagem de negócio. As regras são numeradas e estáveis: uma regr
 - **T-1.13** O Apelido é texto livre numa linha, com até 40 caracteres; espaços nas pontas são descartados. Não precisa ser único.
 - **T-1.14** A busca da sidebar encontra a Branch de workspace pelo Apelido, sem diferenciar maiúsculas nem acentos, além do nome da branch.
 - **T-1.15** Branches de workspace, Repos base e pastas de Outras pastas podem ser Favoritos, pela ação "Favoritar" no menu do cabeçalho ("Remover dos favoritos" desfaz). Sessões arquivadas não são favoritáveis.
-- **T-1.16** Os Favoritos formam um grupo próprio no topo da sidebar, acima das Branches de workspace, que só aparece com pelo menos um Favorito e abre e fecha como os demais. Um Favorito sai do seu grupo de origem; o cabeçalho é o mesmo de lá (Serviços, PRs, resumo de Sessões, Apelido, ações).
+- **T-1.16** _(substituída por T-1.28)_ Os Favoritos formam um grupo próprio no topo da sidebar, acima das Branches de workspace, que só aparece com pelo menos um Favorito e abre e fecha como os demais. Um Favorito sai do seu grupo de origem; o cabeçalho é o mesmo de lá (Serviços, PRs, resumo de Sessões, Apelido, ações).
 - **T-1.17** Os Favoritos são uma preferência do Thalamus, não do `ns`. Uma Branch de workspace removida deixa de ser Favorito; recriada com o mesmo nome, nasce sem ser.
 - **T-1.18** A busca filtra os Favoritos com as mesmas regras dos outros grupos.
 - **T-1.19** As Branches de workspace têm uma opção de ordem, no cabeçalho do grupo: **Nome** (A→Z, o padrão) ou **Criadas recentemente** (a mais nova primeiro). A opção é única para todo o Thalamus e vale também para os Favoritos; neles, em Criadas recentemente, Repos base e pastas vêm depois das Branches de workspace, por nome.
@@ -37,6 +37,15 @@ Escrito em linguagem de negócio. As regras são numeradas e estáveis: uma regr
 - **T-1.25** O resumo de Estado de Sessão (T-1.7) aparece sempre na linha e continua visível com o mouse sobre ela, ao lado das ações.
 - **T-1.26** O grupo **Arquivadas** fica no fim da sidebar. Clicar nele abre a página com as Sessões arquivadas, só para leitura.
 - **T-1.27** A página da linha tem tudo que a Sessão tem, menos a conversa: a primeira aba do centro é **Página** (a lista de T-1.22) no lugar da aba Sessão, ao lado das abas de arquivo da linha (T-7.8); o inspetor tem Serviços (só em Branch de workspace), Arquivos e Alterações, na raiz da linha; e o painel de terminais tem os Consoles (T-3.14) e os Terminais livres (T-8.1) da linha. A página de Arquivadas continua só com a lista, para leitura.
+
+- **T-1.28** Os Favoritos formam um grupo próprio no topo da sidebar, acima das Branches de workspace, que só aparece com pelo menos um Favorito. Um Favorito sai do seu grupo de origem; o cabeçalho é o mesmo de lá (Serviços, PRs, resumo de Sessões, Apelido, ações).
+- **T-1.29** Os grupos **Favoritos**, **Branches de workspace**, **Repos base** e **Outras pastas** podem ser encolhidos e expandidos clicando no título do grupo. Arquivadas não encolhe.
+- **T-1.30** Um Grupo encolhido mostra só o título e, se for dele, a linha em foco: a da Sessão aberta no centro ou a da página da linha aberta. Com a linha em foco fora do grupo, ele fica só com o título. Criar uma Nova Branch de workspace com o grupo encolhido não o expande: a branch nova vira a linha em foco e aparece.
+- **T-1.31** O título de um Grupo encolhido mostra quantas linhas estão escondidas; expandido, não mostra contagem.
+- **T-1.32** As ações do título (ordem e "+ Branch" nas Branches de workspace, "Abrir pasta" em Outras pastas) continuam visíveis e funcionando com o grupo encolhido, e clicá-las não encolhe nem expande o grupo.
+- **T-1.33** Encolher e expandir não desloca nada no título: nome do grupo, ações, contagem e indicador ficam no mesmo lugar nos dois estados. O título fica sempre numa linha; o nome do grupo é cortado com "…" quando a sidebar é estreita, e as ações, a contagem e o indicador nunca encolhem.
+- **T-1.34** Encolher é uma preferência do Thalamus, por grupo, e dura entre aberturas do Thalamus.
+- **T-1.35** Enquanto há texto na busca, todos os grupos mostram suas linhas encontradas, encolhidos ou não, sem mudar o que ficou guardado: limpar a busca devolve cada grupo ao estado anterior.
 
 ## 2. Nova Branch de workspace
 
