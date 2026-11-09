@@ -2,19 +2,18 @@ import SwiftUI
 import SwiftTerm
 
 struct TerminalPanel: View {
-    let sessionID: UUID
-    let directory: URL
+    let row: SidebarRow
+    let root: URL
 
     @Environment(PanelTerminals.self) private var terminals
     @Environment(NsWorkspace.self) private var ns
     @AppStorage("Den.terminalPanelHeight") private var height: Double = 220
 
     var body: some View {
-        if terminals.isPanelShown(for: sessionID), ns.removedBranch(of: directory) == nil,
-           let current = terminals.selected(in: sessionID) {
+        if terminals.isPanelShown(for: row), let current = terminals.selected(in: row) {
             VStack(spacing: 0) {
                 ResizeHandle(height: $height, range: 120...640)
-                tabs(terminals.terminals(of: sessionID), current: current)
+                tabs(terminals.terminals(of: row), current: current)
                 TerminalHost(terminal: current)
                     .id(current.id)
                     .padding(.leading, 8)
@@ -35,7 +34,7 @@ struct TerminalPanel: View {
                             close: { terminals.close(terminal) })
             }
             Button {
-                terminals.open(for: sessionID, in: directory)
+                terminals.open(for: row, in: root)
             } label: {
                 Image(systemName: "plus")
                     .font(.system(size: 11, weight: .medium))
@@ -74,6 +73,44 @@ struct TerminalPanel: View {
     private func console(of terminal: PanelTerminal) -> NsStatus.Service? {
         guard case .console(let branch, let service) = terminal.kind else { return nil }
         return ns.branch(named: branch)?.services.first { $0.id == service } ?? NsStatus.Service(id: service, state: .parado)
+    }
+}
+
+struct TerminalToggle: View {
+    let row: SidebarRow
+    let root: URL
+
+    @Environment(PanelTerminals.self) private var terminals
+
+    var body: some View {
+        Button(action: toggle) {
+            Image(systemName: "rectangle.bottomthird.inset.filled")
+                .font(.system(size: 14))
+                .foregroundStyle(isShown ? Theme.text : Theme.textSecondary)
+                .iconLabel(size: 32)
+        }
+        .buttonStyle(DenButtonStyle(kind: .secondary))
+        .disabled(isArchived)
+        .help(help)
+        .accessibilityLabel(isShown ? "Ocultar Terminais livres" : "Mostrar Terminais livres")
+        .accessibilityHint(isArchived ? Self.archivedFolderReason : "")
+        .onKeyboardShortcut("`", modifiers: .control) { toggle() }
+    }
+
+    private static let archivedFolderReason = "Sessão arquivada: a pasta desta Sessão não existe mais."
+
+    private var isArchived: Bool { row == .archived }
+
+    private var isShown: Bool { terminals.isPanelShown(for: row) }
+
+    private var help: String {
+        if isArchived { return "Terminal livre indisponível. \(Self.archivedFolderReason)" }
+        return isShown ? "Ocultar Terminais livres (⌃`)" : "Terminal livre (⌃`)"
+    }
+
+    private func toggle() {
+        guard !isArchived else { return }
+        terminals.togglePanel(for: row, in: root)
     }
 }
 

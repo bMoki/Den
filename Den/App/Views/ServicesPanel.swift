@@ -2,7 +2,6 @@ import SwiftUI
 
 struct ServicesPanel: View {
     let branch: String
-    let sessionID: UUID
     let directory: URL
 
     @Environment(NsWorkspace.self) private var ns
@@ -51,6 +50,10 @@ struct ServicesPanel: View {
                             .denContextMenu(databaseMenu)
                         }
                     }
+                    if ns.dependencies.isShown(for: branch) {
+                        sectionTitle("Dependências")
+                        DependenciesSection(branch: branch, isBusy: ns.activity[branch] != nil)
+                    }
                     let repos = monitor.repos(of: branch)
                     if !repos.isEmpty {
                         sectionTitle("Pull requests")
@@ -67,7 +70,11 @@ struct ServicesPanel: View {
             .padding(12)
         }
         .scrollIndicators(.never)
-        .task(id: branch) { await ns.loadSnapshots() }
+        .task(id: branch) {
+            async let snapshots: Void = ns.loadSnapshots()
+            await ns.dependencies.load(branch)
+            await snapshots
+        }
         .sheet(isPresented: $takingSnapshot) {
             TakeSnapshotSheet(branch: branch, taken: Set(ns.snapshots(of: branch).map(\.name)),
                               cancel: { takingSnapshot = false }, take: { name, replacing in
@@ -166,7 +173,7 @@ struct ServicesPanel: View {
                 action("Parar", help: BranchActionTitle.stop, symbol: "stop.fill") { await ns.stop(branch) }
                 action("Atualizar", help: BranchActionTitle.update, symbol: "arrow.down.to.line") { await ns.update(branch) }
             }
-            .disabled(activity != nil)
+            .disabled(activity != nil || ns.dependencies.isInstalling(in: branch))
         }
         .padding(12)
         .modifier(CardBackground())
@@ -247,7 +254,7 @@ struct ServicesPanel: View {
             iconAction("terminal", title: "Abrir console de \(service.id)") { await openConsole(service) }
                 .disabled(service.session == nil || service.state == .parado)
         }
-        .disabled(ns.activity[branch] != nil)
+        .disabled(ns.activity[branch] != nil || ns.dependencies.isInstalling(in: branch))
     }
 
     private func iconAction(_ symbol: String, title: String, perform: @escaping () async -> Void) -> some View {
@@ -295,8 +302,8 @@ struct ServicesPanel: View {
 
     private func openConsole(_ service: NsStatus.Service) async {
         guard let session = service.session else { return }
-        await terminals.openConsole(for: sessionID, branch: branch, service: service.id,
-                                    session: session, in: directory)
+        await terminals.openConsole(branch: branch, service: service.id, session: session,
+                                    in: ns.root(of: .branch(branch)) ?? directory)
     }
 }
 

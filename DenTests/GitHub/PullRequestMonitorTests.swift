@@ -208,6 +208,47 @@ private func makeRig(branches: Int = 1, host: String = "github.com", limit: Int 
 }
 
 @MainActor
+@Test func theSameActionDismissesAndBringsBackAPullRequest() {
+    let rig = makeRig()
+    let repo = rig.repo(0)
+    rig.ledger.setPullRequest(makePullRequest(checks: [.failed]), for: repo.id)
+
+    rig.monitor.toggleDismissal(of: repo)
+    #expect(rig.monitor.isDismissed(repo))
+    #expect(rig.monitor.bars(for: rig.branches[0]).isEmpty)
+
+    rig.monitor.toggleDismissal(of: repo)
+    #expect(!rig.monitor.isDismissed(repo))
+    #expect(rig.monitor.bars(for: rig.branches[0]).count == 1)
+}
+
+@MainActor
+@Test func aDismissedMergedPullRequestStaysAwayButANewOneShows() {
+    let rig = makeRig()
+    let repo = rig.repo(0)
+    rig.ledger.setPullRequest(makePullRequest(number: 7, state: .merged, checks: [.running]), for: repo.id)
+    rig.monitor.dismiss(repo)
+
+    rig.ledger.setPullRequest(makePullRequest(number: 7, state: .merged, mergeable: .unknown, checks: [.passed]),
+                              for: repo.id)
+    #expect(rig.monitor.isDismissed(repo))
+
+    rig.ledger.setPullRequest(makePullRequest(number: 8, state: .merged), for: repo.id)
+    #expect(!rig.monitor.isDismissed(repo))
+}
+
+@MainActor
+@Test func aPullRequestDismissedWhileOpenComesBackWhenMerged() {
+    let rig = makeRig()
+    let repo = rig.repo(0)
+    rig.ledger.setPullRequest(makePullRequest(number: 7, review: .approved), for: repo.id)
+    rig.monitor.dismiss(repo)
+
+    rig.ledger.setPullRequest(makePullRequest(number: 7, state: .merged, review: .approved), for: repo.id)
+    #expect(!rig.monitor.isDismissed(repo))
+}
+
+@MainActor
 @Test func aMissingGhStopsTheChecksUntilItIsBack() async {
     let rig = makeRig()
     await rig.fetcher.set(state: .missing)

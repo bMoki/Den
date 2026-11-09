@@ -28,6 +28,12 @@ nonisolated struct SidebarGroups: Equatable {
     var otherFolders: [Folder] = []
     var archived: [SessionSummary] = []
 
+    var folders: [Folder] { favorites + branches + baseRepos + otherFolders }
+
+    func folder(_ row: SidebarRow) -> Folder? {
+        folders.first { SidebarRow($0) == row }
+    }
+
     var isEmpty: Bool {
         favorites.isEmpty && branches.isEmpty && baseRepos.isEmpty && otherFolders.isEmpty && archived.isEmpty
     }

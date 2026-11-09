@@ -5,15 +5,10 @@ struct SidebarView: View {
     @Bindable var workspace: WorkspaceModel
     @Environment(PullRequestMonitor.self) private var monitor
     @Environment(NsWorkspace.self) private var ns
-    @Environment(PanelTerminals.self) private var terminals
-    private let editors = EditorWindows.shared
     var lightsInset: CGFloat = 0
     var collapse: () -> Void = {}
 
-    @State private var toggled: Set<String> = []
-    @State private var archivedOpen = false
     @State private var favoritesOpen = true
-    @State private var pendingDelete: SessionSummary?
 
     @State private var tipTask: Task<Void, Never>?
 
@@ -24,56 +19,27 @@ struct SidebarView: View {
             list
         }
         .background(Theme.sidebar)
-        .confirmationDialog(
-            "Apagar \"\(pendingDelete?.title ?? "")\"?",
-            isPresented: Binding(
-                get: { pendingDelete != nil },
-                set: { if !$0 { pendingDelete = nil } }
-            ),
-            titleVisibility: .visible
-        ) {
-            if pendingUnsaved.isEmpty {
-                Button("Apagar", role: .destructive) { delete(.discard) }
-            } else {
-                Button("Salvar e apagar") { delete(.saveAll) }
-                Button("Apagar sem salvar", role: .destructive) { delete(.discard) }
-            }
-            Button("Cancelar", role: .cancel) { pendingDelete = nil }
-        } message: {
-            let unsaved = pendingUnsaved.isEmpty ? "" : " \(UnsavedAlert.listing(pendingUnsaved))"
-            Text("A conversa e o histórico dela serão removidos permanentemente.\(unsaved)")
-        }
         .sheet(isPresented: Binding(
             get: { ns.creation?.isPresented == true },
             set: { if !$0 { ns.creation?.isPresented = false } }
         )) {
             if let creation = ns.creation {
-                NewBranchSheet(creation: creation) { create(with: creation) }
+                NewBranchSheet(creation: creation, start: { create(with: creation) },
+                               retry: { repo in continuing(creation) { await creation.retry(repo) } },
+                               prepareAgain: { continuing(creation) { await creation.prepareAgain() } })
             }
         }
         .sheet(item: Binding(get: { ns.removal }, set: { if $0 == nil { ns.cancelRemoval() } })) { removal in
-            RemoveBranchSheet(removal: removal, cancel: ns.cancelRemoval) { purge in
+            RemoveBranchSheet(removal: removal, editors: .shared, root: ns.root(of: .branch(removal.branch)),
+                              cancel: ns.cancelRemoval) { purge in
+                guard EditorWindows.shared.unsaved(in: .branch(removal.branch)).isEmpty else { return }
                 Task { await ns.remove(removal.branch, purge: purge) }
             }
         }
     }
 
-    private var pendingUnsaved: [EditorDocument] {
-        pendingDelete.map { editors.unsaved(in: $0.id) } ?? []
-    }
-
-    private func delete(_ choice: UnsavedChoice) {
-        guard let summary = pendingDelete else { return }
-        pendingDelete = nil
-        let unsaved = editors.unsaved(in: summary.id)
-        guard editors.settle(choice, in: summary.id) else {
-            UnsavedAlert.tellFailure(unsaved.filter(\.isDirty))
-            Task { await workspace.select(summary.id) }
-            return
-        }
-        editors.closeSession(summary.id)
-        terminals.close(sessionID: summary.id)
-        Task { await workspace.deleteSession(summary.id) }
+    private func continuing(_ creation: BranchCreation, _ work: @escaping @MainActor () async -> Void) {
+        Task { await ns.holdingBranch(of: creation, while: work) }
     }
 
     private func create(with creation: BranchCreation) {
@@ -87,8 +53,7 @@ struct SidebarView: View {
     // MARK: - List
 
     private var groups: SidebarGroups {
-        SidebarGroups(sessions: workspace.summaries, status: ns.status, search: workspace.search,
-                      layout: workspace.layout, place: ns.place(of:))
+        workspace.groups(in: ns, search: workspace.search)
     }
 
     private var list: some View {
@@ -146,7 +111,10 @@ struct SidebarView: View {
                 ForEach(groups.otherFolders) { folder($0) }
 
                 if !groups.archived.isEmpty {
-                    archived(groups.archived)
+                    ArchivedRow(count: groups.archived.count, isSelected: selectedRow == .archived) {
+                        workspace.showPage(.archived)
+                    }
+                    .padding(.top, 14)
                 }
 
                 if groups.isEmpty {
@@ -184,30 +152,22 @@ struct SidebarView: View {
         }
     }
 
-    @ViewBuilder
-    private func archived(_ sessions: [SessionSummary]) -> some View {
-        let isOpen = archivedOpen || !workspace.search.isEmpty
-        SidebarCollapsibleTitle(title: "Arquivadas", count: sessions.count, noun: .sessions, isOpen: isOpen) {
-            archivedOpen.toggle()
-        }
-            .padding(.top, 14)
-        if isOpen {
-            VStack(alignment: .leading, spacing: 1) {
-                ForEach(sessions) { row(for: $0) }
-            }
-            .transition(.opacity)
-        }
+    private var selectedRow: SidebarRow? {
+        if let page = workspace.page { return page }
+        guard let id = workspace.selectedID,
+              let summary = workspace.summaries.first(where: { $0.id == id }) else { return nil }
+        return ns.row(of: summary.workingDirectory)
     }
 
-    private func isOpen(_ folder: SidebarGroups.Folder) -> Bool {
-        let opensByDefault = !folder.sessions.isEmpty
-        let flipped = toggled.contains(folder.id)
-        return !workspace.search.isEmpty || (flipped ? !opensByDefault : opensByDefault)
+    private func open(_ folder: SidebarGroups.Folder) {
+        let row = SidebarRow(folder)
+        let sessions = workspace.groups(in: ns).folder(row)?.sessions ?? []
+        Task { await workspace.open(row, among: sessions, reselected: selectedRow == row) }
     }
 
     @ViewBuilder
     private func folder(_ folder: SidebarGroups.Folder) -> some View {
-        let isOpen = isOpen(folder)
+        let isSelected = selectedRow == SidebarRow(folder)
         let isBranch = folder.kind == .branch
         let isFavorite = workspace.layout.isFavorite(folder.favorite)
         let toggleFavorite = { workspace.layout.toggle(folder.favorite) }
@@ -218,14 +178,16 @@ struct SidebarView: View {
                     branch: ns.branch(named: folder.name),
                     activity: ns.activity[folder.name],
                     problem: ns.actionProblems[folder.name],
-                    pullRequests: monitor.pullRequests(for: folder.name).map(\.pullRequest),
+                    pullRequests: monitor.bars(for: folder.name).map(\.pullRequest),
                     sessions: workspace.tally(folder.sessions),
-                    isOpen: isOpen,
-                    toggle: { toggle(folder) },
+                    isSelected: isSelected,
+                    open: { open(folder) },
                     newSession: { Task { await workspace.newSession(in: folder.path) } },
                     start: { Task { await ns.start(folder.name) } },
                     stop: { Task { await ns.stop(folder.name) } },
                     update: { Task { await ns.update(folder.name) } },
+                    addableRepos: ns.addableRepos(of: folder.name),
+                    addRepo: { repo in Task { await ns.addRepo(repo, to: folder.name) } },
                     remove: { Task { await ns.askToRemove(folder.name) } },
                     setNickname: { text in Task { await ns.setNickname(folder.name, to: text) } },
                     isFavorite: isFavorite,
@@ -236,8 +198,8 @@ struct SidebarView: View {
                     name: folder.name,
                     detail: folder.kind == .folder ? Self.parent(of: folder.path) : nil,
                     sessions: workspace.tally(folder.sessions),
-                    isOpen: isOpen,
-                    toggle: { toggle(folder) },
+                    isSelected: isSelected,
+                    open: { open(folder) },
                     newSession: { Task { await workspace.newSession(in: folder.path) } },
                     isFavorite: isFavorite,
                     toggleFavorite: toggleFavorite
@@ -249,20 +211,8 @@ struct SidebarView: View {
                     caption: folder.nickname.map { _ in folder.name },
                     detail: tipDetail(for: folder, isBranch: isBranch),
                     state: nil, anchor: anchor,
-                    lines: isBranch ? PaneTip.Line.pullRequests(monitor.pullRequests(for: folder.name)) : [])
+                    lines: isBranch ? PaneTip.Line.pullRequests(monitor.bars(for: folder.name)) : [])
         }, update: { scheduleTip($0) })
-
-        if isOpen, isBranch || !folder.sessions.isEmpty {
-            VStack(alignment: .leading, spacing: 1) {
-                ForEach(folder.sessions) { row(for: $0) }
-                if isBranch {
-                    NewSessionRow(workspace: workspace, directory: folder.path)
-                }
-            }
-            .padding(.leading, 22)
-            .padding(.bottom, 4)
-            .transition(.opacity)
-        }
     }
 
     private func tipDetail(for folder: SidebarGroups.Folder, isBranch: Bool) -> String {
@@ -287,38 +237,6 @@ struct SidebarView: View {
             try? await Task.sleep(for: .milliseconds(delay))
             guard !Task.isCancelled else { return }
             HoverTipPanel.shared.show(next)
-        }
-    }
-
-    private func row(for summary: SessionSummary) -> some View {
-        SessionRow(
-            summary: summary,
-            state: workspace.state(for: summary.id),
-            isSelected: workspace.selectedID == summary.id,
-            select: { Task { await workspace.select(summary.id) } },
-            rename: { name in
-                Task { await workspace.renameSession(summary.id, to: name) }
-            },
-            delete: { pendingDelete = summary }
-        )
-        .hoverTip({ anchor in
-            var detail = [String]()
-            if let harness = summary.harnesses.last {
-                detail.append(HarnessBadge.name(for: harness))
-            }
-            detail.append(summary.updatedAt.formatted(.relative(presentation: .named)))
-            return PaneTip(title: summary.title,
-                           detail: detail.joined(separator: " · "),
-                           state: workspace.state(for: summary.id),
-                           anchor: anchor)
-        }, update: { scheduleTip($0) })
-    }
-
-    private func toggle(_ folder: SidebarGroups.Folder) {
-        Task { @MainActor in
-            withAnimation(.easeInOut(duration: 0.22)) {
-                if toggled.contains(folder.id) { toggled.remove(folder.id) } else { toggled.insert(folder.id) }
-            }
         }
     }
 }

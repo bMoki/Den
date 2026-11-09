@@ -2,6 +2,8 @@ import SwiftUI
 
 struct RemoveBranchSheet: View {
     let removal: NsWorkspace.Removal
+    let editors: EditorWindows
+    let root: URL?
     var cancel: () -> Void
     var remove: (_ purge: Bool) -> Void
 
@@ -20,13 +22,22 @@ struct RemoveBranchSheet: View {
                 DialogCancelButton(action: cancel)
                 Button { remove(purge) } label: { Text("Remover branch").pillLabel() }
                     .buttonStyle(.denDestructive)
-                    .disabled(preview?.uncommitted.isEmpty != true)
+                    .disabled(preview?.uncommitted.isEmpty != true || !unsaved.isEmpty)
             }
         }
         .frame(width: 500)
         .background(Theme.raised)
         .foregroundStyle(Theme.text)
         .preferredColorScheme(.dark)
+    }
+
+    private var unsaved: [EditorDocument] {
+        editors.unsaved(in: .branch(removal.branch))
+    }
+
+    private func relative(_ url: URL) -> String {
+        guard let root = root?.path, url.path.hasPrefix(root + "/") else { return url.path }
+        return String(url.path.dropFirst(root.count + 1))
     }
 
     private var preview: NsClient.RemovalPreview? {
@@ -55,8 +66,19 @@ struct RemoveBranchSheet: View {
                         UncommittedRow(repo: repo, isFirst: index == 0)
                     }
                 }
-                .background(Theme.card, in: DialogBox.shape)
-                .overlay(DialogBox.shape.strokeBorder(Theme.border))
+                .dialogCard()
+            }
+            if !unsaved.isEmpty {
+                DialogWarning(title: "Não dá para remover: há abas com alterações não salvas.",
+                              detail: "Salve ou descarte e tente de novo.")
+                VStack(alignment: .leading, spacing: 4) {
+                    ForEach(unsaved, id: \.url) { document in
+                        FileLine(path: relative(document.url))
+                    }
+                }
+                .padding(10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .dialogCard()
             }
             DialogCheckbox(title: "Apagar também o banco", isOn: $purge, note: "volume \(preview.volume)")
         }
@@ -68,34 +90,47 @@ private struct UncommittedRow: View {
     let isFirst: Bool
 
     var body: some View {
-        HStack(spacing: 10) {
-            Text(repo.repo)
-                .font(.system(size: 12.5, design: .monospaced))
-            Text(files)
-                .font(.system(size: 11.5))
-                .foregroundStyle(Theme.textTertiary)
-                .lineLimit(1)
-                .truncationMode(.middle)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .help(repo.files.joined(separator: "\n"))
-            Text(repo.files.count == 1 ? "1 arquivo" : "\(repo.files.count) arquivos")
-                .font(.system(size: 11.5, weight: .medium))
-                .foregroundStyle(Theme.alertText)
-                .padding(.horizontal, 8)
-                .frame(height: 22)
-                .background(Theme.alertFill, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 10) {
+                Text(repo.repo)
+                    .font(.system(size: 12.5, design: .monospaced))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Text(repo.files.count == 1 ? "1 arquivo" : "\(repo.files.count) arquivos")
+                    .font(.system(size: 11.5, weight: .medium))
+                    .foregroundStyle(Theme.alertText)
+                    .padding(.horizontal, 8)
+                    .frame(height: 22)
+                    .background(Theme.alertFill, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+            }
+            VStack(alignment: .leading, spacing: 4) {
+                ForEach(repo.files, id: \.self) { FileLine(path: $0) }
+            }
         }
-        .padding(.horizontal, 10)
-        .frame(height: 36)
+        .padding(10)
         .overlay(alignment: .top) {
             if !isFirst { Rectangle().fill(Theme.border).frame(height: 1) }
         }
         .accessibilityElement(children: .combine)
     }
+}
 
-    private var files: String {
-        let names = repo.files.prefix(2).map { URL(fileURLWithPath: $0).lastPathComponent }
-        let rest = repo.files.count - names.count
-        return names.joined(separator: ", ") + (rest > 0 ? " +\(rest)" : "")
+private struct FileLine: View {
+    let path: String
+
+    var body: some View {
+        Text(path)
+            .font(.system(size: 11.5, design: .monospaced))
+            .foregroundStyle(Theme.textSecondary)
+            .lineLimit(1)
+            .truncationMode(.head)
+            .textSelection(.enabled)
+            .help(path)
+    }
+}
+
+private extension View {
+    func dialogCard() -> some View {
+        background(Theme.card, in: DialogBox.shape)
+            .overlay(DialogBox.shape.strokeBorder(Theme.border))
     }
 }

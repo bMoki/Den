@@ -8,9 +8,14 @@ import HarnessCore
 final class WorkspaceModel {
     var summaries: [SessionSummary] = []
     var selectedID: UUID?
+    var page: SidebarRow?
     var search: String = ""
     var layout: SidebarLayout {
         didSet { if layout != oldValue { layout.save(to: defaults) } }
+    }
+
+    private var openings: SessionOpenings {
+        didSet { if openings != oldValue { openings.save(to: defaults) } }
     }
 
     var workingDirectory: URL = URL(fileURLWithPath: NSHomeDirectory())
@@ -50,6 +55,7 @@ final class WorkspaceModel {
         self.registry = registry
         self.attachmentsRoot = attachmentsRoot
         layout = SidebarLayout(defaults: defaults)
+        openings = SessionOpenings(defaults: defaults)
     }
 
     func renameSession(_ id: UUID, to title: String) async {
@@ -112,13 +118,13 @@ final class WorkspaceModel {
         adopt(chat)
         await chat.persistMetadata()
         chats[chat.sessionID] = chat
-        selectedID = chat.sessionID
+        show(chat.sessionID)
         await refresh()
         await chat.start()
     }
 
     func select(_ id: UUID) async {
-        selectedID = id
+        show(id)
         if let chat = chats[id] {
             if chat.hasUnread { chat.hasUnread = false }
             return
@@ -130,10 +136,29 @@ final class WorkspaceModel {
         chats[id] = chat
     }
 
+    func open(_ row: SidebarRow, among sessions: [SessionSummary], reselected: Bool) async {
+        guard !reselected, let id = openings.lastOpened(among: sessions) else {
+            page = row
+            return
+        }
+        await select(id)
+    }
+
+    func showPage(_ row: SidebarRow) {
+        page = row
+    }
+
+    private func show(_ id: UUID) {
+        page = nil
+        selectedID = id
+        openings.note(id)
+    }
+
     func deleteSession(_ id: UUID) async {
         if let chat = chats[id] { await chat.stop() }
         chats[id] = nil
         if selectedID == id { selectedID = nil }
+        openings.forget(id)
         try? await store.delete(id)
         cache.forgetPreferences(of: id)
         await refresh()

@@ -11,9 +11,9 @@ private func twoWindows() throws -> (EditorWindows, [EditorTabs], URL) {
 @Test @MainActor func everyOpenWindowIsAskedAboutWhenLeaving() async throws {
     let (windows, tabs, root) = try twoWindows()
     defer { try? FileManager.default.removeItem(at: root) }
-    let session = UUID()
-    let a = try await loaded(tabs[0], ["a.ts"], in: session, root: root)
-    let b = try await loaded(tabs[1], ["b.ts"], in: session, root: root)
+    let row = anyRow()
+    let a = try await loaded(tabs[0], ["a.ts"], in: row, root: root)
+    let b = try await loaded(tabs[1], ["b.ts"], in: row, root: root)
     a[0].text = "mine\n"
     b[0].text = "mine\n"
 
@@ -22,16 +22,16 @@ private func twoWindows() throws -> (EditorWindows, [EditorTabs], URL) {
     #expect(windows.settle(.saveAll))
     #expect(windows.unsaved().isEmpty)
 
-    windows.closeSession(session)
-    #expect(tabs[0].documents(in: session).isEmpty)
-    #expect(tabs[1].documents(in: session).isEmpty)
+    windows.close(row)
+    #expect(tabs[0].documents(in: row).isEmpty)
+    #expect(tabs[1].documents(in: row).isEmpty)
 }
 
 @Test @MainActor func theSameFileInTwoWindowsIsOneTextAskedAboutOnce() async throws {
     let (windows, tabs, root) = try twoWindows()
     defer { try? FileManager.default.removeItem(at: root) }
-    let a = try await loaded(tabs[0], ["a.ts", "b.ts"], in: UUID(), root: root)
-    let again = try await loaded(tabs[1], ["a.ts"], in: UUID(), root: root)
+    let a = try await loaded(tabs[0], ["a.ts", "b.ts"], in: anyRow(), root: root)
+    let again = try await loaded(tabs[1], ["a.ts"], in: anyRow(), root: root)
     a.forEach { $0.text = "mine\n" }
 
     #expect(again.first === a[0])
@@ -41,4 +41,18 @@ private func twoWindows() throws -> (EditorWindows, [EditorTabs], URL) {
     #expect(windows.settle(.saveAll))
     #expect(try String(contentsOf: a[0].url, encoding: .utf8) == "mine\n")
     #expect(a[0].changedOnDisk == nil)
+}
+
+@Test @MainActor func everySessionOfARowSeesTheSameTabsAndOnlyItsUnsavedOnes() async throws {
+    let (windows, tabs, root) = try twoWindows()
+    defer { try? FileManager.default.removeItem(at: root) }
+    let row = SidebarRow.branch("NS-1")
+    let documents = try await loaded(tabs[0], ["a.ts", "b.ts"], in: row, root: root)
+    _ = try await loaded(tabs[0], ["b.ts"], in: anyRow(), root: root)
+    documents[0].text = "mine\n"
+
+    #expect(tabs[0].documents(in: row).map(\.name) == ["a.ts", "b.ts"])
+    #expect(tabs[0].selection(in: row)?.name == "b.ts")
+    #expect(windows.unsaved(in: row).map(\.name) == ["a.ts"])
+    #expect(windows.unsaved(in: .branch("NS-2")).isEmpty)
 }

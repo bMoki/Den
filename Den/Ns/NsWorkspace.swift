@@ -30,7 +30,7 @@ final class NsWorkspace {
     }
 
     struct Activity: Equatable {
-        enum Kind { case start, stop, restart, update, remove, openDatabase, snapshot, restore, removeSnapshot }
+        enum Kind { case start, stop, restart, update, addRepo, remove, openDatabase, snapshot, restore, removeSnapshot }
 
         var kind: Kind
         var label: String
@@ -65,6 +65,7 @@ final class NsWorkspace {
     private(set) var snapshotGroups: [NsClient.SnapshotGroup] = []
     private(set) var snapshotsProblem: String?
     private(set) var memory: NsMemory
+    let dependencies: BranchDependencies
 
     @ObservationIgnored private let fetch: @Sendable () async throws -> NsStatus
     @ObservationIgnored private let startBranch: BranchAction
@@ -90,6 +91,7 @@ final class NsWorkspace {
          openDatabase: @escaping OpenDatabase = { _ in throw NsFailure(message: "ns indisponível") },
          setNickname: @escaping SetNickname = { _, _ in throw NsFailure(message: "ns indisponível") },
          snapshots: SnapshotOperations = .unavailable,
+         dependencies: BranchDependencies.Operations = .unavailable,
          defaults: UserDefaults? = nil) {
         self.fetch = fetch
         startBranch = start
@@ -101,37 +103,23 @@ final class NsWorkspace {
         openBranchDatabase = openDatabase
         saveNickname = setNickname
         snapshotOperations = snapshots
+        self.dependencies = BranchDependencies(operations: dependencies)
         self.defaults = defaults
         memory = NsMemory(defaults: defaults)
-    }
-
-    static func live(_ environment: any AppEnvironment) -> NsWorkspace {
-        let client = NsClient.locating(override: environment.nsOverride)
-        return NsWorkspace(fetch: { try await client.status() },
-                           start: { try await client.start(branch: $0, service: $1, progress: $2) },
-                           stop: { try await client.stop(branch: $0, service: $1, progress: $2) },
-                           create: BranchCreation.Operations(
-                               create: { try await client.new($0, steps: $1, ask: $2) },
-                               addRepo: { try await client.addRepo(branch: $0, repo: $1, steps: $2) },
-                               prepare: { try await client.prepare(branch: $0, steps: $1, ask: $2) }),
-                           update: { try await client.pull(branch: $0, progress: $1) },
-                           previewRemoval: { try await client.removalPreview(branch: $0) },
-                           remove: { try await client.remove(branch: $0, purge: $1, progress: $2) },
-                           openDatabase: { try await client.openDatabase(branch: $0) },
-                           setNickname: { try await client.setNickname(branch: $0, nickname: $1) },
-                           snapshots: SnapshotOperations(
-                               list: { try await client.snapshots() },
-                               take: { try await client.takeSnapshot(branch: $0, name: $1, replace: $2, progress: $3) },
-                               restore: { try await client.restore(branch: $0, ref: $1, progress: $2) },
-                               remove: { try await client.removeSnapshot(branch: $0, name: $1) }),
-                           defaults: environment.defaults)
     }
 
     func newBranch() {
         if let creation, creation.isRunning {
             creation.isPresented = true
         } else {
-            creation = BranchCreation(operations: creationOperations) { [weak self] in await self?.refresh() }
+            creation = makeCreation()
+        }
+    }
+
+    private func makeCreation() -> BranchCreation {
+        BranchCreation(operations: creationOperations) { [weak self] branch in
+            await self?.refresh()
+            await self?.dependencies.reload(branch)
         }
     }
 
@@ -306,7 +294,7 @@ final class NsWorkspace {
     @discardableResult
     private func run<Value: Sendable>(_ started: Activity, on branch: String,
                                       action: @Sendable (@escaping NsClient.Progress) async throws -> Value) async -> Value? {
-        guard activity[branch] == nil else { return nil }
+        guard activity[branch] == nil, !dependencies.isInstalling(in: branch) else { return nil }
         activity[branch] = started
         actionProblems[branch] = nil
         let (labels, sink) = AsyncStream<String>.makeStream()
@@ -325,6 +313,7 @@ final class NsWorkspace {
         await follow.value
         activity[branch] = nil
         await refresh()
+        if started.kind == .start || started.kind == .restart { await dependencies.reload(branch) }
         return value
     }
 
@@ -342,6 +331,65 @@ final class NsWorkspace {
 }
 
 extension NsWorkspace {
+    static func live(_ environment: any AppEnvironment) -> NsWorkspace {
+        let client = NsClient.locating(override: environment.nsOverride)
+        return NsWorkspace(fetch: { try await client.status() },
+                           start: { try await client.start(branch: $0, service: $1, progress: $2) },
+                           stop: { try await client.stop(branch: $0, service: $1, progress: $2) },
+                           create: BranchCreation.Operations(
+                               create: { try await client.new($0, steps: $1, ask: $2) },
+                               addRepo: { try await client.addRepo(branch: $0, repo: $1, steps: $2) },
+                               prepare: { try await client.prepare(branch: $0, steps: $1, ask: $2) }),
+                           update: { try await client.pull(branch: $0, progress: $1) },
+                           previewRemoval: { try await client.removalPreview(branch: $0) },
+                           remove: { try await client.remove(branch: $0, purge: $1, progress: $2) },
+                           openDatabase: { try await client.openDatabase(branch: $0) },
+                           setNickname: { try await client.setNickname(branch: $0, nickname: $1) },
+                           snapshots: SnapshotOperations(
+                               list: { try await client.snapshots() },
+                               take: { try await client.takeSnapshot(branch: $0, name: $1, replace: $2, progress: $3) },
+                               restore: { try await client.restore(branch: $0, ref: $1, progress: $2) },
+                               remove: { try await client.removeSnapshot(branch: $0, name: $1) }),
+                           dependencies: BranchDependencies.Operations(
+                               load: { try await client.dependencies(branch: $0) },
+                               install: { try await client.installDependencies(branch: $0, repo: $1) }),
+                           defaults: environment.defaults)
+    }
+
+    func addableRepos(of branch: String) -> [BranchCreation.Repo] {
+        guard let present = self.branch(named: branch)?.repos?.map(\.repo) else { return [] }
+        return BranchCreation.Repo.allCases.filter { !present.contains($0.rawValue) }
+    }
+
+    func addRepo(_ repo: BranchCreation.Repo, to branch: String) async {
+        if let creation, creation.isRunning {
+            creation.isPresented = true
+            return
+        }
+        guard activity[branch] == nil else { return }
+        let creation = makeCreation()
+        self.creation = creation
+        await holding(branch, adding: repo) { await creation.add(repo, to: branch) }
+    }
+
+    func holdingBranch(of creation: BranchCreation, while work: () async -> Void) async {
+        guard let repo = creation.adding else {
+            await work()
+            return
+        }
+        await holding(creation.name, adding: repo, while: work)
+    }
+
+    private func holding(_ branch: String, adding repo: BranchCreation.Repo, while work: () async -> Void) async {
+        let isFree = activity[branch] == nil
+        if isFree {
+            activity[branch] = Activity(kind: .addRepo, label: "Incluindo \(repo.rawValue)...")
+            actionProblems[branch] = nil
+        }
+        await work()
+        if isFree { activity[branch] = nil }
+    }
+
     func setNickname(_ branch: String, to text: String) async {
         let nickname = BranchNickname.normalized(text)
         guard let index = status?.branches.firstIndex(where: { $0.branch == branch }),

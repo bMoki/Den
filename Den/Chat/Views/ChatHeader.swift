@@ -2,71 +2,44 @@ import SwiftUI
 
 struct ChatHeader: View {
     let chat: ChatModel
+    var openPage: (SidebarRow) -> Void
 
     @AppStorage(InspectorPane.storageKey) private var pane: InspectorPane = .closed
     @Environment(\.chrome) private var chrome
-    @Environment(PanelTerminals.self) private var terminals
     @Environment(NsWorkspace.self) private var ns
 
     var body: some View {
-        TopBar(leadingInset: chrome.leadingInset + (chrome.sidebarHidden ? 8 : 20)) {
+        TopBar(leadingInset: chrome.headerInset) {
             SidebarToggle()
             ViewThatFits(in: .horizontal) {
-                breadcrumb(folder: true, branch: true)
-                breadcrumb(folder: false, branch: true)
-                breadcrumb(folder: false, branch: isArchived)
+                breadcrumb(branch: true)
+                breadcrumb(branch: false)
             }
             Spacer(minLength: 12)
             HarnessSwitcher(chat: chat)
-            terminalToggle
-            panelToggle
+            TerminalToggle(row: ns.row(of: chat.workingDirectory), root: ns.rowRoot(of: chat.workingDirectory))
+            InspectorToggle(isOpen: pane != .closed, action: toggle)
         }
         .onKeyboardShortcut("0", modifiers: [.option, .command]) { toggle() }
-        .onKeyboardShortcut("`", modifiers: .control) { toggleTerminals() }
     }
-
-    private var terminalsShown: Bool { terminals.isPanelShown(for: chat.sessionID) && !isArchived }
 
     private var removedBranch: String? { ns.removedBranch(of: chat.workingDirectory) }
 
-    private var isArchived: Bool { removedBranch != nil }
-
-    private var terminalToggle: some View {
-        Button(action: toggleTerminals) {
-            Image(systemName: "rectangle.bottomthird.inset.filled")
-                .font(.system(size: 14))
-                .foregroundStyle(terminalsShown ? Theme.text : Theme.textSecondary)
-                .iconLabel(size: 32)
-        }
-        .buttonStyle(DenButtonStyle(kind: .secondary))
-        .disabled(isArchived)
-        .help(terminalHelp)
-        .accessibilityLabel(terminalsShown ? "Ocultar Terminais livres" : "Mostrar Terminais livres")
-        .accessibilityHint(isArchived ? Self.archivedFolderReason : "")
-    }
-
-    private static let archivedFolderReason = "Sessão arquivada: a pasta desta Sessão não existe mais."
-
-    private var terminalHelp: String {
-        if isArchived { return "Terminal livre indisponível. \(Self.archivedFolderReason)" }
-        return terminalsShown ? "Ocultar Terminais livres (⌃`)" : "Terminal livre (⌃`)"
-    }
-
-    private func toggleTerminals() {
-        guard !isArchived else { return }
-        terminals.togglePanel(for: chat.sessionID, in: chat.workingDirectory)
-    }
-
-    private func breadcrumb(folder: Bool, branch: Bool) -> some View {
+    private func breadcrumb(branch: Bool) -> some View {
         HStack(spacing: 8) {
-            if folder {
-                Text(chat.workingDirectory.lastPathComponent)
+            let place = ns.row(of: chat.workingDirectory)
+            let title = ns.title(of: place)
+            Button { openPage(place) } label: {
+                Text(title)
                     .foregroundStyle(Theme.textTertiary)
                     .lineLimit(1)
-                    .help(chat.workingDirectory.path)
-                Text("/")
-                    .foregroundStyle(Theme.textFaint)
+                    .truncationMode(.middle)
             }
+            .buttonStyle(.plain)
+            .layoutPriority(-1)
+            .help("Abrir a página de \(title)")
+            Text("›")
+                .foregroundStyle(Theme.textFaint)
             Text(chat.title)
                 .fontWeight(.medium)
                 .lineLimit(1)
@@ -80,23 +53,27 @@ struct ChatHeader: View {
         .font(.system(size: 14))
     }
 
-    private var panelToggle: some View {
-        Button(action: toggle) {
-            Image(systemName: "sidebar.right")
-                .font(.system(size: 14))
-                .foregroundStyle(pane == .closed ? Theme.textSecondary : Theme.text)
-                .iconLabel(size: 32)
-        }
-        .buttonStyle(DenButtonStyle(kind: .secondary))
-        .help(pane == .closed ? "Mostrar painel (⌥⌘0)"
-                              : "Ocultar painel")
-        .accessibilityLabel(pane == .closed ? "Mostrar painel" : "Ocultar painel")
-    }
-
     private func toggle() {
         withAnimation(.easeInOut(duration: 0.2)) {
             pane = pane == .closed ? .opening(inBranch: ns.branchName(of: chat.workingDirectory) != nil) : .closed
         }
+    }
+}
+
+struct InspectorToggle: View {
+    let isOpen: Bool
+    var action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "sidebar.right")
+                .font(.system(size: 14))
+                .foregroundStyle(isOpen ? Theme.text : Theme.textSecondary)
+                .iconLabel(size: 32)
+        }
+        .buttonStyle(DenButtonStyle(kind: .secondary))
+        .help(isOpen ? "Ocultar painel" : "Mostrar painel (⌥⌘0)")
+        .accessibilityLabel(isOpen ? "Ocultar painel" : "Mostrar painel")
     }
 }
 

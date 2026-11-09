@@ -111,40 +111,40 @@ private func repo(committing name: String, _ text: String) async throws -> URL {
     let root = try makeTree([], files: ["a.ts", "b.yaml"])
     defer { try? FileManager.default.removeItem(at: root) }
     let tabs = EditorTabs()
-    let session = UUID()
-    let other = UUID()
+    let row = anyRow()
+    let other = anyRow()
 
-    tabs.open(root.appending(path: "a.ts"), in: session)
-    tabs.open(root.appending(path: "b.yaml"), in: session)
-    tabs.open(root.appending(path: "a.ts"), in: session)
+    tabs.open(root.appending(path: "a.ts"), in: row)
+    tabs.open(root.appending(path: "b.yaml"), in: row)
+    tabs.open(root.appending(path: "a.ts"), in: row)
 
-    #expect(tabs.documents(in: session).map(\.name) == ["a.ts", "b.yaml"])
-    #expect(tabs.selection(in: session)?.name == "a.ts")
+    #expect(tabs.documents(in: row).map(\.name) == ["a.ts", "b.yaml"])
+    #expect(tabs.selection(in: row)?.name == "a.ts")
     #expect(tabs.documents(in: other).isEmpty)
     #expect(tabs.selection(in: other) == nil)
 
-    tabs.select(nil, in: session)
-    #expect(tabs.selection(in: session) == nil)
+    tabs.select(nil, in: row)
+    #expect(tabs.selection(in: row) == nil)
 }
 
 @Test @MainActor func closingTheShownTabShowsTheNextOneOrTheSession() throws {
     let root = try makeTree([], files: ["a.ts", "b.ts", "c.ts"])
     defer { try? FileManager.default.removeItem(at: root) }
     let tabs = EditorTabs()
-    let session = UUID()
-    for name in ["a.ts", "b.ts", "c.ts"] { tabs.open(root.appending(path: name), in: session) }
-    let documents = tabs.documents(in: session)
+    let row = anyRow()
+    for name in ["a.ts", "b.ts", "c.ts"] { tabs.open(root.appending(path: name), in: row) }
+    let documents = tabs.documents(in: row)
 
-    tabs.select(documents[1], in: session)
-    tabs.close(documents[1], in: session)
-    #expect(tabs.selection(in: session)?.name == "c.ts")
+    tabs.select(documents[1], in: row)
+    tabs.close(documents[1], in: row)
+    #expect(tabs.selection(in: row)?.name == "c.ts")
 
-    tabs.close(documents[2], in: session)
-    #expect(tabs.selection(in: session)?.name == "a.ts")
+    tabs.close(documents[2], in: row)
+    #expect(tabs.selection(in: row)?.name == "a.ts")
 
-    tabs.close(documents[0], in: session)
-    #expect(tabs.selection(in: session) == nil)
-    #expect(tabs.documents(in: session).isEmpty)
+    tabs.close(documents[0], in: row)
+    #expect(tabs.selection(in: row) == nil)
+    #expect(tabs.documents(in: row).isEmpty)
 }
 
 @Test @MainActor func modesToggleBackToTheCode() async throws {
@@ -168,8 +168,8 @@ private func repo(committing name: String, _ text: String) async throws -> URL {
     let root = try makeTree([], files: ["a.ts"])
     defer { try? FileManager.default.removeItem(at: root) }
     let tabs = EditorTabs()
-    let first = UUID()
-    let second = UUID()
+    let first = anyRow()
+    let second = anyRow()
 
     tabs.open(root.appending(path: "a.ts"), in: first)
     tabs.open(root.appending(path: "a.ts"), in: second)
@@ -469,9 +469,9 @@ private func deletedWhileUnsaved() async throws -> (EditorDocument, URL) {
 }
 
 @MainActor
-func loaded(_ tabs: EditorTabs, _ names: [String], in session: UUID, root: URL) async throws -> [EditorDocument] {
-    for name in names { tabs.open(root.appending(path: name), in: session) }
-    let documents = tabs.documents(in: session).filter { names.contains($0.name) }
+func loaded(_ tabs: EditorTabs, _ names: [String], in row: SidebarRow, root: URL) async throws -> [EditorDocument] {
+    for name in names { tabs.open(root.appending(path: name), in: row) }
+    let documents = tabs.documents(in: row).filter { names.contains($0.name) }
     for _ in 0..<100 where documents.contains(where: { $0.kind == .loading }) {
         try await Task.sleep(for: .milliseconds(10))
     }
@@ -479,17 +479,17 @@ func loaded(_ tabs: EditorTabs, _ names: [String], in session: UUID, root: URL) 
 }
 
 @MainActor
-private func twoTabs() async throws -> (EditorTabs, UUID, [EditorDocument]) {
+private func twoTabs() async throws -> (EditorTabs, SidebarRow, [EditorDocument]) {
     let root = try makeTree([], files: ["a.ts", "b.ts"])
     let tabs = EditorTabs()
-    let session = UUID()
-    return (tabs, session, try await loaded(tabs, ["a.ts", "b.ts"], in: session, root: root))
+    let row = anyRow()
+    return (tabs, row, try await loaded(tabs, ["a.ts", "b.ts"], in: row, root: root))
 }
 
 @Test @MainActor func leavingWithAnUnsavedTabCancelsDiscardsOrSavesIt() async throws {
     let (tabs, _, documents) = try await twoTabs()
     defer { try? FileManager.default.removeItem(at: documents[0].url.deletingLastPathComponent()) }
-    let other = try await loaded(tabs, ["a.ts"], in: UUID(), root: documents[0].url.deletingLastPathComponent())
+    let other = try await loaded(tabs, ["a.ts"], in: anyRow(), root: documents[0].url.deletingLastPathComponent())
     documents[0].text = "mine\n"
 
     #expect(other.first === documents[0])
@@ -504,10 +504,10 @@ private func twoTabs() async throws -> (EditorTabs, UUID, [EditorDocument]) {
 }
 
 @Test @MainActor func savingAllBeforeLeavingStopsAtAFileTheAgentDeleted() async throws {
-    let (tabs, session, documents) = try await twoTabs()
+    let (tabs, row, documents) = try await twoTabs()
     defer { try? FileManager.default.removeItem(at: documents[0].url.deletingLastPathComponent()) }
     documents.forEach { $0.text = "mine\n" }
-    tabs.select(nil, in: session)
+    tabs.select(nil, in: row)
     try FileManager.default.removeItem(at: documents[1].url)
 
     #expect(!tabs.settle(.saveAll))
@@ -515,22 +515,22 @@ private func twoTabs() async throws -> (EditorTabs, UUID, [EditorDocument]) {
     #expect(try String(contentsOf: documents[0].url, encoding: .utf8) == "mine\n")
     #expect(!FileManager.default.fileExists(atPath: documents[1].url.path))
     #expect(documents[1].lostOnDisk == .deleted)
-    #expect(tabs.selection(in: session) === documents[1])
+    #expect(tabs.selection(in: row) === documents[1])
 }
 
 @Test @MainActor func removingASessionClosesItsTabsAndLetsThemGo() async throws {
     let root = try makeTree([], files: ["a.ts", "b.ts"])
     defer { try? FileManager.default.removeItem(at: root) }
     let tabs = EditorTabs()
-    let removed = UUID()
-    let kept = UUID()
+    let removed = anyRow()
+    let kept = anyRow()
     var documents = try await loaded(tabs, ["a.ts", "b.ts"], in: removed, root: root)
     _ = try await loaded(tabs, ["b.ts"], in: kept, root: root)
     documents.forEach { $0.text = "mine\n" }
     weak let onlyThere = documents[0]
 
     #expect(tabs.unsaved(in: removed).map(\.name) == ["a.ts"])
-    tabs.closeSession(removed)
+    tabs.close(removed)
     documents = []
 
     #expect(tabs.documents(in: removed).isEmpty)
@@ -560,19 +560,19 @@ private func twoTabs() async throws -> (EditorTabs, UUID, [EditorDocument]) {
 }
 
 @Test @MainActor func savingAllLeavesAFileWithAPendingChangeOnDiskForTheUserToSettle() async throws {
-    let (tabs, session, documents) = try await twoTabs()
+    let (tabs, row, documents) = try await twoTabs()
     defer { try? FileManager.default.removeItem(at: documents[0].url.deletingLastPathComponent()) }
     documents.forEach { $0.text = "mine\n" }
     try Data("agent\n".utf8).write(to: documents[0].url)
     await documents[0].readDisk()
 
-    #expect(!tabs.settle(.saveAll, in: session))
+    #expect(!tabs.settle(.saveAll, in: row))
 
     #expect(try String(contentsOf: documents[0].url, encoding: .utf8) == "agent\n")
     #expect(try String(contentsOf: documents[1].url, encoding: .utf8) == "mine\n")
     #expect(documents[0].changedOnDisk == "agent\n")
-    #expect(tabs.selection(in: session) === documents[0])
-    #expect(tabs.documents(in: session).count == 2)
+    #expect(tabs.selection(in: row) === documents[0])
+    #expect(tabs.documents(in: row).count == 2)
 }
 
 @Test @MainActor func aTabOpenedOnAnUnreadableFileShowsTheTextOnceTheFileIsTextAgain() async throws {

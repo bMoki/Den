@@ -231,7 +231,7 @@ func theNicknameGoesToTheNsInOneLineAndBlankMeansNone(typed: String, expected: S
         }
         try await Task.sleep(for: .milliseconds(100))
         throw NsFailure(message: "docker parado")
-    }), refreshed: { refreshes.append("refresh") })
+    }), refreshed: { refreshes.append("refresh \($0)") })
     creation.name = "NS-1"
 
     await creation.create { _ in }
@@ -239,7 +239,7 @@ func theNicknameGoesToTheNsInOneLineAndBlankMeansNone(typed: String, expected: S
 
     #expect(creation.question == nil)
     #expect(answers.all == ["true"])
-    #expect(refreshes.all == ["refresh"])
+    #expect(refreshes.all == ["refresh NS-1"])
 }
 
 @MainActor
@@ -251,7 +251,7 @@ func theNicknameGoesToTheNsInOneLineAndBlankMeansNone(typed: String, expected: S
         },
         addRepo: { _, _, steps in steps(NsEvent(step: "add:parents:worktree", label: "Criando worktree...")) },
         prepare: { _, _, _ in throw NsFailure(message: "docker parado") }),
-        refreshed: { refreshes.append("refresh") })
+        refreshed: { refreshes.append("refresh \($0)") })
     creation.name = "NS-1"
     creation.repos = [.parents]
     await creation.create { _ in }
@@ -261,7 +261,7 @@ func theNicknameGoesToTheNsInOneLineAndBlankMeansNone(typed: String, expected: S
     #expect(creation.missing.isEmpty)
     #expect(creation.steps.first { $0.id == "add:parents" }?.state == .done)
     #expect(creation.phase == .notPrepared(repo: "parents", NsFailure(message: "docker parado")))
-    #expect(refreshes.all == ["refresh", "refresh"])
+    #expect(refreshes.all == ["refresh NS-1", "refresh NS-1"])
 }
 
 @MainActor
@@ -280,4 +280,76 @@ func theNicknameGoesToTheNsInOneLineAndBlankMeansNone(typed: String, expected: S
         #expect(await ask(NsQuestion(message: "?", default: false)) == false)
         break
     }
+}
+
+@MainActor
+@Test func addingARepoIncludesPreparesAndClosesTheProgress() async {
+    let calls = Recorder()
+    let refreshes = Recorder()
+    let creation = BranchCreation(operations: operations(
+        addRepo: { branch, repo, steps in
+            steps(NsEvent(step: "add:parents:worktree", label: "Criando worktree..."))
+            calls.append("add \(branch) \(repo)")
+        },
+        prepare: { branch, steps, _ in
+            steps(NsEvent(step: "database:start", label: "Iniciando PostgreSQL..."))
+            calls.append("prepare \(branch)")
+        }),
+        refreshed: { refreshes.append("refresh \($0)") })
+
+    await creation.add(.parents, to: "NS-1")
+
+    #expect(calls.all == ["add NS-1 parents", "prepare NS-1"])
+    #expect(creation.name == "NS-1")
+    #expect(creation.adding == .parents)
+    #expect(creation.steps.map(\.id) == ["add:parents", "database", "aliases", "deps"])
+    #expect(creation.steps.allSatisfy { $0.state == .done })
+    #expect(creation.phase == .finished)
+    #expect(!creation.isPresented)
+    #expect(refreshes.all == ["refresh NS-1"])
+}
+
+@MainActor
+@Test func aRepoThatFailsToBeAddedShowsTheErrorAndCanBeRetried() async {
+    let attempts = Recorder()
+    let creation = BranchCreation(operations: operations(addRepo: { _, repo, _ in
+        attempts.append(repo)
+        if attempts.all.count == 1 { throw NsFailure(message: "Branch base 'origin/main' não existe no parents") }
+    }))
+
+    await creation.add(.parents, to: "NS-1")
+
+    #expect(creation.missing == [.init(repo: "parents", message: "Branch base 'origin/main' não existe no parents")])
+    #expect(creation.steps.map(\.state) == [.failed, .waiting, .waiting, .waiting])
+    #expect(creation.phase == .finished)
+    #expect(creation.isPresented)
+    #expect(!creation.isRunning)
+
+    await creation.retry("parents")
+
+    #expect(attempts.all == ["parents", "parents"])
+    #expect(creation.missing.isEmpty)
+    #expect(creation.steps.allSatisfy { $0.state == .done })
+}
+
+@MainActor
+@Test func aRepoAddedButNotPreparedCanBePreparedAgain() async {
+    let preparations = Recorder()
+    let creation = BranchCreation(operations: operations(prepare: { _, steps, _ in
+        preparations.append("prepare")
+        steps(NsEvent(step: "prepare:deps:manager", label: "npm ci"))
+        if preparations.all.count == 1 { throw NsFailure(message: "docker parado") }
+    }))
+
+    await creation.add(.manager, to: "NS-1")
+
+    #expect(creation.phase == .notPrepared(repo: "manager", NsFailure(message: "docker parado")))
+    #expect(creation.steps.first { $0.id == "deps" }?.state == .failed)
+    #expect(creation.isPresented)
+
+    await creation.prepareAgain()
+
+    #expect(preparations.all == ["prepare", "prepare"])
+    #expect(creation.phase == .finished)
+    #expect(creation.steps.allSatisfy { $0.state == .done })
 }

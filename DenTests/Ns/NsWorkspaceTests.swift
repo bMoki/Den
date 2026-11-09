@@ -403,3 +403,70 @@ private func snapshotOperations(_ groups: [NsClient.SnapshotGroup], calls: Recor
     #expect(ns.actionProblems["NS-12"] == "Branch 'NS-12' não encontrada")
     #expect(ns.branch(named: "NS-12")?.nickname == nil)
 }
+
+@Test func onlyTheOptionalReposTheBranchLacksCanBeAdded() async {
+    let status = NsStatus(worktreesDir: "/dev/worktrees", baseRepos: [], branches: [
+        .init(branch: "NS-1", path: "/dev/worktrees/NS-1",
+              repos: ["backend", "frontend", "docs", "manager"].map { .init(repo: $0) }),
+        .init(branch: "NS-2", path: "/dev/worktrees/NS-2",
+              repos: ["backend", "frontend", "manager", "report-server", "parents"].map { .init(repo: $0) }),
+        .init(branch: "NS-3", path: "/dev/worktrees/NS-3"),
+    ])
+    let ns = NsWorkspace { status }
+    await ns.refresh()
+
+    #expect(ns.addableRepos(of: "NS-1") == [.reportServer, .parents])
+    #expect(ns.addableRepos(of: "NS-2").isEmpty)
+    #expect(ns.addableRepos(of: "NS-3").isEmpty)
+    #expect(ns.addableRepos(of: "NS-9").isEmpty)
+}
+
+@MainActor
+@Test func addingARepoHoldsTheBranchAndOpensTheProgress() async {
+    let gate = AsyncStream<Void>.makeStream()
+    let calls = Recorder()
+    let ns = NsWorkspace(fetch: { sampleStatus }, create: BranchCreation.Operations(
+        create: { _, _, _ in throw NsFailure(message: "x") },
+        addRepo: { branch, repo, _ in
+            for await _ in gate.stream { break }
+            calls.append("add \(branch) \(repo)")
+        },
+        prepare: { branch, _, _ in calls.append("prepare \(branch)") }))
+    let adding = Task { await ns.addRepo(.parents, to: "NS-12") }
+    while ns.activity["NS-12"] == nil { await Task.yield() }
+
+    #expect(ns.activity["NS-12"]?.kind == .addRepo)
+    #expect(ns.creation?.adding == .parents)
+    #expect(ns.creation?.isPresented == true)
+
+    gate.continuation.yield()
+    await adding.value
+    #expect(calls.all == ["add NS-12 parents", "prepare NS-12"])
+    #expect(ns.activity.isEmpty)
+}
+
+@MainActor
+@Test func retryingAnAddedRepoHoldsTheBranchAgain() async throws {
+    let gate = AsyncStream<Void>.makeStream()
+    let attempts = Recorder()
+    let ns = NsWorkspace(fetch: { sampleStatus }, create: BranchCreation.Operations(
+        create: { _, _, _ in throw NsFailure(message: "x") },
+        addRepo: { _, _, _ in
+            attempts.append("add")
+            if attempts.all.count == 1 { throw NsFailure(message: "fatal") }
+            for await _ in gate.stream { break }
+        },
+        prepare: { _, _, _ in }))
+    await ns.addRepo(.parents, to: "NS-12")
+    let creation = try #require(ns.creation)
+    #expect(ns.activity.isEmpty)
+
+    let retrying = Task { await ns.holdingBranch(of: creation) { await creation.retry("parents") } }
+    while attempts.all.count < 2 { await Task.yield() }
+    #expect(ns.activity["NS-12"]?.kind == .addRepo)
+
+    gate.continuation.yield()
+    await retrying.value
+    #expect(ns.activity.isEmpty)
+    #expect(creation.missing.isEmpty)
+}

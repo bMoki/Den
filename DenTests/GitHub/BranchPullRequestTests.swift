@@ -30,11 +30,11 @@ import Foundation
     let pr = makePullRequest(number: 12)
 
     ledger.setPullRequest(pr, for: backend)
-    ledger.dismiss(backend, signature: "x")
+    ledger.dismiss(backend)
 
     let reloaded = PullRequestLedger(store: PullRequestStore(url: file))
     #expect(reloaded.pullRequest(for: backend) == pr)
-    #expect(reloaded.dismissedSignature(for: backend) == "x")
+    #expect(reloaded.isDismissed(backend))
     #expect(reloaded.pullRequest(for: .init(branch: "feat/NS-1", repo: "frontend")) == nil)
     #expect(reloaded.pullRequest(for: .init(branch: "NS-2", repo: "backend")) == nil)
 }

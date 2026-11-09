@@ -59,12 +59,13 @@ final class BranchCreation {
     private(set) var steps: [Step] = []
     private(set) var question: NsQuestion?
     private(set) var missing: [MissingRepo] = []
+    private(set) var adding: Repo?
 
     @ObservationIgnored private let operations: Operations
-    @ObservationIgnored private let refreshed: @MainActor () async -> Void
+    @ObservationIgnored private let refreshed: @MainActor (_ branch: String) async -> Void
     @ObservationIgnored private var pendingAnswer: CheckedContinuation<Bool, Never>?
 
-    init(operations: Operations, refreshed: @escaping @MainActor () async -> Void = {}) {
+    init(operations: Operations, refreshed: @escaping @MainActor (_ branch: String) async -> Void = { _ in }) {
         self.operations = operations
         self.refreshed = refreshed
     }
@@ -86,10 +87,8 @@ final class BranchCreation {
         let request = NsClient.NewBranch(branch: name, repos: chosen.map(\.rawValue),
                                          nickname: BranchNickname.normalized(nickname))
         steps = [Step(id: StepID.create, title: Self.createTitle(withManager: chosen.contains(.manager)))]
-            + chosen.filter { $0 != .manager }.map { Step(id: StepID.add($0.rawValue), title: "Incluir \($0.rawValue)") }
-            + [Step(id: StepID.database, title: "Subir o banco da branch"),
-               Step(id: StepID.aliases, title: "Criar aliases"),
-               Step(id: StepID.deps, title: "Instalar dependências")]
+            + chosen.filter { $0 != .manager }.map { Self.including($0.rawValue) }
+            + Self.preparing
         phase = .running
         let advance: (NsEvent) -> Void = { self.advance(to: $0) }
         let result = await following(advance) { steps in
@@ -103,37 +102,80 @@ final class BranchCreation {
             for repo in missing { mark(StepID.add(repo.repo), .failed) }
             phase = .finished
             if missing.isEmpty { isPresented = false }
-            await refreshed()
+            await refreshed(name)
             await opened(URL(fileURLWithPath: created.paths.root, isDirectory: true))
         case .failure(let error):
             if let index = steps.firstIndex(where: { $0.state == .running }) { steps[index].state = .failed }
             phase = .failed(Self.failure(error))
             isPresented = true
-            await refreshed()
+            await refreshed(name)
         }
+    }
+
+    func add(_ repo: Repo, to branch: String) async {
+        name = branch
+        adding = repo
+        steps = [Self.including(repo.rawValue)] + Self.preparing
+        phase = .running
+        await include(repo.rawValue)
     }
 
     func retry(_ repo: String) async {
         guard let index = missing.firstIndex(where: { $0.repo == repo }), !missing[index].retrying else { return }
         missing[index].retrying = true
+        if adding != nil { phase = .running }
+        await include(repo)
+    }
+
+    func prepareAgain() async {
+        guard case .notPrepared(let repo, _) = phase else { return }
+        phase = .running
+        await prepare(after: repo)
+    }
+
+    private func include(_ repo: String) async {
         let row = StepID.add(repo)
         mark(row, .running)
-        let (branch, operations, ask) = (name, operations, asker())
+        let (branch, operations) = (name, operations)
         let show: (NsEvent) -> Void = { self.describe(row, with: $0) }
         let added = await following(show) { try await operations.addRepo(branch, repo, $0) }
+        describe(row, with: nil)
         if case .failure(let error) = added {
             mark(row, .failed)
-            describe(row, with: nil)
-            update(repo) { $0.message = Self.failure(error).message; $0.retrying = false }
+            let message = Self.failure(error).message
+            if missing.contains(where: { $0.repo == repo }) {
+                update(repo) { $0.message = message; $0.retrying = false }
+            } else {
+                missing.append(MissingRepo(repo: repo, message: message))
+            }
+            if phase == .running { phase = .finished }
             return
+        }
+        missing.removeAll { $0.repo == repo }
+        mark(row, .done)
+        await prepare(after: repo)
+    }
+
+    private func prepare(after repo: String) async {
+        let (branch, operations, ask) = (name, operations, asker())
+        let row = StepID.add(repo)
+        let show: (NsEvent) -> Void = { event in
+            if self.phase == .running { self.advance(to: event) } else { self.describe(row, with: event) }
         }
         let prepared = await following(show) { try await operations.prepare(branch, $0, ask) }
         settleQuestion()
-        missing.removeAll { $0.repo == repo }
-        mark(row, .done)
         describe(row, with: nil)
-        phase = if case .failure(let error) = prepared { .notPrepared(repo: repo, Self.failure(error)) } else { .finished }
-        await refreshed()
+        if case .failure(let error) = prepared {
+            if phase == .running, let index = steps.firstIndex(where: { $0.state == .running }) {
+                steps[index].state = .failed
+            }
+            phase = .notPrepared(repo: repo, Self.failure(error))
+        } else {
+            if phase == .running { finishSteps() }
+            phase = .finished
+            if adding != nil { isPresented = false }
+        }
+        await refreshed(name)
     }
 
     func reply(_ value: Bool) {
@@ -224,6 +266,14 @@ final class BranchCreation {
         if step.hasPrefix("prepare:deps") { return StepID.deps }
         return step
     }
+
+    private static func including(_ repo: String) -> Step {
+        Step(id: StepID.add(repo), title: "Incluir \(repo)")
+    }
+
+    private static let preparing = [Step(id: StepID.database, title: "Subir o banco da branch"),
+                                    Step(id: StepID.aliases, title: "Criar aliases"),
+                                    Step(id: StepID.deps, title: "Instalar dependências")]
 
     private static func createTitle(withManager: Bool) -> String {
         let repos = Repo.fixed + (withManager ? [Repo.manager.rawValue] : [])

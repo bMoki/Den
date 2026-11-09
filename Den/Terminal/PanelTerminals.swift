@@ -7,7 +7,7 @@ final class PanelTerminals {
     typealias Environment = @Sendable () async -> [String: String]
 
     private(set) var all: [PanelTerminal] = []
-    private var selection: [UUID: UUID] = [:]
+    private var selection: [SidebarRow: UUID] = [:]
     var isPanelOpen = false
 
     @ObservationIgnored private let shell: String
@@ -26,42 +26,46 @@ final class PanelTerminals {
         }
     }
 
-    func terminals(of sessionID: UUID) -> [PanelTerminal] {
-        all.filter { $0.sessionID == sessionID }
+    var rows: Set<SidebarRow> {
+        Set(all.map(\.row))
     }
 
-    func isPanelShown(for sessionID: UUID) -> Bool {
-        isPanelOpen && selected(in: sessionID) != nil
+    func terminals(of row: SidebarRow) -> [PanelTerminal] {
+        all.filter { $0.row == row }
     }
 
-    func selected(in sessionID: UUID) -> PanelTerminal? {
-        let terminals = terminals(of: sessionID)
-        return terminals.first { $0.id == selection[sessionID] } ?? terminals.last
+    func isPanelShown(for row: SidebarRow) -> Bool {
+        isPanelOpen && row != .archived && selected(in: row) != nil
+    }
+
+    func selected(in row: SidebarRow) -> PanelTerminal? {
+        let terminals = terminals(of: row)
+        return terminals.first { $0.id == selection[row] } ?? terminals.last
     }
 
     func select(_ terminal: PanelTerminal) {
-        guard selection[terminal.sessionID] != terminal.id else { return }
-        selection[terminal.sessionID] = terminal.id
+        guard selection[terminal.row] != terminal.id else { return }
+        selection[terminal.row] = terminal.id
         terminal.wantsFocus = true
     }
 
     @discardableResult
-    func open(for sessionID: UUID, in directory: URL) -> PanelTerminal {
+    func open(for row: SidebarRow, in root: URL) -> PanelTerminal {
         let name = URL(fileURLWithPath: shell).lastPathComponent
         let launch = PanelTerminal.Launch(executable: shell,
                                           environment: Terminal.getEnvironmentVariables() + ["SHELL=\(shell)"]
                                               + NsConfigFolder.passedOn(ProcessInfo.processInfo.environment),
                                           execName: "-" + name,
-                                          directory: directory)
-        return add(PanelTerminal(sessionID: sessionID, kind: .free(shell: name), launch: launch, ended: removal))
+                                          directory: root)
+        return add(PanelTerminal(row: row, kind: .free(shell: name), launch: launch, ended: removal))
     }
 
     @discardableResult
-    func openConsole(for sessionID: UUID, branch: String, service: String,
-                     session: String, in directory: URL) async -> PanelTerminal {
+    func openConsole(branch: String, service: String, session: String, in root: URL) async -> PanelTerminal {
+        let row = SidebarRow.branch(branch)
         let kind = PanelTerminal.Kind.console(branch: branch, service: service)
         let environment = await consoleEnvironment()
-        if let open = terminals(of: sessionID).first(where: { $0.kind == kind }) {
+        if let open = terminals(of: row).first(where: { $0.kind == kind }) {
             select(open)
             isPanelOpen = true
             return open
@@ -69,16 +73,16 @@ final class PanelTerminals {
         let launch = PanelTerminal.Launch(executable: "/bin/sh",
                                           arguments: ["-c", Self.attach, "sh", session, Self.notAttached],
                                           environment: environment,
-                                          directory: directory)
-        return add(PanelTerminal(sessionID: sessionID, kind: kind, launch: launch, ended: removal))
+                                          directory: root)
+        return add(PanelTerminal(row: row, kind: kind, launch: launch, ended: removal))
     }
 
-    func togglePanel(for sessionID: UUID, in directory: URL) {
-        if terminals(of: sessionID).isEmpty {
-            open(for: sessionID, in: directory)
+    func togglePanel(for row: SidebarRow, in root: URL) {
+        if terminals(of: row).isEmpty {
+            open(for: row, in: root)
         } else {
             isPanelOpen.toggle()
-            if isPanelOpen { selected(in: sessionID)?.wantsFocus = true }
+            if isPanelOpen { selected(in: row)?.wantsFocus = true }
         }
     }
 
@@ -87,9 +91,9 @@ final class PanelTerminals {
         remove(terminal.id)
     }
 
-    func close(sessionID: UUID) {
-        for terminal in terminals(of: sessionID) { close(terminal) }
-        selection[sessionID] = nil
+    func close(_ row: SidebarRow) {
+        for terminal in terminals(of: row) { close(terminal) }
+        selection[row] = nil
     }
 
     func closeAll() {

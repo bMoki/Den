@@ -15,14 +15,11 @@ struct ChatView: View {
     @State private var tableLock = TableScrollLock()
 
     @AppStorage(InspectorPane.storageKey) private var pane: InspectorPane = .closed
-    @AppStorage("Den.inspectorWidth") private var inspectorWidth: Double = 480
     let gitChanges: GitChangesModel
     let files: FileTree
     let editors: EditorTabs
+    var openPage: (SidebarRow) -> Void
     @Environment(NsWorkspace.self) private var ns
-
-    private static let minimumChatWidth: CGFloat = 420
-    private static let minimumInspectorWidth: Double = 320
 
     private struct ScrollEdgeState: Equatable {
         var isNearBottom: Bool
@@ -33,65 +30,30 @@ struct ChatView: View {
     }
 
     var body: some View {
-        GeometryReader { geometry in
-            let room = Double(geometry.size.width - Self.minimumChatWidth)
-            let docked = room >= Self.minimumInspectorWidth
-            HStack(spacing: 0) {
-                VStack(spacing: 0) {
-                    ChatHeader(chat: chat)
-                    EditorTabStrip(tabs: editors, session: chat.sessionID, files: files)
-                    if let document = editors.selection(in: chat.sessionID) {
-                        EditorView(document: document, folder: chat.workingDirectory) { editors.close(document, in: chat.sessionID) }
+        InspectorSplit(isShown: pane != .closed) {
+            VStack(spacing: 0) {
+                ChatHeader(chat: chat, openPage: openPage)
+                EditorTabStrip(tabs: editors, row: row, files: files, home: .session)
+                if let document = editors.selection(in: row) {
+                    EditorView(document: document, folder: ns.rowRoot(of: chat.workingDirectory)) { editors.close(document, in: row) }
+                } else {
+                    transcript
+                    if let removedBranch {
+                        ArchivedSessionBar(branch: removedBranch)
                     } else {
-                        transcript
-                        if let removedBranch {
-                            ArchivedSessionBar(branch: removedBranch)
-                        } else {
-                            ChatComposer(chat: chat, slash: slash, mentions: mentions,
-                                         keys: keys) { nearBottom = true }
-                        }
+                        ChatComposer(chat: chat, slash: slash, mentions: mentions,
+                                     keys: keys) { nearBottom = true }
                     }
-                    TerminalPanel(sessionID: chat.sessionID, directory: chat.workingDirectory)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Theme.canvas)
-
-                if pane != .closed, docked {
-                    ResizeHandle(width: $inspectorWidth,
-                                 range: Self.minimumInspectorWidth...room,
-                                 growsTowardTrailing: false)
-                    inspector
-                        .frame(width: min(max(inspectorWidth, Self.minimumInspectorWidth), room))
-                        .transition(.move(edge: .trailing).combined(with: .opacity))
-                }
+                TerminalPanel(row: row, root: ns.rowRoot(of: chat.workingDirectory))
             }
-            .overlay(alignment: .trailing) {
-                if pane != .closed, !docked {
-                    inspector
-                        .frame(width: min(max(inspectorWidth, Self.minimumInspectorWidth),
-                                          Double(geometry.size.width) - 56))
-                        .overlay(alignment: .leading) {
-                            Rectangle().fill(Theme.borderStrong).frame(width: 1)
-                        }
-                        .shadow(color: .black.opacity(0.5), radius: 28, x: -8)
-                        .transition(.move(edge: .trailing).combined(with: .opacity))
-                }
-            }
-            .frame(width: geometry.size.width, height: geometry.size.height)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Theme.canvas)
+        } inspector: {
+            inspector
         }
-
         .navigationTitle(chat.title)
         .focusedSceneValue(\.chat, chat)
-        .task(id: "\(shownPane == .changes)|\(chat.workingDirectory.path)") {
-            guard shownPane == .changes else { return }
-            await gitChanges.load(directory: chat.workingDirectory)
-            while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(4))
-                guard !Task.isCancelled else { return }
-                await gitChanges.load(directory: chat.workingDirectory)
-            }
-        }
-
         .task(id: chat.sessionID) { await chat.loadBranch() }
         .task(id: chat.workingDirectory) { await mentions.loadIndex(under: chat.workingDirectory) }
         .onChange(of: chat.prompt) {
@@ -133,16 +95,18 @@ struct ChatView: View {
 
     private var branch: String? { ns.branchName(of: chat.workingDirectory) }
 
-    private var isEditing: Bool { editors.selection(in: chat.sessionID) != nil }
+    private var row: SidebarRow { ns.row(of: chat.workingDirectory) }
+
+    private var isEditing: Bool { editors.selection(in: row) != nil }
 
     private var removedBranch: String? { ns.removedBranch(of: chat.workingDirectory) }
 
     private var shownPane: InspectorPane { pane.shown(inBranch: branch != nil) }
 
     private var inspector: some View {
-        InspectorView(pane: $pane, gitChanges: gitChanges, files: files, sessionID: chat.sessionID,
+        InspectorView(pane: $pane, gitChanges: gitChanges, files: files,
                       directory: chat.workingDirectory, branch: branch, removedBranch: removedBranch,
-                      open: { editors.open($0, in: chat.sessionID) },
+                      open: { editors.open($0, in: row) },
                       mention: { path, isDirectory in mentions.mention(path, isDirectory: isDirectory, in: chat) })
     }
 

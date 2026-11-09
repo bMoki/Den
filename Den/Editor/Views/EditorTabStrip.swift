@@ -1,23 +1,31 @@
 import SwiftUI
 
 struct EditorTabStrip: View {
+    enum Home {
+        case session, page
+
+        var title: String { self == .session ? "Sessão" : "Página" }
+        var symbol: String { self == .session ? "bubble.left" : "list.bullet" }
+    }
+
     let tabs: EditorTabs
-    let session: UUID
+    let row: SidebarRow
     let files: FileTree
+    let home: Home
 
     @State private var closing: EditorDocument?
 
     var body: some View {
-        let selected = tabs.selection(in: session)
+        let selected = tabs.selection(in: row)
         ScrollViewReader { reader in
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 0) {
-                    tab(title: "Sessão", symbol: "bubble.left", isOn: selected == nil) { tabs.select(nil, in: session) }
-                    ForEach(tabs.documents(in: session)) { document in
+                    tab(title: home.title, symbol: home.symbol, isOn: selected == nil) { tabs.select(nil, in: row) }
+                    ForEach(tabs.documents(in: row)) { document in
                         EditorTab(document: document, mark: files.marks.state(ofFile: document.url),
                                   isOn: selected === document,
-                                  select: { tabs.select(document, in: session) },
-                                  close: { document.isDirty ? (closing = document) : tabs.close(document, in: session) })
+                                  select: { tabs.select(document, in: row) },
+                                  close: { document.isDirty ? (closing = document) : tabs.close(document, in: row) })
                             .id(document.url)
                     }
                 }
@@ -46,11 +54,11 @@ struct EditorTabStrip: View {
         if saving {
             document.save()
             guard !document.isDirty else {
-                tabs.select(document, in: session)
+                tabs.select(document, in: row)
                 return
             }
         }
-        tabs.close(document, in: session)
+        tabs.close(document, in: row)
     }
 
     private func tab(title: String, symbol: String, isOn: Bool, select: @escaping () -> Void) -> some View {

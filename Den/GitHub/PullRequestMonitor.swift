@@ -183,14 +183,23 @@ final class PullRequestMonitor {
     }
 
     func bars(for branch: String) -> [Bar] {
-        pullRequests(for: branch).filter { bar in
-            ledger.dismissedSignature(for: bar.id) != PullRequestStatus.signature(bar.pullRequest)
-        }
+        pullRequests(for: branch).filter { !isDismissed($0.repo) }
+    }
+
+    func isDismissed(_ repo: BranchRepo) -> Bool {
+        ledger.isDismissed(repo.id)
     }
 
     func dismiss(_ repo: BranchRepo) {
-        guard let pr = ledger.pullRequest(for: repo.id) else { return }
-        ledger.dismiss(repo.id, signature: PullRequestStatus.signature(pr))
+        ledger.dismiss(repo.id)
+    }
+
+    func toggleDismissal(of repo: BranchRepo) {
+        if isDismissed(repo) {
+            ledger.restore(repo.id)
+        } else {
+            dismiss(repo)
+        }
     }
 
     func checkedAt(_ repo: BranchRepo) -> Date? {
