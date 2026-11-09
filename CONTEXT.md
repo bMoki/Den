@@ -63,8 +63,12 @@ Uma mensagem mandada numa Sessão enquanto o agente trabalha e que o agente aind
 ### Favorito
 Uma Branch de workspace, Repo base ou pasta de Outras pastas que o desenvolvedor fixou no topo da sidebar. É uma preferência de quem usa o Thalamus, não um atributo da Branch de workspace.
 
+### PR dispensado
+Um PR que quem trabalha na Branch de workspace tirou da vista até ele mudar de estado (review, checks, conflito, merge ou fechamento). Ao mudar, volta sozinho. Um PR mergeado não muda mais, então, dispensado, não volta. Dispensar é uma preferência do Thalamus e não age sobre o PR no GitHub.
+_Evitar:_ "PR arquivado", "PR oculto".
+
 ### Repo opcional
-Um Repo que uma Branch de workspace pode ou não ter, escolhido ao criá-la: **manager** (incluído por padrão), **report-server** e **parents**. Backend, frontend e docs estão sempre presentes.
+Um Repo que uma Branch de workspace pode ou não ter: **manager** (incluído por padrão), **report-server** e **parents**. É escolhido ao criá-la e pode ser adicionado depois; uma vez adicionado, não sai. Backend, frontend e docs estão sempre presentes.
 
 ### Nova Branch de workspace
 Criar uma Branch de workspace e deixá-la preparada (Preparar), sem iniciar nenhum Serviço. Termina com uma Sessão aberta na raiz da Branch de workspace, sem mensagem inicial.
