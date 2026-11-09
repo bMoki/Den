@@ -4,6 +4,10 @@ import HarnessCore
 nonisolated struct NsFailure: Error, Equatable, Sendable {
     let message: String
     var hint: String?
+
+    var detail: String {
+        [message, hint].compactMap(\.self).joined(separator: "\n")
+    }
 }
 
 nonisolated struct NsQuestion: Decodable, Equatable, Sendable {
@@ -413,5 +417,41 @@ extension NsClient {
     func setNickname(branch: String, nickname: String) async throws {
         let _: Ignored = try await call("setNickname", input: NicknameInput(branch: branch, nickname: nickname),
                                         timeout: .seconds(30))
+    }
+}
+
+extension NsClient {
+    nonisolated struct RepoDependencies: Decodable, Equatable, Sendable, Identifiable {
+        enum State: String, Decodable, Sendable {
+            case installed = "instaladas"
+            case reused = "da-master"
+            case divergent = "da-master-divergentes"
+            case missing = "faltando"
+
+            var needsInstall: Bool { self == .divergent || self == .missing }
+        }
+
+        let id: String
+        let cwd: String
+        let state: State
+        let command: String
+    }
+
+    private nonisolated struct DependenciesReply: Decodable {
+        let repos: [RepoDependencies]
+    }
+
+    private nonisolated struct InstallInput: Encodable {
+        let branch: String
+        let repo: String
+    }
+
+    func dependencies(branch: String) async throws -> [RepoDependencies] {
+        let reply: DependenciesReply = try await call("deps", input: BranchInput(branch: branch), timeout: .seconds(60))
+        return reply.repos
+    }
+
+    func installDependencies(branch: String, repo: String) async throws -> RepoDependencies {
+        try await call("installDeps", input: InstallInput(branch: branch, repo: repo), timeout: .seconds(900))
     }
 }

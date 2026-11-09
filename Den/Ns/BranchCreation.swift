@@ -62,10 +62,10 @@ final class BranchCreation {
     private(set) var adding: Repo?
 
     @ObservationIgnored private let operations: Operations
-    @ObservationIgnored private let refreshed: @MainActor () async -> Void
+    @ObservationIgnored private let refreshed: @MainActor (_ branch: String) async -> Void
     @ObservationIgnored private var pendingAnswer: CheckedContinuation<Bool, Never>?
 
-    init(operations: Operations, refreshed: @escaping @MainActor () async -> Void = {}) {
+    init(operations: Operations, refreshed: @escaping @MainActor (_ branch: String) async -> Void = { _ in }) {
         self.operations = operations
         self.refreshed = refreshed
     }
@@ -102,13 +102,13 @@ final class BranchCreation {
             for repo in missing { mark(StepID.add(repo.repo), .failed) }
             phase = .finished
             if missing.isEmpty { isPresented = false }
-            await refreshed()
+            await refreshed(name)
             await opened(URL(fileURLWithPath: created.paths.root, isDirectory: true))
         case .failure(let error):
             if let index = steps.firstIndex(where: { $0.state == .running }) { steps[index].state = .failed }
             phase = .failed(Self.failure(error))
             isPresented = true
-            await refreshed()
+            await refreshed(name)
         }
     }
 
@@ -175,7 +175,7 @@ final class BranchCreation {
             phase = .finished
             if adding != nil { isPresented = false }
         }
-        await refreshed()
+        await refreshed(name)
     }
 
     func reply(_ value: Bool) {

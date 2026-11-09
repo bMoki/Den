@@ -103,8 +103,7 @@ struct NewBranchSheet: View {
                 }
                 if let stopped {
                     FailureBox(title: stopped.title, detail: nil,
-                               message: [stopped.failure.message, stopped.failure.hint].compactMap(\.self)
-                                   .joined(separator: "\n")) {
+                               message: stopped.failure.detail) {
                         if case .notPrepared = creation.phase {
                             Button(action: prepareAgain) { Text("Preparar de novo").pillLabel() }
                                 .buttonStyle(.denSecondary)
