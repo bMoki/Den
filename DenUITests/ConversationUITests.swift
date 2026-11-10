@@ -36,6 +36,7 @@ final class ConversationUITests: XCTestCase {
         }
         app.launchEnvironment["DEN_CLI_claude-code"] = claude.executable
         app.launchEnvironment["DEN_CLI_opencode"] = openCode.executable
+        app.launchArguments += ["-ApplePersistenceIgnoreState", "YES"]
         app.launch()
         return app
     }
