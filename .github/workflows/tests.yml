@@ -41,7 +41,7 @@ jobs:
         run: |
           # shellcheck disable=SC2086 # $SIGNING is a list of build settings
           xcodebuild test \
-            -project Den.xcodeproj -scheme Den \
+            -project Thalamus.xcodeproj -scheme Thalamus \
             -destination 'platform=macOS' \
             -skipPackagePluginValidation \
             -enableCodeCoverage YES \
@@ -71,7 +71,7 @@ jobs:
         run: |
           # shellcheck disable=SC2086 # $SIGNING is a list of build settings
           xcodebuild test \
-            -project Den.xcodeproj -scheme Den \
+            -project Thalamus.xcodeproj -scheme Thalamus \
             -destination 'platform=macOS' \
             -skipPackagePluginValidation \
             -enableThreadSanitizer YES \

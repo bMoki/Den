@@ -18,7 +18,7 @@
 set -eu
 cd "$(dirname "$0")/.."
 
-swift - docs/marca/icone Den/Assets.xcassets <<'SWIFT'
+swift - docs/marca/icone Thalamus/Assets.xcassets <<'SWIFT'
 import AppKit
 
 let sources = URL(fileURLWithPath: CommandLine.arguments[1])

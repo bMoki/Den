@@ -90,12 +90,12 @@ release() {
     [ -n "$identity" ] || fail "no Apple Development certificate in the keychain"
     commit=$(git rev-parse --short HEAD)
 
-    adhoc xcodebuild test -project Den.xcodeproj -scheme Den -destination 'platform=macOS' \
+    adhoc xcodebuild test -project Thalamus.xcodeproj -scheme Thalamus -destination 'platform=macOS' \
         -derivedDataPath build/DerivedData -skipPackagePluginValidation -skipMacroValidation -quiet \
-        -only-testing:DenTests
+        -only-testing:ThalamusTests
     adhoc Scripts/quality/check
 
-    xcodebuild build -project Den.xcodeproj -scheme Den -configuration Release -destination 'platform=macOS' \
+    xcodebuild build -project Thalamus.xcodeproj -scheme Thalamus -configuration Release -destination 'platform=macOS' \
         -derivedDataPath build/Release -skipPackagePluginValidation -skipMacroValidation -quiet \
         CODE_SIGN_IDENTITY="$identity" CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= PROVISIONING_PROFILE_SPECIFIER= \
         CURRENT_PROJECT_VERSION="$(git rev-list --count HEAD)" \

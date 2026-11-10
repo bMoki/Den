@@ -1,7 +1,7 @@
 {
   "ClaudeHarness": 87,
-  "Den": 77,
   "HarnessCore": 96,
   "HarnessProbeArguments": 90,
-  "OpenCodeHarness": 64
+  "OpenCodeHarness": 64,
+  "Thalamus": 77
 }

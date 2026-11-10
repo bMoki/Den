@@ -45,50 +45,50 @@ class PackageTotals(unittest.TestCase):
 class AppTotals(unittest.TestCase):
     def test_files_under_a_views_folder_are_left_out(self):
         totals = coverage.app_totals(reported(
-            ("/repo/Den/Chat/ViewModels/ChatModel.swift", 80, 100),
-            ("/repo/Den/Chat/Views/ChatView.swift", 0, 400),
-            ("/repo/Den/Sidebar/Views/SidebarView.swift", 10, 300),
+            ("/repo/Thalamus/Chat/ViewModels/ChatModel.swift", 80, 100),
+            ("/repo/Thalamus/Chat/Views/ChatView.swift", 0, 400),
+            ("/repo/Thalamus/Sidebar/Views/SidebarView.swift", 10, 300),
         ))
-        self.assertEqual(totals, {"Den": (80, 100)})
+        self.assertEqual(totals, {"Thalamus": (80, 100)})
 
     def test_a_file_merely_named_like_a_view_still_counts(self):
-        totals = coverage.app_totals(reported(("/repo/Den/App/InspectorView.swift", 0, 200)))
-        self.assertEqual(totals, {"Den": (0, 200)})
+        totals = coverage.app_totals(reported(("/repo/Thalamus/App/InspectorView.swift", 0, 200)))
+        self.assertEqual(totals, {"Thalamus": (0, 200)})
 
     def test_other_targets_are_ignored(self):
-        totals = coverage.app_totals(reported(("/repo/DenTests/Run/RunStateTests.swift", 40, 40), target="DenTests.xctest"))
+        totals = coverage.app_totals(reported(("/repo/ThalamusTests/Run/RunStateTests.swift", 40, 40), target="ThalamusTests.xctest"))
         self.assertEqual(coverage.percentages(totals), {})
 
 
 class Percentages(unittest.TestCase):
     def test_a_target_without_executable_lines_has_no_percentage(self):
-        self.assertEqual(coverage.percentages({"HarnessCore": (9, 20), "Den": (0, 0)}), {"HarnessCore": 45.0})
+        self.assertEqual(coverage.percentages({"HarnessCore": (9, 20), "Thalamus": (0, 0)}), {"HarnessCore": 45.0})
 
 
 class Failures(unittest.TestCase):
     def test_at_or_above_the_floor_passes(self):
-        self.assertEqual(coverage.failures({"Den": 81.0, "HarnessCore": 96.7}, {"Den": 81, "HarnessCore": 96}, ("Den", "HarnessCore")), [])
+        self.assertEqual(coverage.failures({"Thalamus": 81.0, "HarnessCore": 96.7}, {"Thalamus": 81, "HarnessCore": 96}, ("Thalamus", "HarnessCore")), [])
 
     def test_below_the_floor_is_reported_with_both_numbers(self):
-        self.assertEqual(coverage.failures({"Den": 80.94}, {"Den": 81}, ("Den",)), ["Den: 80.9% is below the floor of 81%"])
+        self.assertEqual(coverage.failures({"Thalamus": 80.94}, {"Thalamus": 81}, ("Thalamus",)), ["Thalamus: 80.9% is below the floor of 81%"])
 
     def test_a_target_that_vanished_from_the_report_fails(self):
         self.assertEqual(coverage.failures({}, {"OpenCodeHarness": 64}, ("OpenCodeHarness",)), ["OpenCodeHarness: missing from the coverage report"])
 
     def test_a_target_without_a_floor_fails(self):
-        self.assertEqual(coverage.failures({"Den": 50.0}, {}, ("Den",)), ["Den: no floor recorded; run again with --write-floor"])
+        self.assertEqual(coverage.failures({"Thalamus": 50.0}, {}, ("Thalamus",)), ["Thalamus: no floor recorded; run again with --write-floor"])
 
     def test_only_the_named_targets_are_checked(self):
-        self.assertEqual(coverage.failures({"Den": 90.0}, {"Den": 81, "HarnessCore": 96}, ("Den",)), [])
+        self.assertEqual(coverage.failures({"Thalamus": 90.0}, {"Thalamus": 81, "HarnessCore": 96}, ("Thalamus",)), [])
 
 
 class Raised(unittest.TestCase):
     def test_the_measured_group_is_rounded_down_and_the_rest_kept(self):
-        floors = coverage.raised({"Den": 70, "HarnessCore": 96}, {"Den": 81.97}, ("Den",))
-        self.assertEqual(floors, {"Den": 81, "HarnessCore": 96})
+        floors = coverage.raised({"Thalamus": 70, "HarnessCore": 96}, {"Thalamus": 81.97}, ("Thalamus",))
+        self.assertEqual(floors, {"Thalamus": 81, "HarnessCore": 96})
 
     def test_half_a_point_is_left_for_the_run_to_run_wobble(self):
-        self.assertEqual(coverage.raised({}, {"Den": 81.01}, ("Den",)), {"Den": 80})
+        self.assertEqual(coverage.raised({}, {"Thalamus": 81.01}, ("Thalamus",)), {"Thalamus": 80})
 
 
 class MissingInputs(unittest.TestCase):
@@ -132,7 +132,7 @@ class MissingInputs(unittest.TestCase):
 
 class Main(unittest.TestCase):
     PACKAGE = {"HarnessCore": 96.7, "ClaudeHarness": 87.9, "OpenCodeHarness": 64.9, "HarnessProbeArguments": 91.2}
-    FLOORS = {"HarnessCore": 96, "ClaudeHarness": 87, "OpenCodeHarness": 64, "HarnessProbeArguments": 90, "Den": 80}
+    FLOORS = {"HarnessCore": 96, "ClaudeHarness": 87, "OpenCodeHarness": 64, "HarnessProbeArguments": 90, "Thalamus": 80}
 
     def setUp(self):
         scratch = tempfile.TemporaryDirectory()
@@ -170,10 +170,10 @@ class Main(unittest.TestCase):
 
     def test_the_app_is_measured_from_the_bundle_it_was_given(self):
         self.record(self.FLOORS)
-        status, printed, _ = self.run_main(["app", "build/app.xcresult"], app={"Den": 79.9})
+        status, printed, _ = self.run_main(["app", "build/app.xcresult"], app={"Thalamus": 79.9})
         self.assertEqual(self.bundles, ["build/app.xcresult"])
         self.assertEqual(status, 1)
-        self.assertIn("Den                      79.9%   floor 80%", printed)
+        self.assertIn("Thalamus                 79.9%   floor 80%", printed)
 
     def test_the_app_needs_a_bundle(self):
         with self.assertRaises(SystemExit) as stopped:
@@ -181,16 +181,16 @@ class Main(unittest.TestCase):
         self.assertEqual(stopped.exception.code, 2)
 
     def test_without_a_recorded_floor_the_run_fails_and_says_how_to_record_one(self):
-        status, _, complained = self.run_main(["app", "build/app.xcresult"], app={"Den": 81.0})
+        status, _, complained = self.run_main(["app", "build/app.xcresult"], app={"Thalamus": 81.0})
         self.assertEqual(status, 1)
-        self.assertIn("Den: no floor recorded; run again with --write-floor", complained)
+        self.assertIn("Thalamus: no floor recorded; run again with --write-floor", complained)
 
     def test_write_floor_records_the_measured_group_and_keeps_the_other(self):
-        self.record({"Den": 80, "HarnessCore": 50})
+        self.record({"Thalamus": 80, "HarnessCore": 50})
         status, _, _ = self.run_main(["package", "--write-floor"], package=self.PACKAGE)
         self.assertEqual(status, 0)
         self.assertEqual(json.loads(self.floor.read_text(encoding="utf-8")),
-                         {"ClaudeHarness": 87, "Den": 80, "HarnessCore": 96, "HarnessProbeArguments": 90, "OpenCodeHarness": 64})
+                         {"ClaudeHarness": 87, "Thalamus": 80, "HarnessCore": 96, "HarnessProbeArguments": 90, "OpenCodeHarness": 64})
         self.assertTrue(self.floor.read_text(encoding="utf-8").endswith("}\n"))
 
 

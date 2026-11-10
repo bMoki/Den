@@ -8,10 +8,10 @@
 # fails. docs/quality.md explains how to refresh it.
 
 included:
-  - Den
-  - DenTests
-  - DenUITests
-  - DenTestSupport
+  - Thalamus
+  - ThalamusTests
+  - ThalamusUITests
+  - ThalamusTestSupport
   - Packages/HarnessKit/Sources
   - Packages/HarnessKit/Tests
 excluded:
@@ -104,8 +104,8 @@ nesting:
   type_level: 2 # e.g. TranscriptEntry.Kind.CodingKeys
 
 # House rules. Custom rules match the absolute path of a file, and the checkout
-# is itself called Den, so the patterns below rule out Packages by name instead
-# of trusting `Den/` to mean the app.
+# may itself be called Thalamus, so the patterns below rule out Packages by
+# name instead of trusting `Thalamus/` to mean the app.
 custom_rules:
   no_comments:
     name: "No comments"
@@ -121,16 +121,16 @@ custom_rules:
     severity: error
   concrete_harness_outside_registry:
     name: "Concrete harnesses stay behind the registry"
-    included: ".*/(Den|DenTests|DenUITests|DenTestSupport)/.*\\.swift"
-    excluded: ".*/(Packages|Den/Harness)/.*"
+    included: ".*/(Thalamus|ThalamusTests|ThalamusUITests|ThalamusTestSupport)/.*\\.swift"
+    excluded: ".*/(Packages|Thalamus/Harness)/.*"
     regex: '^\s*(@\w+\s+)*import\s+((typealias|struct|class|enum|protocol|let|var|func)\s+)?(ClaudeHarness|OpenCodeHarness)\b'
-    message: "Only Den/Harness may import a concrete harness; everything else goes through HarnessCore."
+    message: "Only Thalamus/Harness may import a concrete harness; everything else goes through HarnessCore."
     severity: error
   shared_knows_no_harness:
     name: "Shared is harness-free"
-    included: ".*/Den/Shared/.*\\.swift"
+    included: ".*/Thalamus/Shared/.*\\.swift"
     regex: '^\s*(@\w+\s+)*import\s+((typealias|struct|class|enum|protocol|let|var|func)\s+)?HarnessCore\b'
-    message: "Den/Shared must not depend on HarnessCore."
+    message: "Thalamus/Shared must not depend on HarnessCore."
     severity: error
 
 reporter: xcode
