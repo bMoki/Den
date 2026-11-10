@@ -1,0 +1,86 @@
+#!/bin/sh
+# Draws the app icon PNGs from the brand SVGs, in every size the macOS slots of
+# the asset catalog ask for (16 to 1024 px). AppIcon is the SVG as it is;
+# AppIconDev, the icon of Den Dev, adds the orange DEV band at the bottom so
+# the two apps stay apart side by side.
+#
+#   Scripts/app-icon
+#
+# Run it again after the drawing in docs/marca/icone/app-indigo.svg changes.
+# Each size is drawn from the SVG itself, not scaled down from the 1024. The
+# 16 px comes from app-indigo-16.svg, the same drawing fitted to that pixel
+# grid, where the central dot would otherwise blur into the two halves.
+#
+# The PNGs are drawn in sRGB, so the hex colors of the SVG land in them
+# unchanged. The band takes the bottom quarter of the icon body (the 824 px
+# square at 100 px from the edge, radius 185, as in the SVGs), which stays
+# below the drawing.
+set -eu
+cd "$(dirname "$0")/.."
+
+swift - docs/marca/icone Den/Assets.xcassets <<'SWIFT'
+import AppKit
+
+let sources = URL(fileURLWithPath: CommandLine.arguments[1])
+let catalog = URL(fileURLWithPath: CommandLine.arguments[2])
+let sizes = [16, 32, 64, 128, 256, 512, 1024]
+
+let body = NSRect(x: 100, y: 100, width: 824, height: 824)
+let bodyRadius: CGFloat = 185
+let bandColor = NSColor(srgbRed: 1, green: 0x8C / 255.0, blue: 0x1A / 255.0, alpha: 1)
+let bandShare: CGFloat = 0.25
+
+func fail(_ message: String) -> Never {
+    FileHandle.standardError.write(Data("app-icon: \(message)\n".utf8))
+    exit(1)
+}
+
+func svg(_ name: String) -> NSImage {
+    let file = sources.appendingPathComponent(name)
+    guard let image = NSImage(contentsOf: file) else { fail("could not read \(file.path)") }
+    return image
+}
+
+func drawBand() {
+    NSBezierPath(roundedRect: body, xRadius: bodyRadius, yRadius: bodyRadius).addClip()
+    let band = NSRect(x: body.minX, y: body.minY, width: body.width, height: body.height * bandShare)
+    bandColor.setFill()
+    band.fill()
+    let font = NSFont.systemFont(ofSize: band.height * 0.53, weight: .heavy)
+    let label = NSAttributedString(string: "DEV", attributes: [.font: font, .foregroundColor: NSColor.white])
+    let baseline = band.midY - font.capHeight / 2
+    label.draw(at: NSPoint(x: band.midX - label.size().width / 2, y: baseline + font.descender))
+}
+
+func png(of drawing: NSImage, size: Int, banded: Bool) -> Data {
+    guard let space = CGColorSpace(name: CGColorSpace.sRGB), let bitmap = CGContext(
+        data: nil, width: size, height: size, bitsPerComponent: 8, bytesPerRow: 0, space: space,
+        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+    ) else { fail("could not make a \(size) px bitmap") }
+    let context = NSGraphicsContext(cgContext: bitmap, flipped: false)
+    NSGraphicsContext.saveGraphicsState()
+    NSGraphicsContext.current = context
+    context.imageInterpolation = .high
+    let scale = CGFloat(size) / 1024
+    bitmap.scaleBy(x: scale, y: scale)
+    drawing.draw(in: NSRect(x: 0, y: 0, width: 1024, height: 1024))
+    if banded { drawBand() }
+    NSGraphicsContext.restoreGraphicsState()
+    guard let image = bitmap.makeImage(),
+          let data = NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:])
+    else { fail("could not encode \(size) px") }
+    return data
+}
+
+let drawing = svg("app-indigo.svg")
+let smallDrawing = svg("app-indigo-16.svg")
+for (iconSet, banded) in [("AppIcon", false), ("AppIconDev", true)] {
+    let folder = catalog.appendingPathComponent("\(iconSet).appiconset")
+    for size in sizes {
+        let file = folder.appendingPathComponent("icon_\(size).png")
+        let data = png(of: size == 16 ? smallDrawing : drawing, size: size, banded: banded)
+        do { try data.write(to: file) } catch { fail("\(file.path): \(error)") }
+    }
+    print("app-icon: wrote \(folder.path)")
+}
+SWIFT
