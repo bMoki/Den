@@ -13,7 +13,7 @@ mesmas versões das ferramentas.
 | Formatação Swift (o estilo da casa, sem reescrever o que já é deliberado) | SwiftFormat 0.63.1 — `.swiftformat` | ✓ corrige sozinho | ✓ |
 | Lint: falhas lógicas (`a == a`, force unwrap, `Task` que engole erro, observer descartado, `super` esquecido…), idiomas e limites de tamanho | SwiftLint 0.65.1 — `.swiftlint.yml` | ✓ | ✓ |
 | Sem comentários novos em Swift; só diretivas de ferramenta passam | SwiftLint, regra `no_comments` | ✓ | ✓ |
-| Fronteiras de módulo: HarnessKit sem framework de UI, harness concreto só em `Den/Harness`, `Den/Shared` sem `HarnessCore` | SwiftLint, regras customizadas em `.swiftlint.yml` | ✓ | ✓ |
+| Fronteiras de módulo: HarnessKit sem framework de UI, harness concreto só em `Thalamus/Harness`, `Thalamus/Shared` sem `HarnessCore` | SwiftLint, regras customizadas em `.swiftlint.yml` | ✓ | ✓ |
 | Código duplicado (clone novo de ≥ 50 tokens e ≥ 5 linhas) | jscpd 5.4.0 — `.jscpd.json` | ✓ | ✓ |
 | Warnings do compilador viram erro (concorrência, deprecações, valores não usados, código inalcançável) | `swiftc` / `xcodebuild` — `Scripts/quality/build-strict` | | ✓ |
 | Código não usado: declarações, parâmetros, imports, propriedades só atribuídas | Periphery 3.8.0 — `.periphery.yml` e `Packages/HarnessKit/.periphery.yml` | | ✓ |
@@ -63,7 +63,7 @@ do jeito que os hooks esperam.
 - **Import recusado** (`headless_harnesskit`,
   `concrete_harness_outside_registry`, `shared_knows_no_harness`): a
   dependência cruza uma fronteira de módulo. O HarnessKit não conhece UI, o
-  app só fala com um harness concreto por `Den/Harness`, e `Den/Shared` não
+  app só fala com um harness concreto por `Thalamus/Harness`, e `Thalamus/Shared` não
   conhece harness nenhum.
 - **jscpd achou um clone novo**: o relatório marca com `[NEW]` os dois trechos.
   Extraia o que é comum. Se a repetição for intencional, envolva o trecho com
@@ -98,7 +98,7 @@ swift test --package-path Packages/HarnessKit --enable-code-coverage
 Scripts/quality/coverage package
 
 rm -rf build/app.xcresult
-xcodebuild test -project Den.xcodeproj -scheme Den -destination 'platform=macOS' -skipPackagePluginValidation \
+xcodebuild test -project Thalamus.xcodeproj -scheme Thalamus -destination 'platform=macOS' -skipPackagePluginValidation \
   -enableCodeCoverage YES -resultBundlePath build/app.xcresult
 Scripts/quality/coverage app build/app.xcresult
 ```
@@ -117,7 +117,7 @@ número que o job imprime antes de gravar um piso novo.
 
 ```sh
 swift test --package-path Packages/HarnessKit --sanitize=thread
-xcodebuild test -project Den.xcodeproj -scheme Den -destination 'platform=macOS' -skipPackagePluginValidation \
+xcodebuild test -project Thalamus.xcodeproj -scheme Thalamus -destination 'platform=macOS' -skipPackagePluginValidation \
   -enableThreadSanitizer YES
 ```
 

@@ -66,7 +66,7 @@ Scripts/app-icon
 ```
 
 O script desenha cada tamanho que o catálogo pede (16 a 1024 px) direto do
-SVG, em sRGB, e grava por cima dos PNGs de `Den/Assets.xcassets`. O de 16 px
+SVG, em sRGB, e grava por cima dos PNGs de `Thalamus/Assets.xcassets`. O de 16 px
 sai do `app-indigo-16.svg`; os outros, do `app-indigo.svg`. No `AppIconDev`,
 ele acrescenta embaixo a faixa laranja "DEV" (`#FF8C1A`), com um quarto da
 altura do corpo, abaixo do desenho. Rode de novo sempre que um dos dois SVGs

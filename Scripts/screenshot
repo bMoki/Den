@@ -62,7 +62,7 @@ esac
 app="build/DerivedData/Build/Products/Debug/Den Dev.app"
 if [ "$build" = yes ]; then
     xcodebuild build -quiet \
-        -project Den.xcodeproj -scheme Den -configuration Debug \
+        -project Thalamus.xcodeproj -scheme Thalamus -configuration Debug \
         -destination 'platform=macOS' \
         -derivedDataPath build/DerivedData \
         -skipPackagePluginValidation \

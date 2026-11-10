@@ -1,10 +1,10 @@
 # Periphery: code nothing uses in the app, its tests and the UI tests
 # (unused declarations, parameters, imports and assign-only properties).
 # Run it with `Scripts/quality/unused-code`; HarnessKit has its own config.
-project: Den.xcodeproj
+project: Thalamus.xcodeproj
 schemes:
-  - Den
-  - DenUITests
+  - Thalamus
+  - ThalamusUITests
 # HarnessKit is scanned on its own, where its tests count as users too.
 report_exclude:
   - Packages/**

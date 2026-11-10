@@ -1,6 +1,6 @@
 #!/bin/sh
 # Stands in for a harness CLI in Thalamus's tests. Driven by the step files in
-# $FAKE_CLI_STATE; DenTestSupport/FakeCLI.swift writes them and explains
+# $FAKE_CLI_STATE; ThalamusTestSupport/FakeCLI.swift writes them and explains
 # the format. When the directory is still empty, the steps are unpacked from
 # $FAKE_CLI_SCENARIO, one "<file> <base64>" per line.
 
