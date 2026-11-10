@@ -5,7 +5,7 @@ struct UITestEnvironment: RootedEnvironment {
     static let rootKey = "THALAMUS_UI_TEST_ROOT"
     static let cliKeyPrefix = "THALAMUS_CLI_"
     static let projectSetupKey = "THALAMUS_PROJECT_SETUP"
-    static let defaultsSuite = "Den.UITests"
+    static let defaultsSuite = "Thalamus.UITests"
     static let ghKey = "THALAMUS_GH"
     static let nsKey = "THALAMUS_NS"
 

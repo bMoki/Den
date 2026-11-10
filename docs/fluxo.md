@@ -1,8 +1,8 @@
 # Fluxo de trabalho
 
 O Den real, instalado em `/Applications`, é o que se usa no dia a dia. O
-desenvolvimento acontece no Den Dev, um app à parte que nunca toca nos dados
-do real. O real só muda quando você roda `Scripts/release`.
+desenvolvimento acontece no Thalamus Dev, um app à parte que nunca toca nos
+dados do real. O real só muda quando você roda `Scripts/release`.
 
 ## Do ticket ao Den real
 
@@ -13,9 +13,9 @@ do real. O real só muda quando você roda `Scripts/release`.
    git switch -c feat/<assunto>
    ```
 
-2. **Testar no Den Dev.** Rodar pelo Xcode, ou pelos testes, abre o Den Dev
-   (ícone com a faixa laranja "DEV"). Ele pode ficar aberto ao lado do Den
-   real. Para os testes e o gate, use os comandos de
+2. **Testar no Thalamus Dev.** Rodar pelo Xcode, ou pelos testes, abre o
+   Thalamus Dev (ícone com a faixa laranja "DEV"). Ele pode ficar aberto ao
+   lado do Den real. Para os testes e o gate, use os comandos de
    [quality.md](quality.md), ou rode `Scripts/screenshot` para ver uma tela
    sem abrir nada à mão.
 
@@ -68,42 +68,51 @@ cinco mais novos. O app fica zipado ali para o macOS não achar um segundo Den.
 
 ## Onde fica cada coisa
 
-| O quê | Den (real) | Den Dev | Testes de interface |
+| O quê | Thalamus (real, Release) | Thalamus Dev (Debug) | Testes de interface |
 |---|---|---|---|
-| Como abre | `/Applications/Den.app` | build Debug do Xcode | XCUITest e `Scripts/screenshot` |
-| Bundle id | `gabrielpassos.Den` | `gabrielpassos.Den.dev` | `gabrielpassos.Den.dev` |
+| Como abre | o app em `/Applications`, instalado pelo `Scripts/release` | build Debug do Xcode | XCUITest e `Scripts/screenshot` |
+| Bundle id | `dev.brenosonda.Thalamus` | `dev.brenosonda.Thalamus.dev` | `dev.brenosonda.Thalamus.dev` |
 | Ícone | `AppIcon` | `AppIconDev`, com a faixa "DEV" | `AppIconDev` |
-| Sessões, anexos, PRs | `~/Library/Application Support/Den` | `~/Library/Application Support/Den Dev` | uma pasta descartável em `/private/tmp` (`ThalamusUITests-…`, `ThalamusScreenshot-…`) |
-| Preferências | `gabrielpassos.Den` | `Den.Dev` | `Den.UITests`, zeradas a cada pasta nova |
+| Sessões, anexos, PRs | `~/Library/Application Support/Thalamus` | `~/Library/Application Support/Thalamus Dev` | uma pasta descartável em `/private/tmp` (`ThalamusUITests-…`, `ThalamusScreenshot-…`) |
+| Preferências | `dev.brenosonda.Thalamus` | `Thalamus.Dev` | `Thalamus.UITests`, zeradas a cada pasta nova |
 | CLIs (`ns`, `claude`, `opencode`) | os que o shell de login acha | o `ns` do `cli` em desenvolvimento (veja abaixo); os outros, os que o shell de login acha | os falsos de `Scripts/fake-cli`; nos XCUITests não há `ns` |
 
-Os testes unitários rodam dentro do Den Dev e também não tocam no real.
+Os testes unitários rodam dentro do Thalamus Dev e também não tocam no real.
 
-O Den usa o `ns` que o shell de login acha (hoje `~/.local/bin/ns`), a menos
-que a preferência `Den.nsPath` dele aponte outro. O `claude` e o `opencode`
-vêm do shell de login nos dois apps, com caminhos comuns como
+Na primeira abertura, quando a pasta de dados dele ainda não existe, o
+Thalamus copia a do Den (`~/Library/Application Support/Den`) e as
+preferências `Den.*` do domínio `gabrielpassos.Den`, trocando o prefixo para
+`Thalamus.`. As sessões copiadas passam a apontar para os anexos copiados. O
+Thalamus Dev faz o mesmo a partir do Den Dev (`Den Dev` e `Den.Dev`), nunca do
+Den real. Nada do Den é apagado nem alterado, uma preferência `Thalamus.*`
+que já exista não é trocada, e a cópia não roda de novo depois que a pasta
+existe. Quando o app abre como host dos testes unitários, não migra nada.
+
+O Thalamus usa o `ns` que o shell de login acha (hoje `~/.local/bin/ns`), a
+menos que a preferência `Thalamus.nsPath` dele aponte outro. O `claude` e o
+`opencode` vêm do shell de login nos dois apps, com caminhos comuns como
 `/opt/homebrew/bin` de reserva.
 
-## O Den Dev isolado, com o ns em desenvolvimento
+## O Thalamus Dev isolado, com o ns em desenvolvimento
 
-O `ns` e o Den evoluem juntos. O Den Dev usa o `ns` compilado do repositório
-`cli`, num workspace só de teste. Assim, criar, arquivar ou remover uma Sessão
-nele não mexe nas branches e worktrees reais, e o Den real segue com o `ns`
-instalado em `~/.local/bin/ns`.
+O `ns` e o Thalamus evoluem juntos. O Thalamus Dev usa o `ns` compilado do
+repositório `cli`, num workspace só de teste. Assim, criar, arquivar ou remover
+uma Sessão nele não mexe nas branches e worktrees reais, e o Den real
+segue com o `ns` instalado em `~/.local/bin/ns`.
 
 ```sh
-Scripts/dev-ns setup   # uma vez: compila o cli, monta o workspace e aponta o Den Dev
-Scripts/dev-ns build   # a cada mudança no cli; depois reabra o Den Dev
-Scripts/dev-ns off     # volta o Den Dev para o ns instalado e o workspace real
+Scripts/dev-ns setup   # uma vez: compila o cli, monta o workspace e aponta o Thalamus Dev
+Scripts/dev-ns build   # a cada mudança no cli; depois reabra o Thalamus Dev
+Scripts/dev-ns off     # volta o Thalamus Dev para o ns instalado e o workspace real
 ```
 
 O `setup` pode rodar de novo: ele reescreve a configuração de teste a partir
 da real e só cria os clones e os templates que faltam. Ele monta:
 
-| O quê | Den Dev | Den real |
+| O quê | Thalamus Dev | Den real |
 |---|---|---|
-| `ns` | `cli/dist/ns` (preferência `Den.nsPath`) | `~/.local/bin/ns` |
-| Configuração do `ns` | `~/.config/ns-dev` (preferência `Den.nsConfigDir`) | `~/.config/ns` |
+| `ns` | `cli/dist/ns` (preferência `Thalamus.nsPath`) | `~/.local/bin/ns` |
+| Configuração do `ns` | `~/.config/ns-dev` (preferência `Thalamus.nsConfigDir`) | `~/.config/ns` |
 | Repositórios e worktrees | `~/Developer/ns-dev`, com clones locais dos reais | `~/Developer` |
 | Estado do `ns` | `~/.local/state/ns-dev` | `~/.local/state/ns` |
 | Nome do produto (containers, volumes, snapshots, URLs locais) | `nsdev` | o do `env.json` real |
@@ -113,9 +122,9 @@ da real e só cria os clones e os templates que faltam. Ele monta:
 Os clones buscam do GitHub, mas não conseguem dar push: o endereço de push
 deles é inválido de propósito. Os apps das branches de teste sobem com `nsdev` nas URLs
 locais e nas variáveis de produto dos templates. Os hooks do IntelliJ ficam desligados, e o
-`setup` apaga as branches que o Den Dev lembrava do workspace real.
+`setup` apaga as branches que o Thalamus Dev lembrava do workspace real.
 
-O Den Dev exporta a pasta de configuração como `NS_CONFIG_DIR` ao abrir, então
+O Thalamus Dev exporta a pasta de configuração como `NS_CONFIG_DIR` ao abrir, então
 os terminais do painel e os agentes também usam o workspace de teste. Nos
 terminais, porém, `ns` continua sendo o do `PATH`, porque o shell de login
 monta o `PATH` de novo; chame `cli/dist/ns` pelo caminho para usar o de

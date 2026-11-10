@@ -88,7 +88,7 @@ private func queuedLines(_ chat: ChatModel) -> [String] {
     let chat = ChatModel(store: FileTranscriptStore(root: root),
                          restoring: Session(title: "reopened", workingDirectory: root,
                                             segments: [segment]),
-                         cache: scratchCache)
+                         cache: scratchCache, attachmentsRoot: root.appending(path: "attachments"))
 
     #expect(chat.sentMessages == ["/review"])
 }

@@ -135,7 +135,7 @@ final class ChatModel {
     init(store: FileTranscriptStore, workingDirectory: URL,
          harness: HarnessID? = nil, cache: SessionCache = .standard,
          registry: HarnessRegistry = .standard,
-         attachmentsRoot: URL = ChatModel.standardAttachmentsRoot) {
+         attachmentsRoot: URL) {
         self.store = store
         self.cache = cache
         self.registry = registry
@@ -157,7 +157,7 @@ final class ChatModel {
     init(store: FileTranscriptStore, restoring session: Session,
          cache: SessionCache = .standard,
          registry: HarnessRegistry = .standard,
-         attachmentsRoot: URL = ChatModel.standardAttachmentsRoot) {
+         attachmentsRoot: URL) {
         self.store = store
         self.cache = cache
         self.registry = registry
@@ -266,10 +266,6 @@ final class ChatModel {
 
             append(.notice, "não consegui subir o harness: \(error)")
         }
-    }
-
-    nonisolated static var standardAttachmentsRoot: URL {
-        URL.applicationSupportDirectory.appending(path: "Den/attachments")
     }
 
     private func persistAttachment(_ pending: PendingAttachment) -> Attachment? {

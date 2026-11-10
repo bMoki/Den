@@ -1,8 +1,8 @@
 #!/bin/sh
 # Draws the app icon PNGs from the brand SVGs, in every size the macOS slots of
 # the asset catalog ask for (16 to 1024 px). AppIcon is the SVG as it is;
-# AppIconDev, the icon of Den Dev, adds the orange DEV band at the bottom so
-# the two apps stay apart side by side.
+# AppIconDev, the icon of Thalamus Dev, adds the orange DEV band at the bottom
+# so the two apps stay apart side by side.
 #
 #   Scripts/app-icon
 #

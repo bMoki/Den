@@ -4,7 +4,7 @@ import Foundation
 
 @Test func devKeepsItsFilesApartFromProduction() {
     let environment = DevEnvironment()
-    let support = URL.applicationSupportDirectory.appending(path: "Den Dev")
+    let support = URL.applicationSupportDirectory.appending(path: "Thalamus Dev")
 
     #expect(environment.sessionsRoot == support.appending(path: "sessions"))
     #expect(environment.attachmentsRoot == support.appending(path: "attachments"))
@@ -42,4 +42,11 @@ import Foundation
     #expect(environment.nsConfigDirectory == nil)
     scratch.defaults.set("~/.config/ns-dev", forKey: NsConfigFolder.key)
     #expect(environment.nsConfigDirectory == "~/.config/ns-dev")
+}
+
+@Test func devMigratesFromDenDevOnly() {
+    #expect(DevEnvironment().migration
+            == DenMigration(denFolder: URL.applicationSupportDirectory.appending(path: "Den Dev"),
+                            denDomain: "Den.Dev",
+                            folder: URL.applicationSupportDirectory.appending(path: "Thalamus Dev")))
 }

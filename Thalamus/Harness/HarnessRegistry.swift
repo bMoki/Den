@@ -29,7 +29,7 @@ nonisolated struct HarnessRegistry {
         return declared.isEmpty ? cache.rememberedKnobs(for: id) : declared
     }
 
-    private static let defaultKey = "Den.defaultHarness"
+    private static let defaultKey = PreferenceKey.named("defaultHarness")
 
     func preferred(in defaults: UserDefaults) -> HarnessID {
         guard let raw = defaults.string(forKey: Self.defaultKey) else { return fallback }

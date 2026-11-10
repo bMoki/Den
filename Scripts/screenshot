@@ -59,7 +59,7 @@ case "$output" in
     *) output=$repo/$output ;;
 esac
 
-app="build/DerivedData/Build/Products/Debug/Den Dev.app"
+app="build/DerivedData/Build/Products/Debug/Thalamus Dev.app"
 if [ "$build" = yes ]; then
     xcodebuild build -quiet \
         -project Thalamus.xcodeproj -scheme Thalamus -configuration Debug \
@@ -75,7 +75,7 @@ fi
 root=$(mktemp -d /private/tmp/ThalamusScreenshot-XXXXXX)
 # A seeded root already has sessions, so the app would keep the preferences of
 # the last run; start them over here instead.
-defaults delete Den.UITests >/dev/null 2>&1 || true
+defaults delete Thalamus.UITests >/dev/null 2>&1 || true
 [ -z "$seed" ] || (cd "$root" && sh -c "$seed")
 case "$ns_status" in
     ''|/*) ;;
@@ -88,7 +88,7 @@ env "THALAMUS_UI_TEST_ROOT=$root" \
     "FAKE_NS_STATUS=$ns_status" \
     "THALAMUS_CLI_claude-code=$repo/Scripts/fake-cli/claude-code" \
     "THALAMUS_CLI_opencode=$repo/Scripts/fake-cli/opencode" \
-    "$app/Contents/MacOS/Den Dev" -ApplePersistenceIgnoreState YES >"$root/app.log" 2>&1 &
+    "$app/Contents/MacOS/Thalamus Dev" -ApplePersistenceIgnoreState YES >"$root/app.log" 2>&1 &
 pid=$!
 
 cleanup() {

@@ -126,17 +126,6 @@ private let reported = ContextUsage(
     }
 }
 
-private func restoredChat(measured: ContextUsage?, entries: [TranscriptEntry] = []) -> ChatModel {
-    let root = FileManager.default.temporaryDirectory
-        .appending(path: "ThalamusTests-" + UUID().uuidString)
-    let segment = Segment(harness: HarnessID(rawValue: "test-" + UUID().uuidString),
-                          harnessSessionID: "", model: "", entries: entries,
-                          context: measured)
-    let session = Session(title: "restored", workingDirectory: root, segments: [segment])
-    return ChatModel(store: FileTranscriptStore(root: root),
-                     restoring: session, cache: scratchCache)
-}
-
 @Test func aMeasuredUsageIsSavedWithTheSession() async throws {
     try await withLiveChat { live in
         await live.session.offer(usage: reported)
@@ -149,7 +138,7 @@ private func restoredChat(measured: ContextUsage?, entries: [TranscriptEntry] = 
 }
 
 @Test func aReopenedSessionShowsTheUsageLastMeasured() {
-    let chat = restoredChat(measured: reported)
+    let chat = chatRestoring(context: reported)
 
     #expect(chat.contextUsage == reported)
     #expect(chat.contextWindow == 200_000)
@@ -158,7 +147,7 @@ private func restoredChat(measured: ContextUsage?, entries: [TranscriptEntry] = 
 }
 
 @Test func aReopenedSessionKeepsItsMeasurementUntilTheHarnessIsBack() async {
-    let chat = restoredChat(measured: reported)
+    let chat = chatRestoring(context: reported)
 
     await chat.refreshContextUsage()
 
@@ -167,7 +156,7 @@ private func restoredChat(measured: ContextUsage?, entries: [TranscriptEntry] = 
 }
 
 @Test func aSessionNeverMeasuredReopensWithoutUsage() {
-    let chat = restoredChat(measured: nil)
+    let chat = chatRestoring()
 
     #expect(chat.contextUsage == nil)
     #expect(chat.contextWindow == nil)

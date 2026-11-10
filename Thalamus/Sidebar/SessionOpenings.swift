@@ -2,7 +2,7 @@ import Foundation
 import HarnessCore
 
 nonisolated struct SessionOpenings: StoredInDefaults, Equatable, Sendable {
-    static let key = "Den.sessionOpenings"
+    static let key = PreferenceKey.named("sessionOpenings")
 
     var openedAt: [UUID: Date] = [:]
 

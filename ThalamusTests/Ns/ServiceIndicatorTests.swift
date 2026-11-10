@@ -71,11 +71,11 @@ private func scratchDefaults() throws -> UserDefaults {
     for target in IndicatorTarget.all {
         defaults.set("globe", forKey: target.storageKey)
     }
-    defaults.set("kept", forKey: "Den.sidebarWidth")
+    defaults.set("kept", forKey: "Thalamus.sidebarWidth")
 
     IndicatorPreferences.restoreStandards(in: defaults)
 
     #expect(defaults.string(forKey: IndicatorStyle.storageKey) == nil)
     #expect(IndicatorTarget.all.allSatisfy { defaults.string(forKey: $0.storageKey) == nil })
-    #expect(defaults.string(forKey: "Den.sidebarWidth") == "kept")
+    #expect(defaults.string(forKey: "Thalamus.sidebarWidth") == "kept")
 }

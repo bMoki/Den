@@ -6,7 +6,7 @@ enum InspectorPane: String {
     case files
     case changes
 
-    static let storageKey = "Den.inspector"
+    static let storageKey = PreferenceKey.named("inspector")
 
     func shown(inBranch: Bool) -> InspectorPane {
         self == .services && !inBranch ? .files : self

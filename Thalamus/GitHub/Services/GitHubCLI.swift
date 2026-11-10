@@ -28,7 +28,7 @@ actor GitHubCLI: PullRequestFetching {
     typealias Runner = @Sendable (_ executable: String, _ arguments: [String], _ directory: URL?,
                                   _ environment: [String: String]?, _ timeout: Duration) async -> ProcessOutcome?
 
-    nonisolated static let pathKey = "Den.ghPath"
+    nonisolated static let pathKey = PreferenceKey.named("ghPath")
     nonisolated static let defaultCandidates = ["/opt/homebrew/bin/gh", "/usr/local/bin/gh"]
     nonisolated static let quiet = ["GH_PROMPT_DISABLED": "1", "GH_NO_UPDATE_NOTIFIER": "1", "NO_COLOR": "1"]
 

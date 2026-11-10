@@ -1,9 +1,9 @@
 import Foundation
 
 struct DevEnvironment: AppEnvironment {
-    static let defaultsSuite = "Den.Dev"
+    static let defaultsSuite = "Thalamus.Dev"
 
-    private let support = URL.applicationSupportDirectory.appending(path: "Den Dev")
+    private let support = URL.applicationSupportDirectory.appending(path: "Thalamus Dev")
 
     let defaults: UserDefaults
 
@@ -17,4 +17,8 @@ struct DevEnvironment: AppEnvironment {
     var registry: HarnessRegistry { .standard }
     var workingDirectory: URL { URL(fileURLWithPath: NSHomeDirectory()) }
     var nsConfigDirectory: String? { preference(NsConfigFolder.key) }
+    var migration: DenMigration? {
+        DenMigration(denFolder: URL.applicationSupportDirectory.appending(path: "Den Dev"),
+                     denDomain: "Den.Dev", folder: support)
+    }
 }

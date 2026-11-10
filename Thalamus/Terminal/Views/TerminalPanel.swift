@@ -7,7 +7,7 @@ struct TerminalPanel: View {
 
     @Environment(PanelTerminals.self) private var terminals
     @Environment(NsWorkspace.self) private var ns
-    @AppStorage("Den.terminalPanelHeight") private var height: Double = 220
+    @AppStorage(PreferenceKey.named("terminalPanelHeight")) private var height: Double = 220
 
     var body: some View {
         if terminals.isPanelShown(for: row), let current = terminals.selected(in: row) {

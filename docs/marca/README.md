@@ -57,8 +57,8 @@ raios 10,5 × 23,3, giradas 12°).
 
 ## Ícone do app no Xcode
 
-Os PNGs do `AppIcon` (Release) e do `AppIconDev` (Den Dev, o build Debug) saem
-dos SVGs Índigo pelo script (a tabela "Onde fica cada coisa" de
+Os PNGs do `AppIcon` (Release) e do `AppIconDev` (Thalamus Dev, o build
+Debug) saem dos SVGs Índigo pelo script (a tabela "Onde fica cada coisa" de
 [fluxo.md](../fluxo.md) diz qual app usa qual):
 
 ```sh

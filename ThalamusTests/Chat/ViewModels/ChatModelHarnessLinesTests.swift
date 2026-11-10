@@ -24,7 +24,7 @@ private func question(_ text: String) -> TranscriptEntry {
                 entries: [question("e agora"), reply("do OpenCode")]),
     ])
     let chat = ChatModel(store: FileTranscriptStore(root: root), restoring: session,
-                         cache: scratchCache)
+                         cache: scratchCache, attachmentsRoot: root.appending(path: "attachments"))
 
     let replies = chat.lines.filter { $0.role == .assistant }
     #expect(replies.map(\.harness) == [claude, openCode])

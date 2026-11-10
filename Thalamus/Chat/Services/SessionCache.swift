@@ -11,11 +11,11 @@ nonisolated struct SessionCache {
     static let standard = SessionCache(defaults: .standard)
 
     private func catalogKey(_ directory: URL, _ harness: HarnessID) -> String {
-        "Den.catalog." + harness.rawValue + "." + directory.standardizedFileURL.path
+        PreferenceKey.named("catalog.") + harness.rawValue + "." + directory.standardizedFileURL.path
     }
 
     private func lastCatalogKey(_ harness: HarnessID) -> String {
-        "Den.catalog.last." + harness.rawValue
+        PreferenceKey.named("catalog.last.") + harness.rawValue
     }
 
     func remember(_ catalog: CommandCatalog, for directory: URL,
@@ -38,7 +38,7 @@ nonisolated struct SessionCache {
     }
 
     private func knobsKey(_ harness: HarnessID) -> String {
-        "Den.knobs." + harness.rawValue
+        PreferenceKey.named("knobs.") + harness.rawValue
     }
 
     func remember(_ knobs: [HarnessKnob], for harness: HarnessID) {
@@ -53,9 +53,9 @@ nonisolated struct SessionCache {
         return knobs
     }
 
-    private let harnessPreferencesKey = "Den.sessionHarnessPreferences"
+    private let harnessPreferencesKey = PreferenceKey.named("sessionHarnessPreferences")
 
-    private let legacyPreferencesKey = "Den.sessionPreferences"
+    private let legacyPreferencesKey = PreferenceKey.named("sessionPreferences")
 
     func preferences(for sessionID: UUID, harness: HarnessID) -> [String: String]? {
         let all = defaults.dictionary(forKey: harnessPreferencesKey)
@@ -85,7 +85,7 @@ nonisolated struct SessionCache {
         defaults.set(all, forKey: harnessPreferencesKey)
     }
 
-    private let sessionDefaultsKey = "Den.sessionDefaults"
+    private let sessionDefaultsKey = PreferenceKey.named("sessionDefaults")
 
     func sessionDefault(for harness: HarnessID) -> [String: String] {
         let all = defaults.dictionary(forKey: sessionDefaultsKey)

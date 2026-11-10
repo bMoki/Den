@@ -392,7 +392,7 @@ actor NsClient {
 }
 
 extension NsClient {
-    nonisolated static let pathKey = "Den.nsPath"
+    nonisolated static let pathKey = PreferenceKey.named("nsPath")
 
     static func locating(override: String?, shell: ShellEnvironment = .shared) -> NsClient {
         NsClient {

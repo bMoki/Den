@@ -10,12 +10,14 @@ protocol AppEnvironment {
     var defaults: UserDefaults { get }
     var registry: HarnessRegistry { get }
     var workingDirectory: URL { get }
+    var migration: DenMigration? { get }
 }
 
 extension AppEnvironment {
     var ghOverride: String? { nil }
     var nsOverride: String? { preference(NsClient.pathKey).map { ($0 as NSString).expandingTildeInPath } }
     var nsConfigDirectory: String? { nil }
+    var migration: DenMigration? { nil }
 
     func preference(_ key: String) -> String? {
         defaults.string(forKey: key).flatMap { $0.isEmpty ? nil : $0 }
@@ -43,4 +45,9 @@ func resolveEnvironment(_ variables: [String: String],
                         debugBuild: Bool = isDebugBuild) -> any AppEnvironment {
     guard debugBuild else { return ProductionEnvironment() }
     return UITestEnvironment(variables) ?? DevEnvironment()
+}
+
+func migrateFromDen(_ environment: any AppEnvironment, _ variables: [String: String]) {
+    guard variables["XCTestConfigurationFilePath"] == nil else { return }
+    environment.migration?.run(into: environment.defaults)
 }

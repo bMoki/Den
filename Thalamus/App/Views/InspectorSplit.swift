@@ -5,7 +5,7 @@ struct InspectorSplit<Main: View, Inspector: View>: View {
     @ViewBuilder var main: () -> Main
     @ViewBuilder var inspector: () -> Inspector
 
-    @AppStorage("Den.inspectorWidth") private var inspectorWidth: Double = 480
+    @AppStorage(PreferenceKey.named("inspectorWidth")) private var inspectorWidth: Double = 480
 
     private static var minimumMainWidth: CGFloat { 420 }
     private static var minimumInspectorWidth: Double { 320 }

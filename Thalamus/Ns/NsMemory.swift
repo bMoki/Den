@@ -1,7 +1,7 @@
 import Foundation
 
 nonisolated struct NsMemory: StoredInDefaults, Equatable, Sendable {
-    static let key = "Den.nsMemory"
+    static let key = PreferenceKey.named("nsMemory")
 
     var worktreesDir: String?
     var branches: [String: String] = [:]

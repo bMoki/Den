@@ -43,7 +43,7 @@ nonisolated struct SidebarFavorite: Codable, Hashable, Sendable {
 }
 
 nonisolated struct SidebarLayout: StoredInDefaults, Equatable, Sendable {
-    static let key = "Den.sidebarLayout"
+    static let key = PreferenceKey.named("sidebarLayout")
 
     var favorites: Set<SidebarFavorite> = []
     var order = SidebarOrder.name

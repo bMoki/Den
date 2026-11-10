@@ -4,7 +4,7 @@ import SwiftUI
 enum IndicatorStyle: String, CaseIterable, Identifiable {
     case dots, icons
 
-    static let storageKey = "Den.indicatorStyle"
+    static let storageKey = PreferenceKey.named("indicatorStyle")
     static let standard = IndicatorStyle.dots
 
     var id: String { rawValue }
@@ -134,7 +134,7 @@ enum IndicatorTarget: Hashable, Identifiable {
         }
     }
 
-    var storageKey: String { "Den.indicator.\(id)" }
+    var storageKey: String { PreferenceKey.named("indicator.\(id)") }
 
     private var icons: Icons? {
         switch self {

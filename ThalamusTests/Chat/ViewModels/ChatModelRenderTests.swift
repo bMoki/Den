@@ -10,22 +10,12 @@ private func entry(_ kind: TranscriptEntry.Kind,
     TranscriptEntry(timestamp: moment, kind: kind, raw: raw)
 }
 
-private func restored(_ entries: [TranscriptEntry]) -> ChatModel {
-    let root = FileManager.default.temporaryDirectory
-        .appending(path: "ThalamusTests-" + UUID().uuidString)
-    let segment = Segment(harness: HarnessID(rawValue: "test-" + UUID().uuidString),
-                          harnessSessionID: "", model: "", entries: entries)
-    let session = Session(title: "restored", workingDirectory: root, segments: [segment])
-    return ChatModel(store: FileTranscriptStore(root: root),
-                     restoring: session, cache: scratchCache)
-}
-
 private func shape(_ chat: ChatModel) -> [String] {
     chat.lines.map { "\($0.role):\($0.text)" }
 }
 
 @Test func renderKeepsTheTranscriptInOrder() {
-    let chat = restored([
+    let chat = chatRestoring([
         entry(.userMessage(text: "question", attachments: [])),
         entry(.assistantThinking("weighing it")),
         entry(.assistantText("answer")),
@@ -34,7 +24,7 @@ private func shape(_ chat: ChatModel) -> [String] {
 }
 
 @Test func blankTextNeverBecomesALine() {
-    let chat = restored([
+    let chat = chatRestoring([
         entry(.assistantText("   \n  ")),
         entry(.userMessage(text: "", attachments: [])),
         entry(.assistantThinking("")),
@@ -46,7 +36,7 @@ private func shape(_ chat: ChatModel) -> [String] {
 // MARK: - Tools
 
 @Test func questionToolCallsAndTheirResultsStayHidden() {
-    let chat = restored([
+    let chat = chatRestoring([
         entry(.toolCall(ToolCall(id: "q1", rawName: "AskUserQuestion",
                                  canonical: nil, input: .object([:])))),
         entry(.toolResult(ToolResult(callID: "q1", isError: false,
@@ -60,7 +50,7 @@ private func shape(_ chat: ChatModel) -> [String] {
 }
 
 @Test func aToolCallKeepsItsVerbAndShowsTheFileName() throws {
-    let chat = restored([
+    let chat = chatRestoring([
         entry(.toolCall(ToolCall(id: "t1", rawName: "Read", canonical: .read,
                                  input: .object(["file_path": .string("/a/b/App.swift")])))),
     ])
@@ -70,7 +60,7 @@ private func shape(_ chat: ChatModel) -> [String] {
 }
 
 @Test func aFailedToolResultSaysSo() {
-    let chat = restored([
+    let chat = chatRestoring([
         entry(.toolResult(ToolResult(callID: "t1", isError: true,
                                      content: .string("no such file")))),
     ])
@@ -82,7 +72,7 @@ private func shape(_ chat: ChatModel) -> [String] {
 @Test func theAnswerAfterACompactionBecomesTheSummaryDigest() throws {
     let compaction = ContextCompaction(trigger: .automatic, tokensBefore: 155_000,
                                        tokensAfter: 8_000, duration: 75)
-    let chat = restored([
+    let chat = chatRestoring([
         entry(.contextCompacted(compaction)),
         entry(.assistantText("here is what happened")),
         entry(.assistantText("and now the real answer")),
@@ -98,7 +88,7 @@ private func shape(_ chat: ChatModel) -> [String] {
 }
 
 @Test func aContinuedSessionMessageBecomesASummaryDigest() throws {
-    let chat = restored([
+    let chat = chatRestoring([
         entry(.userMessage(text: "This session is being continued from an earlier one.",
                            attachments: [])),
     ])
@@ -110,7 +100,7 @@ private func shape(_ chat: ChatModel) -> [String] {
 @Test func localCommandOutputBecomesACommandDigest() throws {
     let text = "<command-name>/status</command-name>\n"
         + "<local-command-stdout>ok</local-command-stdout>"
-    let chat = restored([entry(.userMessage(text: text, attachments: []))])
+    let chat = chatRestoring([entry(.userMessage(text: text, attachments: []))])
 
     let line = try #require(chat.lines.first)
     #expect(line.title == Digest.command)
@@ -118,7 +108,7 @@ private func shape(_ chat: ChatModel) -> [String] {
 }
 
 @Test func theCompactCommandNeverBecomesALine() {
-    let chat = restored([
+    let chat = chatRestoring([
         entry(.userMessage(text: SlashCatalog.compactCommand, attachments: [])),
         entry(.assistantText("done")),
     ])
@@ -128,7 +118,7 @@ private func shape(_ chat: ChatModel) -> [String] {
 // MARK: - Notices
 
 @Test func silentNoticesNeverBecomeLines() {
-    let chat = restored([
+    let chat = chatRestoring([
         entry(.systemNotice(subtype: "init", text: "booting")),
         entry(.systemNotice(subtype: "rate_limit", text: "slow down")),
         entry(.systemNotice(subtype: "harness_switch", text: "swapped")),
@@ -139,7 +129,7 @@ private func shape(_ chat: ChatModel) -> [String] {
 
 @Test func aRateLimitNoticeFlipsTheFlagWithoutShowing() {
     func chat(_ status: String) -> ChatModel {
-        restored([entry(
+        chatRestoring([entry(
             .systemNotice(subtype: "rate_limit", text: "slow down"),
             raw: .object(["rate_limit_info": .object(["status": .string(status)])]))])
     }
@@ -152,7 +142,7 @@ private func shape(_ chat: ChatModel) -> [String] {
     func system(_ subtype: String) -> JSONValue {
         .object(["type": .string("system"), "subtype": .string(subtype)])
     }
-    let chat = restored([
+    let chat = chatRestoring([
         entry(.unrecognized(discriminator: "hook", payload: system("hook_started")),
               raw: system("hook_started")),
         entry(.unrecognized(discriminator: "hook", payload: system("hook_response")),
@@ -164,7 +154,7 @@ private func shape(_ chat: ChatModel) -> [String] {
 }
 
 @Test func onlyADeniedPermissionLeavesAMessage() {
-    let chat = restored([
+    let chat = chatRestoring([
         entry(.permissionDecision(requestID: "p1", .allow(updatedInput: nil))),
         entry(.permissionDecision(requestID: "p2",
                                   .deny(message: "denied by policy", interrupt: false))),
@@ -175,7 +165,7 @@ private func shape(_ chat: ChatModel) -> [String] {
 // MARK: - Turn results
 
 @Test func aFailedTurnAnnouncesItsStopReason() {
-    let chat = restored([
+    let chat = chatRestoring([
         entry(.turnResult(TurnResult(usage: .zero, stopReason: "max_tokens",
                                      isError: true, contextTokens: 4_200))),
     ])
@@ -184,7 +174,7 @@ private func shape(_ chat: ChatModel) -> [String] {
 }
 
 @Test func aCleanTurnSaysNothing() {
-    let chat = restored([
+    let chat = chatRestoring([
         entry(.turnResult(TurnResult(usage: .zero, stopReason: "end_turn", isError: false))),
     ])
     #expect(chat.lines.isEmpty)
@@ -206,7 +196,7 @@ private func withAttachedImage(_ body: (URL, Data) throws -> Void) throws {
 
 @Test func attachmentsRideAlongTheirUserLine() throws {
     try withAttachedImage { image, bytes in
-        let chat = restored([entry(.userMessage(text: "look at this", attachments: [
+        let chat = chatRestoring([entry(.userMessage(text: "look at this", attachments: [
             Attachment(kind: "image", path: image.path, raw: .object([:])),
             Attachment(kind: "file", path: "/tmp/a1b2.csv",
                        raw: .object(["name": .string("report.csv")])),
@@ -222,7 +212,7 @@ private func withAttachedImage(_ body: (URL, Data) throws -> Void) throws {
 
 @Test func anAttachmentOnlyMessageSurvivesTheBlankTextRule() throws {
     try withAttachedImage { image, _ in
-        let chat = restored([entry(.userMessage(text: "", attachments: [
+        let chat = chatRestoring([entry(.userMessage(text: "", attachments: [
             Attachment(kind: "image", path: image.path, raw: .object([:])),
         ]))])
 
@@ -234,7 +224,7 @@ private func withAttachedImage(_ body: (URL, Data) throws -> Void) throws {
 }
 
 @Test func anUnreadableAttachmentIsSimplySkipped() throws {
-    let chat = restored([entry(.userMessage(text: "look at this", attachments: [
+    let chat = chatRestoring([entry(.userMessage(text: "look at this", attachments: [
         Attachment(kind: "image", path: "/nowhere/gone.png", raw: .object([:])),
     ]))])
     #expect(shape(chat) == ["user:look at this"])
