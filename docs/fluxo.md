@@ -30,7 +30,8 @@ nunca toca nos dados do real. O real só muda quando você roda
 
    O CI roda neste Mac, que é o único runner do repositório. Se os checks
    ficarem na fila, confira se ele está online com
-   `gh api repos/bMoki/Den/actions/runners`.
+   `gh api repos/bMoki/Thalamus/actions/runners`.
+   O runner e o registro dele estão em [O runner do CI](#o-runner-do-ci).
 
 4. **Merge em `main`** pelo pull request, com merge commit, que mantém os
    commits da branch como foram feitos, e atualize o `main` local:
@@ -89,6 +90,51 @@ fecha, abre nem registra nenhum app real:
 ```sh
 THALAMUS_RELEASE_ROOT=$(mktemp -d) Scripts/release
 ```
+
+## O runner do CI
+
+Os workflows pedem `runs-on: [self-hosted, macOS]`, e o único runner é este
+Mac:
+
+| O quê | Hoje |
+|---|---|
+| Pasta | `~/actions-runner-thalamus` |
+| Nome | `MacBook-Pro-de-Breno-thalamus` |
+| Labels | `self-hosted`, `macOS`, `ARM64` (as padrão) |
+| Serviço | LaunchAgent `actions.runner.bMoki-Thalamus.MacBook-Pro-de-Breno-thalamus` |
+| Logs | `~/actions-runner-thalamus/_diag` e `~/Library/Logs/actions.runner.bMoki-Thalamus.*` |
+
+Renomear o repositório não derruba o runner: o registro fica ligado ao ID do
+repositório, não ao nome dele. Depois de um renome, aponte o `origin` para o
+nome novo e confira o runner:
+
+```sh
+git remote set-url origin git@github.com:bMoki/Thalamus.git
+gh api repos/bMoki/Thalamus/actions/runners --jq '.runners[] | {name, status}'
+```
+
+Para registrá-lo de novo (se ele ficar offline, ou para trocar a pasta ou o
+nome), espere o runner ficar livre (`busy: false`), porque parar o serviço
+derruba o job em andamento. Os tokens vêm do `gh` de quem administra o
+repositório e valem uma hora. O registro antigo sai pela API, e não pelo
+`config.sh remove`: o `.runner` guarda a URL que o repositório tinha quando o
+runner foi registrado, e depois de um renome a remoção por ela dá 404.
+
+```sh
+cd ~/actions-runner-thalamus
+./svc.sh stop && ./svc.sh uninstall
+id=$(gh api repos/bMoki/Thalamus/actions/runners --jq '.runners[] | select(.name=="MacBook-Pro-de-Breno-thalamus") | .id')
+gh api -X DELETE "repos/bMoki/Thalamus/actions/runners/$id"
+./config.sh remove --local
+./config.sh --unattended --url https://github.com/bMoki/Thalamus \
+  --token "$(gh api -X POST repos/bMoki/Thalamus/actions/runners/registration-token --jq .token)" \
+  --name MacBook-Pro-de-Breno-thalamus --work _work --replace
+./svc.sh install && ./svc.sh start
+```
+
+Para trocar a pasta, mova-a entre o `remove --local` e o novo `config.sh`.
+O nome do serviço sai do repositório e do `--name`; se eles mudarem, atualize
+a tabela acima.
 
 ## Onde fica cada coisa
 
