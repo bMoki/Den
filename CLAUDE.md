@@ -45,4 +45,4 @@ A IDE do `ns`, um app macOS em SwiftUI. Leia antes de mexer:
   nem qualquer outra atribuição, e sem código de ticket. Nunca commite
   `*.profraw`.
 - O CI roda num runner self-hosted neste Mac. Se os checks ficarem na fila,
-  veja se ele está online: `gh api repos/bMoki/Den/actions/runners`.
+  veja se ele está online: `gh api repos/bMoki/Thalamus/actions/runners`.

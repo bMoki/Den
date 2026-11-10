@@ -30,7 +30,8 @@ nunca toca nos dados do real. O real só muda quando você roda
 
    O CI roda neste Mac, que é o único runner do repositório. Se os checks
    ficarem na fila, confira se ele está online com
-   `gh api repos/bMoki/Den/actions/runners`.
+   `gh api repos/bMoki/Thalamus/actions/runners`.
+   O runner e o registro dele estão em [O runner do CI](#o-runner-do-ci).
 
 4. **Merge em `main`** pelo pull request, com merge commit, que mantém os
    commits da branch como foram feitos, e atualize o `main` local:
@@ -89,6 +90,53 @@ fecha, abre nem registra nenhum app real:
 ```sh
 THALAMUS_RELEASE_ROOT=$(mktemp -d) Scripts/release
 ```
+
+## O runner do CI
+
+Os workflows pedem `runs-on: [self-hosted, macOS]`, e o único runner é este
+Mac:
+
+| O quê | Hoje |
+|---|---|
+| Pasta | `~/actions-runner-den` |
+| Nome | `MacBook-Pro-de-Breno-den` |
+| Labels | `self-hosted`, `macOS`, `ARM64` (as padrão) |
+| Serviço | LaunchAgent `actions.runner.bMoki-Den.MacBook-Pro-de-Breno-den` |
+
+A pasta, o nome e o serviço ainda dizem "den" porque vêm do registro feito
+quando o repositório se chamava Den. Renomear o repositório não derrubou o
+runner, porque o registro fica ligado ao ID do repositório, não ao nome dele.
+O `.runner` da pasta ainda guarda a URL antiga, que só o `config.sh remove`
+usa; se algo falhar com ela, registre o runner de novo. Depois de um renome,
+aponte o `origin` para o nome novo e confira o runner:
+
+```sh
+git remote set-url origin git@github.com:bMoki/Thalamus.git
+gh api repos/bMoki/Thalamus/actions/runners --jq '.runners[] | {name, status}'
+```
+
+Se o runner aparecer offline ou os checks ficarem na fila, registre-o de
+novo. Os tokens vêm do `gh` de quem administra o repositório e valem uma
+hora:
+
+```sh
+cd ~/actions-runner-den
+./svc.sh stop && ./svc.sh uninstall
+./config.sh remove --token "$(gh api -X POST repos/bMoki/Thalamus/actions/runners/remove-token --jq .token)"
+./config.sh --unattended --url https://github.com/bMoki/Thalamus \
+  --token "$(gh api -X POST repos/bMoki/Thalamus/actions/runners/registration-token --jq .token)" \
+  --name MacBook-Pro-de-Breno-den --work _work --replace
+./svc.sh install && ./svc.sh start
+```
+
+O `--replace` reaproveita o nome se o registro antigo já tiver sumido do
+GitHub. O registro novo cria outro serviço,
+`actions.runner.bMoki-Thalamus.<nome>`, com os logs em
+`~/Library/Logs/actions.runner.bMoki-Thalamus.*`; atualize a tabela acima.
+
+Para tirar o "den" da pasta e do nome, faça o mesmo com a pasta renomeada
+(`mv ~/actions-runner-den ~/actions-runner-thalamus` entre o `remove` e o
+novo `config.sh`) e outro `--name`.
 
 ## Onde fica cada coisa
 
