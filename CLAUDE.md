@@ -1,4 +1,4 @@
-# Thalamus (app Den)
+# Thalamus
 
 A IDE do `ns`, um app macOS em SwiftUI. Leia antes de mexer:
 
@@ -10,15 +10,21 @@ A IDE do `ns`, um app macOS em SwiftUI. Leia antes de mexer:
 - [docs/pendencias.md](docs/pendencias.md): o que ficou aberto.
 - Tickets: `../.scratch/thalamus-ide/issues/`.
 
-## Den real e Thalamus Dev
+## Thalamus real e Thalamus Dev
 
-- O Den em `/Applications` é o que o usuário usa de verdade. Nunca o abra,
-  feche ou troque, e nunca toque em `~/Library/Application Support/Den`, nas
-  preferências `gabrielpassos.Den` nem no `ns` instalado (`~/.local/bin/ns`).
+- O Thalamus em `/Applications/Thalamus.app` é o que o usuário usa de verdade
+  (até a primeira release dele, ainda é o Den, em `/Applications/Den.app`).
+  Nunca abra, feche ou troque nenhum dos dois, e nunca toque em
+  `~/Library/Application Support/Thalamus`, nas preferências
+  `dev.brenosonda.Thalamus` nem no `ns` instalado (`~/.local/bin/ns`).
+- Os dados do Den (`~/Library/Application Support/Den`, `Den Releases` e as
+  preferências `gabrielpassos.Den`) ficam como backup até o usuário apagá-los
+  à mão. Também não toque neles.
 - Desenvolva e teste no Thalamus Dev, o build Debug. Ele usa o `ns` compilado
   do `../cli` e um workspace só de teste (`Scripts/dev-ns`). Depois de mudar
   o `cli`, rode `Scripts/dev-ns build`.
-- O Den real só muda com `Scripts/release`, e só quando o usuário pedir.
+- O Thalamus real só muda com `Scripts/release`, e só quando o usuário pedir.
+  Para ensaiar o script, use `THALAMUS_RELEASE_ROOT` (veja `docs/fluxo.md`).
 - Não deixe o Thalamus Dev nem apps de teste abertos ao terminar.
 
 ## Trabalho

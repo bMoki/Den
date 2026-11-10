@@ -1,10 +1,11 @@
 # Fluxo de trabalho
 
-O Den real, instalado em `/Applications`, é o que se usa no dia a dia. O
-desenvolvimento acontece no Thalamus Dev, um app à parte que nunca toca nos
-dados do real. O real só muda quando você roda `Scripts/release`.
+O Thalamus real, instalado em `/Applications/Thalamus.app`, é o que se usa no
+dia a dia. O desenvolvimento acontece no Thalamus Dev, um app à parte que
+nunca toca nos dados do real. O real só muda quando você roda
+`Scripts/release`.
 
-## Do ticket ao Den real
+## Do ticket ao Thalamus real
 
 1. **Uma branch por ticket**, a partir de `main` atualizado:
 
@@ -15,7 +16,7 @@ dados do real. O real só muda quando você roda `Scripts/release`.
 
 2. **Testar no Thalamus Dev.** Rodar pelo Xcode, ou pelos testes, abre o
    Thalamus Dev (ícone com a faixa laranja "DEV"). Ele pode ficar aberto ao
-   lado do Den real. Para os testes e o gate, use os comandos de
+   lado do Thalamus real. Para os testes e o gate, use os comandos de
    [quality.md](quality.md), ou rode `Scripts/screenshot` para ver uma tela
    sem abrir nada à mão.
 
@@ -39,7 +40,7 @@ dados do real. O real só muda quando você roda `Scripts/release`.
    git switch main && git pull --ff-only
    ```
 
-5. **Atualizar o Den real**, quando quiser:
+5. **Atualizar o Thalamus real**, quando quiser:
 
    ```sh
    Scripts/release
@@ -47,10 +48,17 @@ dados do real. O real só muda quando você roda `Scripts/release`.
 
    Ele recusa rodar fora de `main` ou com alterações não commitadas, roda os
    testes unitários e o gate, gera a build de Release assinada, pede para o
-   Den aberto sair (o aviso de arquivos não salvos continua valendo; cancelar
-   ali para tudo sem trocar nada), faz backup do app e dos dados, instala e
-   reabre. O painel Sobre mostra a versão como `1.0 (274)`, com o número de
-   commits, e o commit embaixo.
+   Thalamus aberto sair (o aviso de arquivos não salvos continua valendo;
+   cancelar ali para tudo sem trocar nada), faz backup do app e dos dados,
+   instala e reabre. O painel Sobre mostra a versão como `1.0 (274)`, com o
+   número de commits, e o commit embaixo.
+
+   A primeira release do Thalamus também aposenta o Den: se o Den estiver
+   aberto, pede para ele sair do mesmo jeito, guarda o `Den.app` no backup e
+   o tira de `/Applications`, para os dois apps não trabalharem nos mesmos
+   projetos. Os dados do Den (`~/Library/Application Support/Den` e as
+   preferências `gabrielpassos.Den`) ficam onde estão; o Thalamus copia o que
+   precisa deles na primeira abertura (veja abaixo).
 
 ## Voltar uma release
 
@@ -58,19 +66,35 @@ dados do real. O real só muda quando você roda `Scripts/release`.
 Scripts/release --rollback
 ```
 
-Troca o Den instalado pelo app que a última release substituiu. Rodar de novo
-volta mais uma release. Só o app é trocado: os dados que cada release
-encontrou ficam no `data.zip` do backup dela, para restaurar à mão se uma
-release mudar o formato deles.
+Põe de volta os apps que a última release substituiu. Rodar de novo volta
+mais uma release. Logo depois da primeira release do Thalamus, o rollback
+devolve o `Den.app` a `/Applications` e tira o Thalamus. Só os apps são
+trocados: os dados que cada release encontrou ficam no `data.zip` do backup
+dela, para restaurar à mão se uma release mudar o formato deles.
 
-Os backups ficam em `~/Library/Application Support/Den Releases/<data>`, os
-cinco mais novos. O app fica zipado ali para o macOS não achar um segundo Den.
+Os backups ficam em `~/Library/Application Support/Thalamus Releases/<data>`,
+os cinco mais novos que ainda têm um app para voltar (os mais antigos saem,
+inclusive os já usados por um rollback). Por isso o caminho de volta ao Den
+dura cinco releases. Os apps ficam zipados ali para o macOS não achar uma
+segunda cópia. Os backups de quando o app era o Den continuam em
+`~/Library/Application Support/Den Releases`; o rollback não os usa, e para
+voltar a um deles é preciso descompactar o `Den.app.zip` à mão.
+
+Para ensaiar a troca sem tocar nos apps reais, aponte
+`THALAMUS_RELEASE_ROOT` para uma pasta descartável. Ela faz o papel de
+`/Applications` e de `Application Support`, e o script pula o git, os testes
+e a build (instala o app de Release que já está em `build/Release`) e não
+fecha, abre nem registra nenhum app real:
+
+```sh
+THALAMUS_RELEASE_ROOT=$(mktemp -d) Scripts/release
+```
 
 ## Onde fica cada coisa
 
 | O quê | Thalamus (real, Release) | Thalamus Dev (Debug) | Testes de interface |
 |---|---|---|---|
-| Como abre | o app em `/Applications`, instalado pelo `Scripts/release` | build Debug do Xcode | XCUITest e `Scripts/screenshot` |
+| Como abre | `/Applications/Thalamus.app`, instalado pelo `Scripts/release` | build Debug do Xcode | XCUITest e `Scripts/screenshot` |
 | Bundle id | `dev.brenosonda.Thalamus` | `dev.brenosonda.Thalamus.dev` | `dev.brenosonda.Thalamus.dev` |
 | Ícone | `AppIcon` | `AppIconDev`, com a faixa "DEV" | `AppIconDev` |
 | Sessões, anexos, PRs | `~/Library/Application Support/Thalamus` | `~/Library/Application Support/Thalamus Dev` | uma pasta descartável em `/private/tmp` (`ThalamusUITests-…`, `ThalamusScreenshot-…`) |
@@ -97,8 +121,8 @@ menos que a preferência `Thalamus.nsPath` dele aponte outro. O `claude` e o
 
 O `ns` e o Thalamus evoluem juntos. O Thalamus Dev usa o `ns` compilado do
 repositório `cli`, num workspace só de teste. Assim, criar, arquivar ou remover
-uma Sessão nele não mexe nas branches e worktrees reais, e o Den real
-segue com o `ns` instalado em `~/.local/bin/ns`.
+uma Sessão nele não mexe nas branches e worktrees reais, e o Thalamus
+real segue com o `ns` instalado em `~/.local/bin/ns`.
 
 ```sh
 Scripts/dev-ns setup   # uma vez: compila o cli, monta o workspace e aponta o Thalamus Dev
@@ -109,7 +133,7 @@ Scripts/dev-ns off     # volta o Thalamus Dev para o ns instalado e o workspace 
 O `setup` pode rodar de novo: ele reescreve a configuração de teste a partir
 da real e só cria os clones e os templates que faltam. Ele monta:
 
-| O quê | Thalamus Dev | Den real |
+| O quê | Thalamus Dev | Thalamus real |
 |---|---|---|
 | `ns` | `cli/dist/ns` (preferência `Thalamus.nsPath`) | `~/.local/bin/ns` |
 | Configuração do `ns` | `~/.config/ns-dev` (preferência `Thalamus.nsConfigDir`) | `~/.config/ns` |
@@ -141,5 +165,5 @@ Variáveis `NS_*` exportadas no seu shell valem mais que o `env.json`. Não
 exporte `NS_BASE_DIR`, `NS_STATE_DIR` nem os `NS_*_REPO`, ou o workspace de
 teste volta a apontar para o real.
 
-O Den real só recebe o `ns` novo com `bun run install-global` no `cli`, que faz
-para o `ns` o que o `Scripts/release` faz para o Den.
+O Thalamus real só recebe o `ns` novo com `bun run install-global` no `cli`,
+que faz para o `ns` o que o `Scripts/release` faz para o Thalamus.
