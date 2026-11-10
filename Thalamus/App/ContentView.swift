@@ -12,8 +12,8 @@ struct ContentView: View {
 
     @State private var isFullScreen = false
 
-    @AppStorage("Den.sidebarVisible") private var sidebarVisible = true
-    @AppStorage("Den.sidebarWidth") private var sidebarWidth: Double = 280
+    @AppStorage(PreferenceKey.named("sidebarVisible")) private var sidebarVisible = true
+    @AppStorage(PreferenceKey.named("sidebarWidth")) private var sidebarWidth: Double = 280
 
     init(environment: any AppEnvironment) {
         _workspace = State(initialValue: WorkspaceModel.live(environment))

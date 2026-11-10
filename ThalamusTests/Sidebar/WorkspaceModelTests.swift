@@ -99,14 +99,15 @@ import HarnessCore
         #expect(harness.model.defaultHarness == target)
 
         let reopened = WorkspaceModel(store: harness.store, defaults: harness.defaults,
-                                      cache: SessionCache(defaults: harness.defaults))
+                                      cache: SessionCache(defaults: harness.defaults),
+                                      attachmentsRoot: FileManager.default.temporaryDirectory.appending(path: "attachments"))
         #expect(reopened.defaultHarness == target)
     }
 }
 
 @Test func anUnknownStoredHarnessFallsBack() async throws {
     try await withWorkspace(seed: { defaults in
-        defaults.set("ghost-harness", forKey: "Den.defaultHarness")
+        defaults.set("ghost-harness", forKey: "Thalamus.defaultHarness")
     }) { harness in
         #expect(harness.model.defaultHarness == HarnessRegistry.standard.fallback)
     }

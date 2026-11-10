@@ -99,13 +99,13 @@ private let other = HarnessID(rawValue: "other-harness")
 @Test func choicesSavedBeforeThePerHarnessFormatMoveToTheFirstHarnessThatSavesThem() {
     withTemporaryCache { cache in
         let session = UUID()
-        cache.defaults.set([session.uuidString: ["model": "opus"]], forKey: "Den.sessionPreferences")
+        cache.defaults.set([session.uuidString: ["model": "opus"]], forKey: "Thalamus.sessionPreferences")
         #expect(cache.preferences(for: session, harness: harness) == ["model": "opus"])
 
         cache.setPreferences(["model": "opus"], for: session, harness: harness)
 
         #expect(cache.preferences(for: session, harness: other) == nil)
-        #expect(cache.defaults.dictionary(forKey: "Den.sessionPreferences")?.isEmpty == true)
+        #expect(cache.defaults.dictionary(forKey: "Thalamus.sessionPreferences")?.isEmpty == true)
     }
 }
 

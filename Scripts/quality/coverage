@@ -21,7 +21,7 @@ ROOT = Path(__file__).resolve().parents[2]
 FLOOR_FILE = ROOT / ".coverage-floor.json"
 PACKAGE = ROOT / "Packages" / "HarnessKit"
 PACKAGE_TARGETS = ("HarnessCore", "ClaudeHarness", "OpenCodeHarness", "HarnessProbeArguments")
-APP_TARGET = "Den.app"
+APP_TARGET = "Thalamus.app"
 APP_KEY = "Thalamus"
 WOBBLE = 0.5
 

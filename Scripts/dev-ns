@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Points Den Dev at the ns under development and at a workspace of its own.
+"""Points Thalamus Dev at the ns under development and at a workspace of its own.
 
-  Scripts/dev-ns setup   build the cli, create the test workspace, point Den Dev at both
-  Scripts/dev-ns build   rebuild the cli after a change (then reopen Den Dev)
-  Scripts/dev-ns off     point Den Dev back at the installed ns and the real workspace
+  Scripts/dev-ns setup   build the cli, create the test workspace, point Thalamus Dev at both
+  Scripts/dev-ns build   rebuild the cli after a change (then reopen Thalamus Dev)
+  Scripts/dev-ns off     point Thalamus Dev back at the installed ns and the real workspace
 
 The test workspace takes the real ns config and changes what would reach real
 things: its own base, state and config folders, ports shifted by 100, and its
@@ -31,8 +31,8 @@ CONFIG = HOME / ".config" / "ns-dev"
 BASE = HOME / "Developer" / "ns-dev"
 STATE = HOME / ".local" / "state" / "ns-dev"
 PRODUCT = "nsdev"
-SUITE = "Den.Dev"
-THALAMUS_KEYS = ("Den.nsPath", "Den.nsConfigDir")
+SUITE = "Thalamus.Dev"
+THALAMUS_KEYS = ("Thalamus.nsPath", "Thalamus.nsConfigDir")
 PORT_SHIFT = 100
 PORTS = {
     "NS_MASTER_DB_PORT": 5434,
@@ -132,7 +132,7 @@ def copy_templates(real):
 
 
 def forget_real_branches():
-    subprocess.run(["defaults", "delete", SUITE, "Den.nsMemory"], capture_output=True)
+    subprocess.run(["defaults", "delete", SUITE, "Thalamus.nsMemory"], capture_output=True)
 
 
 def setup():
@@ -145,17 +145,17 @@ def setup():
         clone(real, key, name)
     copy_templates(real)
 
-    run("defaults", "write", SUITE, "Den.nsPath", str(NS))
-    run("defaults", "write", SUITE, "Den.nsConfigDir", str(CONFIG))
+    run("defaults", "write", SUITE, "Thalamus.nsPath", str(NS))
+    run("defaults", "write", SUITE, "Thalamus.nsConfigDir", str(CONFIG))
     forget_real_branches()
-    print(f"Den Dev now runs {NS} on {CONFIG}; reopen it to pick that up")
+    print(f"Thalamus Dev now runs {NS} on {CONFIG}; reopen it to pick that up")
 
 
 def off():
     for key in THALAMUS_KEYS:
         subprocess.run(["defaults", "delete", SUITE, key], capture_output=True)
     forget_real_branches()
-    print("Den Dev is back on the installed ns and the real workspace; reopen it")
+    print("Thalamus Dev is back on the installed ns and the real workspace; reopen it")
 
 
 COMMANDS = {"setup": setup, "build": build, "off": off}

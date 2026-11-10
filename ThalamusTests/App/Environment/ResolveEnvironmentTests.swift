@@ -59,3 +59,35 @@ private func scratchURL() -> URL {
     #expect(isDebugBuild)
     #expect(resolveEnvironment([:]) is DevEnvironment)
 }
+
+private struct MigratingEnvironment: RootedEnvironment {
+    let root: URL
+    let defaults: UserDefaults
+    let registry = HarnessRegistry(harnesses: [])
+    let denDomain: String
+
+    var migration: DenMigration? {
+        DenMigration(denFolder: root.appending(path: "Den"), denDomain: denDomain,
+                     folder: root.appending(path: "Thalamus"))
+    }
+}
+
+@Test func theAppMigratesOnlyOutsideATestHost() throws {
+    let scratch = ScratchDefaults()
+    let root = try makeTree([])
+    defer {
+        scratch.remove()
+        try? FileManager.default.removeItem(at: root)
+    }
+    let environment = MigratingEnvironment(root: root, defaults: scratch.defaults, denDomain: scratch.suite)
+
+    migrateFromDen(environment, ["XCTestConfigurationFilePath": "/tests.xctestconfiguration"])
+    #expect(!FileManager.default.fileExists(atPath: root.appending(path: "Thalamus").path))
+
+    migrateFromDen(environment, [:])
+    #expect(FileManager.default.fileExists(atPath: root.appending(path: "Thalamus").path))
+}
+
+@Test func theseTestsRunInsideATestHost() {
+    #expect(ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil)
+}

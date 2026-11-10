@@ -43,7 +43,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "BE5BD8D4305B606D00035C7F"
-            BuildableName = "Den.app"
+            BuildableName = "Thalamus.app"
             BlueprintName = "Thalamus"
             ReferencedContainer = "container:Thalamus.xcodeproj">
          </BuildableReference>
@@ -59,7 +59,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "BE5BD8D4305B606D00035C7F"
-            BuildableName = "Den.app"
+            BuildableName = "Thalamus.app"
             BlueprintName = "Thalamus"
             ReferencedContainer = "container:Thalamus.xcodeproj">
          </BuildableReference>

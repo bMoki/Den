@@ -2,24 +2,24 @@
 
 A IDE do `ns`, um app macOS em SwiftUI. Leia antes de mexer:
 
-- [docs/fluxo.md](docs/fluxo.md): o fluxo de trabalho, o Den Dev isolado, a
-  release e onde fica cada coisa.
+- [docs/fluxo.md](docs/fluxo.md): o fluxo de trabalho, o Thalamus Dev isolado,
+  a release e onde fica cada coisa.
 - [docs/quality.md](docs/quality.md): os gates e como rodá-los.
 - [CONTEXT.md](CONTEXT.md) e [docs/adr/](docs/adr/): a linguagem do domínio e
   as decisões.
 - [docs/pendencias.md](docs/pendencias.md): o que ficou aberto.
 - Tickets: `../.scratch/thalamus-ide/issues/`.
 
-## Den real e Den Dev
+## Den real e Thalamus Dev
 
 - O Den em `/Applications` é o que o usuário usa de verdade. Nunca o abra,
   feche ou troque, e nunca toque em `~/Library/Application Support/Den`, nas
   preferências `gabrielpassos.Den` nem no `ns` instalado (`~/.local/bin/ns`).
-- Desenvolva e teste no Den Dev, o build Debug. Ele usa o `ns` compilado do
-  `../cli` e um workspace só de teste (`Scripts/dev-ns`). Depois de mudar o
-  `cli`, rode `Scripts/dev-ns build`.
+- Desenvolva e teste no Thalamus Dev, o build Debug. Ele usa o `ns` compilado
+  do `../cli` e um workspace só de teste (`Scripts/dev-ns`). Depois de mudar
+  o `cli`, rode `Scripts/dev-ns build`.
 - O Den real só muda com `Scripts/release`, e só quando o usuário pedir.
-- Não deixe o Den Dev nem apps de teste abertos ao terminar.
+- Não deixe o Thalamus Dev nem apps de teste abertos ao terminar.
 
 ## Trabalho
 

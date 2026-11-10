@@ -149,3 +149,10 @@ private func scratchRoot() -> URL {
     scratch.defaults.set("~/cli/dist/ns", forKey: NsClient.pathKey)
     #expect(environment.nsOverride == NSHomeDirectory() + "/cli/dist/ns")
 }
+
+@Test func aUITestRootMigratesNothing() throws {
+    let root = scratchRoot()
+    defer { try? FileManager.default.removeItem(at: root) }
+
+    #expect(try #require(UITestEnvironment([UITestEnvironment.rootKey: root.path])).migration == nil)
+}

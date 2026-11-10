@@ -48,7 +48,7 @@ final class WorkspaceModel {
 
     init(store: FileTranscriptStore, defaults: UserDefaults, cache: SessionCache,
          registry: HarnessRegistry = .standard,
-         attachmentsRoot: URL = ChatModel.standardAttachmentsRoot) {
+         attachmentsRoot: URL) {
         self.store = store
         self.defaults = defaults
         self.cache = cache

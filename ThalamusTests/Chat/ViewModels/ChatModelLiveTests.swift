@@ -35,7 +35,8 @@ private func notices(_ chat: ChatModel) -> [String] {
                          workingDirectory: FileManager.default.temporaryDirectory,
                          harness: HarnessID(rawValue: "ghost"),
                          cache: scratchCache,
-                         registry: HarnessRegistry(harnesses: []))
+                         registry: HarnessRegistry(harnesses: []),
+                         attachmentsRoot: FileManager.default.temporaryDirectory.appending(path: "attachments"))
     await chat.start()
 
     #expect(chat.isLive == false)

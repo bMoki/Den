@@ -2,7 +2,7 @@ import Darwin
 import Foundation
 
 enum NsConfigFolder {
-    nonisolated static let key = "Den.nsConfigDir"
+    nonisolated static let key = PreferenceKey.named("nsConfigDir")
     nonisolated static let variable = "NS_CONFIG_DIR"
 
     static func export(_ folder: String?,

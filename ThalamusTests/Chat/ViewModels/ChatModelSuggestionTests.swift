@@ -155,7 +155,8 @@ private func suggested(_ live: LiveChatHarness, _ runner: FakeCommandRunner) asy
                          restoring: Session(title: "restored", workingDirectory: root,
                                             segments: [segment]),
                          cache: scratchCache,
-                         registry: HarnessRegistry(harnesses: [harness]))
+                         registry: HarnessRegistry(harnesses: [harness]),
+                         attachmentsRoot: root.appending(path: "attachments"))
     chat.runner = runner
 
     #expect(chat.suggestedReply == nil)
