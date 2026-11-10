@@ -3,7 +3,7 @@ import Foundation
 
 func makeTree(_ directories: [String], files: [String] = []) throws -> URL {
     let root = FileManager.default.temporaryDirectory
-        .appending(path: "DenTests-" + UUID().uuidString)
+        .appending(path: "ThalamusTests-" + UUID().uuidString)
     try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
     for path in directories {
         try FileManager.default.createDirectory(at: root.appending(path: path),

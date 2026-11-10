@@ -71,7 +71,7 @@ struct InspectorToggle: View {
                 .foregroundStyle(isOpen ? Theme.text : Theme.textSecondary)
                 .iconLabel(size: 32)
         }
-        .buttonStyle(DenButtonStyle(kind: .secondary))
+        .buttonStyle(ThalamusButtonStyle(kind: .secondary))
         .help(isOpen ? "Ocultar painel" : "Mostrar painel (⌥⌘0)")
         .accessibilityLabel(isOpen ? "Ocultar painel" : "Mostrar painel")
     }

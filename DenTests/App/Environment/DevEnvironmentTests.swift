@@ -15,7 +15,7 @@ import Foundation
 
 @Test func devPreferencesNeverReachProduction() {
     let environment = DevEnvironment()
-    let key = "DenTests.devIsolation." + UUID().uuidString
+    let key = "ThalamusTests.devIsolation." + UUID().uuidString
     defer { environment.defaults.removeObject(forKey: key) }
 
     environment.defaults.set("dev", forKey: key)

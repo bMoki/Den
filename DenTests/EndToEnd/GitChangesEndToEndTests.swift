@@ -13,7 +13,7 @@ private func write(_ text: String, to name: String, in directory: URL) throws {
 /// would leave it: one file changed, one deleted, one created.
 private func withEditedRepository(_ body: (URL) async throws -> Void) async throws {
     let repository = FileManager.default.temporaryDirectory
-        .appending(path: "DenTests-" + UUID().uuidString)
+        .appending(path: "ThalamusTests-" + UUID().uuidString)
     try FileManager.default.createDirectory(at: repository, withIntermediateDirectories: true)
     defer { try? FileManager.default.removeItem(at: repository) }
 

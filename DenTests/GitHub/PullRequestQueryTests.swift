@@ -7,7 +7,7 @@ private let rich = #"""
   {
     "number": 80,
     "title": "Melhorias nos seletores de data",
-    "url": "https://github.com/den/app/pull/80",
+    "url": "https://github.com/thalamus/app/pull/80",
     "state": "OPEN",
     "isDraft": false,
     "additions": 220,
@@ -18,22 +18,22 @@ private let rich = #"""
     "updatedAt": "2026-09-30T12:00:00Z",
     "statusCheckRollup": [
       {"__typename": "CheckRun", "name": "lint", "workflowName": "CI", "status": "COMPLETED",
-       "conclusion": "FAILURE", "detailsUrl": "https://github.com/den/app/actions/runs/1/job/1",
+       "conclusion": "FAILURE", "detailsUrl": "https://github.com/thalamus/app/actions/runs/1/job/1",
        "startedAt": "2026-09-30T11:00:00Z", "completedAt": "2026-09-30T11:00:42Z"},
       {"__typename": "CheckRun", "name": "build", "workflowName": "CI", "status": "COMPLETED",
-       "conclusion": "SUCCESS", "detailsUrl": "https://github.com/den/app/actions/runs/1/job/2",
+       "conclusion": "SUCCESS", "detailsUrl": "https://github.com/thalamus/app/actions/runs/1/job/2",
        "startedAt": "2026-09-30T11:00:00Z", "completedAt": "2026-09-30T11:03:10Z"},
       {"__typename": "CheckRun", "name": "e2e", "workflowName": "CI", "status": "IN_PROGRESS",
-       "conclusion": "", "detailsUrl": "https://github.com/den/app/actions/runs/1/job/3",
+       "conclusion": "", "detailsUrl": "https://github.com/thalamus/app/actions/runs/1/job/3",
        "startedAt": "2026-09-30T11:00:00Z", "completedAt": "0001-01-01T00:00:00Z"},
       {"__typename": "CheckRun", "name": "deploy", "workflowName": "CD", "status": "QUEUED",
        "conclusion": "", "detailsUrl": "", "startedAt": "0001-01-01T00:00:00Z",
        "completedAt": "0001-01-01T00:00:00Z"},
       {"__typename": "CheckRun", "name": "docs", "workflowName": "CI", "status": "COMPLETED",
-       "conclusion": "SKIPPED", "detailsUrl": "https://github.com/den/app/actions/runs/1/job/5",
+       "conclusion": "SKIPPED", "detailsUrl": "https://github.com/thalamus/app/actions/runs/1/job/5",
        "startedAt": "2026-09-30T11:00:00Z", "completedAt": "2026-09-30T11:00:01Z"},
       {"__typename": "StatusContext", "context": "vercel", "state": "PENDING",
-       "targetUrl": "https://vercel.com/den/app/1", "startedAt": "2026-09-30T11:00:00Z"}
+       "targetUrl": "https://vercel.com/thalamus/app/1", "startedAt": "2026-09-30T11:00:00Z"}
     ]
   }
 ]
@@ -41,10 +41,10 @@ private let rich = #"""
 
 private func entry(number: Int, state: String, updatedAt: String, isDraft: Bool = false) -> String {
     """
-    {"number": \(number), "title": "PR \(number)", "url": "https://github.com/den/app/pull/\(number)",
+    {"number": \(number), "title": "PR \(number)", "url": "https://github.com/thalamus/app/pull/\(number)",
      "state": "\(state)", "isDraft": \(isDraft), "additions": 1, "deletions": 0, "baseRefName": "main",
      "reviewDecision": "", "mergeable": "UNKNOWN", "updatedAt": "\(updatedAt)", "statusCheckRollup": null,
-     "headRefName": "den/NS-1-fix"}
+     "headRefName": "thalamus/NS-1-fix"}
     """
 }
 
@@ -53,8 +53,8 @@ private func parse(_ text: String) throws -> PullRequest? {
 }
 
 @Test func theQueryAsksForThisBranchInEveryState() {
-    let arguments = PullRequestQuery.arguments(branch: "den/NS-1-fix")
-    #expect(arguments.starts(with: ["pr", "list", "--head", "den/NS-1-fix", "--state", "all"]))
+    let arguments = PullRequestQuery.arguments(branch: "thalamus/NS-1-fix")
+    #expect(arguments.starts(with: ["pr", "list", "--head", "thalamus/NS-1-fix", "--state", "all"]))
     #expect(arguments.last?.contains("statusCheckRollup") == true)
     #expect(arguments.last?.contains("baseRefName") == true)
 }
@@ -70,7 +70,7 @@ private func parse(_ text: String) throws -> PullRequest? {
     #expect(pr.base == "main")
     #expect(pr.checks.map(\.state) == [.failed, .passed, .running, .queued, .skipped, .running])
     #expect(pr.checks[0].workflow == "CI")
-    #expect(pr.checks[0].url?.absoluteString == "https://github.com/den/app/actions/runs/1/job/1")
+    #expect(pr.checks[0].url?.absoluteString == "https://github.com/thalamus/app/actions/runs/1/job/1")
     #expect(pr.checks[2].completedAt == nil)
     #expect(pr.checks[3].startedAt == nil)
     #expect(pr.checks[3].url == nil)
@@ -122,5 +122,5 @@ private func parse(_ text: String) throws -> PullRequest? {
 
 @Test func thePullRequestRemembersTheGitBranchItCameFrom() throws {
     #expect(PullRequestQuery.arguments(branch: "x").last?.contains("headRefName") == true)
-    #expect(try parse("[\(entry(number: 1, state: "OPEN", updatedAt: "2026-09-30T12:00:00Z"))]")?.head == "den/NS-1-fix")
+    #expect(try parse("[\(entry(number: 1, state: "OPEN", updatedAt: "2026-09-30T12:00:00Z"))]")?.head == "thalamus/NS-1-fix")
 }

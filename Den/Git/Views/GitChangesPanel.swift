@@ -90,7 +90,7 @@ struct GitChangesPanel: View {
                     .foregroundStyle(Theme.textTertiary)
                     .iconLabel(size: 26)
             }
-            .buttonStyle(.denGhost(radius: 7))
+            .buttonStyle(.thalamusGhost(radius: 7))
             .disabled(model.isLoading)
             .help("Atualizar alterações")
             .accessibilityLabel("Atualizar alterações")
@@ -255,7 +255,7 @@ struct GitChangesPanel: View {
             .frame(height: Self.listRowHeight)
             .contentShape(Rectangle())
         }
-        .buttonStyle(.denGhost(radius: 7))
+        .buttonStyle(.thalamusGhost(radius: 7))
         .help(repo.root.path)
         .accessibilityLabel(isCollapsed ? "Expandir \(repo.name)" : "Recolher \(repo.name)")
     }
@@ -393,7 +393,7 @@ struct GitChangesPanel: View {
                 .padding(.horizontal, 10)
                 .frame(height: 26)
             }
-            .buttonStyle(DenButtonStyle(kind: .secondary, radius: 7))
+            .buttonStyle(ThalamusButtonStyle(kind: .secondary, radius: 7))
         }
         .padding(.leading, 14)
         .padding(.trailing, 10)

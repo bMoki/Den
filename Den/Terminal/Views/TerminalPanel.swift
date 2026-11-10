@@ -41,7 +41,7 @@ struct TerminalPanel: View {
                     .foregroundStyle(Theme.textTertiary)
                     .iconLabel(size: 22)
             }
-            .buttonStyle(.denGhost(radius: 5))
+            .buttonStyle(.thalamusGhost(radius: 5))
             .padding(.leading, 4)
             .help("Novo Terminal livre")
             .accessibilityLabel("Novo Terminal livre")
@@ -59,7 +59,7 @@ struct TerminalPanel: View {
                     .foregroundStyle(Theme.textTertiary)
                     .iconLabel(size: 22)
             }
-            .buttonStyle(.denGhost(radius: 5))
+            .buttonStyle(.thalamusGhost(radius: 5))
             .padding(.horizontal, 6)
             .help("Ocultar painel")
             .accessibilityLabel("Ocultar painel")
@@ -89,7 +89,7 @@ struct TerminalToggle: View {
                 .foregroundStyle(isShown ? Theme.text : Theme.textSecondary)
                 .iconLabel(size: 32)
         }
-        .buttonStyle(DenButtonStyle(kind: .secondary))
+        .buttonStyle(ThalamusButtonStyle(kind: .secondary))
         .disabled(isArchived)
         .help(help)
         .accessibilityLabel(isShown ? "Ocultar Terminais livres" : "Mostrar Terminais livres")
@@ -139,7 +139,7 @@ private struct TerminalTab: View {
                     .frame(width: 16, height: 16)
                     .contentShape(Rectangle())
             }
-            .buttonStyle(.denGhost(radius: 4))
+            .buttonStyle(.thalamusGhost(radius: 4))
             .opacity(isSelected || hovering ? 1 : 0)
             .help(console == nil ? "Fechar Terminal livre" : "Fechar Console")
             .accessibilityLabel("Fechar \(title)")

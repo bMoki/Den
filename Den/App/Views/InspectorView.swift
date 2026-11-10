@@ -40,7 +40,7 @@ struct InspectorView: View {
                         .foregroundStyle(Theme.textTertiary)
                         .iconLabel()
                 }
-                .buttonStyle(.denGhost)
+                .buttonStyle(.thalamusGhost)
                 .help("Recolher painel (⌥⌘0)")
                 .accessibilityLabel("Fechar painel")
             }

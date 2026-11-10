@@ -29,7 +29,7 @@ func withLiveChat(configure: (inout FakeHarness) -> Void = { _ in },
     let scratch = ScratchDefaults()
     let defaults = scratch.defaults
     let root = FileManager.default.temporaryDirectory
-        .appending(path: "DenTests-" + UUID().uuidString)
+        .appending(path: "ThalamusTests-" + UUID().uuidString)
     try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
     defer {
         scratch.remove()

@@ -5,7 +5,7 @@ import Foundation
 @Test func theReposOfABranchAreTheBaseReposCheckedOutInItsFolder() throws {
     let root = try makeTree(["base/backend/.git", "base/frontend/.git", "wt/NS-1/backend", "wt/NS-2/frontend"],
                             files: ["wt/NS-1/backend/.git", "wt/NS-2/frontend/.git"])
-    try "[core]\n\tbare = false\n[remote \"origin\"]\n\turl = git@github.com:den/backend.git\n"
+    try "[core]\n\tbare = false\n[remote \"origin\"]\n\turl = git@github.com:thalamus/backend.git\n"
         .write(to: root.appending(path: "base/backend/.git/config"), atomically: true, encoding: .utf8)
     let status = NsStatus(worktreesDir: root.appending(path: "wt").path,
                           baseRepos: [.init(repo: "backend", path: root.appending(path: "base/backend").path),
@@ -17,14 +17,14 @@ import Foundation
 
     #expect(repos.map(\.id) == [.init(branch: "NS-1", repo: "backend"), .init(branch: "NS-2", repo: "frontend")])
     #expect(repos[0].folder.path == root.appending(path: "wt/NS-1/backend").path)
-    #expect(repos[0].remote == GitHubRemote(host: "github.com", owner: "den", name: "backend"))
+    #expect(repos[0].remote == GitHubRemote(host: "github.com", owner: "thalamus", name: "backend"))
     #expect(repos[1].remote == nil)
 }
 
 @MainActor
 @Test func pullRequestsAndDismissalsAreKeptPerBranchAndRepo() {
     let file = FileManager.default.temporaryDirectory
-        .appending(path: "DenTests-" + UUID().uuidString).appending(path: "pull-requests.json")
+        .appending(path: "ThalamusTests-" + UUID().uuidString).appending(path: "pull-requests.json")
     let ledger = PullRequestLedger(store: PullRequestStore(url: file))
     let backend = BranchRepo.Key(branch: "feat/NS-1", repo: "backend")
     let pr = makePullRequest(number: 12)
@@ -51,7 +51,7 @@ import Foundation
 @MainActor
 @Test func twoSessionsOnTheSameBranchShareItsPullRequests() async {
     let file = FileManager.default.temporaryDirectory
-        .appending(path: "DenTests-" + UUID().uuidString).appending(path: "pull-requests.json")
+        .appending(path: "ThalamusTests-" + UUID().uuidString).appending(path: "pull-requests.json")
     let fetcher = FakeFetcher()
     let monitor = PullRequestMonitor(ledger: PullRequestLedger(store: PullRequestStore(url: file)), fetcher: fetcher)
     monitor.track([branchRepo("NS-1")], branches: ["NS-1"])
@@ -72,7 +72,7 @@ import Foundation
 @MainActor
 @Test func aRemovedBranchTakesItsPullRequestsAlong() {
     let file = FileManager.default.temporaryDirectory
-        .appending(path: "DenTests-" + UUID().uuidString).appending(path: "pull-requests.json")
+        .appending(path: "ThalamusTests-" + UUID().uuidString).appending(path: "pull-requests.json")
     let ledger = PullRequestLedger(store: PullRequestStore(url: file))
     let monitor = PullRequestMonitor(ledger: ledger, fetcher: FakeFetcher())
     let gone = branchRepo("NS-1")

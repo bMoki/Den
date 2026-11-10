@@ -73,7 +73,7 @@ struct ChatComposer: View {
                     .foregroundStyle(Theme.textSecondary)
                     .iconLabel(size: 32)
             }
-            .buttonStyle(.denGhost(radius: 9))
+            .buttonStyle(.thalamusGhost(radius: 9))
             .help("Anexar arquivos")
             .accessibilityLabel("Anexar arquivos")
             sendButton
@@ -93,7 +93,7 @@ struct ChatComposer: View {
                 .contentTransition(.symbolEffect(.replace))
                 .frame(width: 34, height: 34)
         }
-        .buttonStyle(DenButtonStyle(kind: .primary, radius: 10))
+        .buttonStyle(ThalamusButtonStyle(kind: .primary, radius: 10))
         .disabled(!chat.isBusy
                   && chat.prompt.trimmingCharacters(in: .whitespaces).isEmpty
                   && chat.pendingAttachments.isEmpty

@@ -6,7 +6,7 @@ func makePullRequest(number: Int = 1, state: PullRequest.State = .open, isDraft:
                      mergeable: PullRequest.Mergeable = .mergeable,
                      checks: [CheckRun.State] = []) -> PullRequest {
     PullRequest(number: number, title: "PR \(number)",
-                url: URL(string: "https://github.com/den/api/pull/\(number)") ?? URL(fileURLWithPath: "/"),
+                url: URL(string: "https://github.com/thalamus/api/pull/\(number)") ?? URL(fileURLWithPath: "/"),
                 state: state, isDraft: isDraft, additions: 10, deletions: 2, base: "main",
                 review: review, mergeable: mergeable,
                 checks: checks.enumerated().map { index, state in

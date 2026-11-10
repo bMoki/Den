@@ -1,7 +1,7 @@
 import SwiftUI
 
-struct DenMenuChip<Label: View>: View {
-    var sections: [DenMenuSection]
+struct ThalamusMenuChip<Label: View>: View {
+    var sections: [ThalamusMenuSection]
     var bordered = false
     var radius: CGFloat = 8
     var arrowEdge = Edge.top
@@ -22,24 +22,24 @@ struct DenMenuChip<Label: View>: View {
             .animation(.easeOut(duration: 0.12), value: hovering)
             .onChange(of: isOpen) { if isOpen { opened() } }
             .popover(isPresented: $isOpen, arrowEdge: arrowEdge) {
-                DenMenuList(sections: sections) { isOpen = false }
+                ThalamusMenuList(sections: sections) { isOpen = false }
                     .presentationBackground(Theme.raised)
                     .environment(\.colorScheme, .dark)
             }
     }
 }
 
-struct DenMenuList: View {
-    let sections: [DenMenuSection]
+struct ThalamusMenuList: View {
+    let sections: [ThalamusMenuSection]
     var dismiss: () -> Void = {}
 
-    @State private var path: [DenMenuItem] = []
+    @State private var path: [ThalamusMenuItem] = []
 
     private static let maxHeight: CGFloat = 360
 
-    private var shown: [DenMenuSection] { path.last?.children ?? sections }
+    private var shown: [ThalamusMenuSection] { path.last?.children ?? sections }
 
-    private var showsIcons: Bool { DenMenuSection.showsIcons(in: shown) }
+    private var showsIcons: Bool { ThalamusMenuSection.showsIcons(in: shown) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
@@ -65,7 +65,7 @@ struct DenMenuList: View {
                                 .padding(.bottom, 2)
                         }
                         ForEach(section.items) { item in
-                            DenMenuRow(item: item, showsIcon: showsIcons) { choose(item) }
+                            ThalamusMenuRow(item: item, showsIcon: showsIcons) { choose(item) }
                         }
                     }
                 }
@@ -75,18 +75,18 @@ struct DenMenuList: View {
         }
         .padding(6)
         .frame(minWidth: 190, alignment: .leading)
-        .accessibilityIdentifier("den-menu")
+        .accessibilityIdentifier("thalamus-menu")
         .onDisappear { path = [] }
     }
 
-    private func back(to parent: DenMenuItem) -> some View {
+    private func back(to parent: ThalamusMenuItem) -> some View {
         BackButton(title: parent.title) {
             withAnimation(.easeOut(duration: 0.12)) { _ = path.popLast() }
         }
         .help("Voltar")
     }
 
-    private func choose(_ item: DenMenuItem) {
+    private func choose(_ item: ThalamusMenuItem) {
         guard item.children.isEmpty else {
             withAnimation(.easeOut(duration: 0.12)) { path.append(item) }
             return
@@ -96,8 +96,8 @@ struct DenMenuList: View {
     }
 }
 
-private struct DenMenuRow: View {
-    let item: DenMenuItem
+private struct ThalamusMenuRow: View {
+    let item: ThalamusMenuItem
     var showsIcon: Bool
     var choose: () -> Void
 

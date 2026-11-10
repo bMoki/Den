@@ -12,7 +12,7 @@ private func entry(_ kind: TranscriptEntry.Kind,
 
 private func restored(_ entries: [TranscriptEntry]) -> ChatModel {
     let root = FileManager.default.temporaryDirectory
-        .appending(path: "DenTests-" + UUID().uuidString)
+        .appending(path: "ThalamusTests-" + UUID().uuidString)
     let segment = Segment(harness: HarnessID(rawValue: "test-" + UUID().uuidString),
                           harnessSessionID: "", model: "", entries: entries)
     let session = Session(title: "restored", workingDirectory: root, segments: [segment])
@@ -194,7 +194,7 @@ private func shape(_ chat: ChatModel) -> [String] {
 
 private func withAttachedImage(_ body: (URL, Data) throws -> Void) throws {
     let root = FileManager.default.temporaryDirectory
-        .appending(path: "DenTests-" + UUID().uuidString)
+        .appending(path: "ThalamusTests-" + UUID().uuidString)
     try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
     defer { try? FileManager.default.removeItem(at: root) }
 

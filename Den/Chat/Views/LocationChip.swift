@@ -23,7 +23,7 @@ struct LocationChip: View {
             .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .strokeBorder(Theme.borderStrong, lineWidth: 1))
         }
-        .buttonStyle(.denGhost)
+        .buttonStyle(.thalamusGhost)
         .fixedSize()
         .help(chat.workingDirectory.path)
         .accessibilityLabel("Pasta da sessão: \(chat.workingDirectory.lastPathComponent)")

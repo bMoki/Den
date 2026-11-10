@@ -65,7 +65,7 @@ func withEndToEnd(_ body: (EndToEnd) async throws -> Void) async throws {
     let scratch = ScratchDefaults()
     let defaults = scratch.defaults
     let root = FileManager.default.temporaryDirectory
-        .appending(path: "DenTests-" + UUID().uuidString)
+        .appending(path: "ThalamusTests-" + UUID().uuidString)
     let claude = try FakeCLI()
     let openCode = try FakeCLI()
 

@@ -92,7 +92,7 @@ private func remove(_ folders: (real: URL, link: URL)) {
 }
 
 @Test func theWorkspaceRemembersBetweenRunsAndArchivesBeforeNsAnswers() async throws {
-    let suite = "DenTests.nsMemory.\(UUID().uuidString)"
+    let suite = "ThalamusTests.nsMemory.\(UUID().uuidString)"
     let defaults = try #require(UserDefaults(suiteName: suite))
     defer { defaults.removePersistentDomain(forName: suite) }
     let first = NsWorkspace(fetch: { sampleStatus }, defaults: defaults)

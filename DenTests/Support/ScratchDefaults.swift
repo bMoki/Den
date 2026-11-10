@@ -24,7 +24,7 @@ nonisolated struct ScratchDefaults {
         let suite = Self.pool.withLock { pool in
             if let reused = pool.free.popLast() { return reused }
             pool.made += 1
-            return "DenTests.\(Self.checkout).\(pool.made)"
+            return "ThalamusTests.\(Self.checkout).\(pool.made)"
         }
         guard let defaults = UserDefaults(suiteName: suite) else {
             fatalError("could not create suite \(suite)")

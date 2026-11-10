@@ -55,7 +55,7 @@ import Foundation
 
 @Test func indexFilesSkipsVendoredAndHiddenEntries() throws {
     let root = FileManager.default.temporaryDirectory
-        .appending(path: "DenTests-" + UUID().uuidString)
+        .appending(path: "ThalamusTests-" + UUID().uuidString)
     defer { try? FileManager.default.removeItem(at: root) }
 
     let files = FileManager.default
@@ -75,7 +75,7 @@ import Foundation
 
 @Test func indexFilesSkipBuildOutput() throws {
     let root = FileManager.default.temporaryDirectory
-        .appending(path: "DenTests-" + UUID().uuidString)
+        .appending(path: "ThalamusTests-" + UUID().uuidString)
     defer { try? FileManager.default.removeItem(at: root) }
 
     let files = FileManager.default
@@ -93,7 +93,7 @@ import Foundation
 
 @Test func indexFilesSkipOtherCheckoutsOfARepoInTheProject() throws {
     let root = FileManager.default.temporaryDirectory
-        .appending(path: "DenTests-" + UUID().uuidString)
+        .appending(path: "ThalamusTests-" + UUID().uuidString)
     defer { try? FileManager.default.removeItem(at: root) }
 
     let files = FileManager.default
@@ -122,7 +122,7 @@ import Foundation
 
 @Test func indexFilesCutTheDeepestEntriesWhenTheLimitIsReached() throws {
     let root = FileManager.default.temporaryDirectory
-        .appending(path: "DenTests-" + UUID().uuidString)
+        .appending(path: "ThalamusTests-" + UUID().uuidString)
     defer { try? FileManager.default.removeItem(at: root) }
 
     let files = FileManager.default
@@ -157,7 +157,7 @@ import Foundation
 
 @Test func indexFilesResolveSymlinkedRoots() throws {
     let scratch = FileManager.default.temporaryDirectory
-        .appending(path: "DenTests-" + UUID().uuidString)
+        .appending(path: "ThalamusTests-" + UUID().uuidString)
     try FileManager.default.createDirectory(at: scratch,
                                             withIntermediateDirectories: true)
     defer { try? FileManager.default.removeItem(at: scratch) }

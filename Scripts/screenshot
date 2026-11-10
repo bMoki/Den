@@ -8,7 +8,7 @@
 #
 #   --no-build     reuse the app already in build/DerivedData
 #   --setup CMD    shell command run once in the project folder before launch,
-#                  like DEN_PROJECT_SETUP in the UI tests
+#                  like THALAMUS_PROJECT_SETUP in the UI tests
 #   --seed CMD     shell command run in the data root before launch, to plant
 #                  sessions under sessions/<id>/session.json
 #   --ns FILE      the status the fake `ns rpc` answers with (a JSON file, read
@@ -72,7 +72,7 @@ fi
 
 # The UI tests keep their roots under /private/tmp too: the app removes its
 # stored preferences whenever the root has no sessions yet.
-root=$(mktemp -d /private/tmp/DenScreenshot-XXXXXX)
+root=$(mktemp -d /private/tmp/ThalamusScreenshot-XXXXXX)
 # A seeded root already has sessions, so the app would keep the preferences of
 # the last run; start them over here instead.
 defaults delete Den.UITests >/dev/null 2>&1 || true
@@ -82,12 +82,12 @@ case "$ns_status" in
     *) ns_status=$repo/$ns_status ;;
 esac
 
-env "DEN_UI_TEST_ROOT=$root" \
-    "DEN_PROJECT_SETUP=$setup" \
-    "DEN_NS=$repo/Scripts/fake-cli/ns" \
+env "THALAMUS_UI_TEST_ROOT=$root" \
+    "THALAMUS_PROJECT_SETUP=$setup" \
+    "THALAMUS_NS=$repo/Scripts/fake-cli/ns" \
     "FAKE_NS_STATUS=$ns_status" \
-    "DEN_CLI_claude-code=$repo/Scripts/fake-cli/claude-code" \
-    "DEN_CLI_opencode=$repo/Scripts/fake-cli/opencode" \
+    "THALAMUS_CLI_claude-code=$repo/Scripts/fake-cli/claude-code" \
+    "THALAMUS_CLI_opencode=$repo/Scripts/fake-cli/opencode" \
     "$app/Contents/MacOS/Den Dev" -ApplePersistenceIgnoreState YES >"$root/app.log" 2>&1 &
 pid=$!
 

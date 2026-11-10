@@ -2,23 +2,23 @@ import Testing
 import Foundation
 @testable import Den
 
-private let expected = GitHubRemote(host: "github.com", owner: "den", name: "app")
+private let expected = GitHubRemote(host: "github.com", owner: "thalamus", name: "app")
 
 @Test func httpsRemotesAreRead() {
-    #expect(GitHubRemote(remoteURL: "https://github.com/den/app.git") == expected)
-    #expect(GitHubRemote(remoteURL: "https://github.com/den/app") == expected)
-    #expect(GitHubRemote(remoteURL: "http://GitHub.com/den/app\n") == expected)
+    #expect(GitHubRemote(remoteURL: "https://github.com/thalamus/app.git") == expected)
+    #expect(GitHubRemote(remoteURL: "https://github.com/thalamus/app") == expected)
+    #expect(GitHubRemote(remoteURL: "http://GitHub.com/thalamus/app\n") == expected)
 }
 
 @Test func sshRemotesAreRead() {
-    #expect(GitHubRemote(remoteURL: "git@github.com:den/app.git") == expected)
-    #expect(GitHubRemote(remoteURL: "ssh://git@github.com/den/app") == expected)
-    #expect(GitHubRemote(remoteURL: "ssh://git@github.com:22/den/app.git") == expected)
+    #expect(GitHubRemote(remoteURL: "git@github.com:thalamus/app.git") == expected)
+    #expect(GitHubRemote(remoteURL: "ssh://git@github.com/thalamus/app") == expected)
+    #expect(GitHubRemote(remoteURL: "ssh://git@github.com:22/thalamus/app.git") == expected)
 }
 
 @Test func anEnterpriseHostIsKept() {
-    #expect(GitHubRemote(remoteURL: "git@git.acme.com:den/app.git")
-            == GitHubRemote(host: "git.acme.com", owner: "den", name: "app"))
+    #expect(GitHubRemote(remoteURL: "git@git.acme.com:thalamus/app.git")
+            == GitHubRemote(host: "git.acme.com", owner: "thalamus", name: "app"))
 }
 
 @Test func localAndMalformedRemotesAreNotGitHub() {

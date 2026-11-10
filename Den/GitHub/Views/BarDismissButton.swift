@@ -10,7 +10,7 @@ struct BarDismissButton: View {
                 .foregroundStyle(Theme.textTertiary)
                 .iconLabel(size: 24)
         }
-        .buttonStyle(.denGhost(radius: 6))
+        .buttonStyle(.thalamusGhost(radius: 6))
         .accessibilityLabel("Dispensar")
     }
 }

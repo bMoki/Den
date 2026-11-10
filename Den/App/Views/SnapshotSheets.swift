@@ -27,7 +27,7 @@ struct TakeSnapshotSheet: View {
                 Spacer(minLength: 0)
                 DialogCancelButton(action: cancel)
                 Button(action: submit) { Text(replacing ? "Substituir" : "Tirar snapshot").pillLabel() }
-                    .buttonStyle(.denPrimary)
+                    .buttonStyle(.thalamusPrimary)
                     .keyboardShortcut(.defaultAction)
                     .disabled(!isValid)
             }
@@ -130,7 +130,7 @@ struct RestoreSnapshotSheet: View {
                 Button { if let selected { restore(selected) } } label: {
                     Text(selected.map { "Restaurar \($0)" } ?? "Restaurar").pillLabel()
                 }
-                .buttonStyle(.denPrimary)
+                .buttonStyle(.thalamusPrimary)
                 .disabled(selected == nil)
             }
         }

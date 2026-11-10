@@ -25,7 +25,7 @@ struct BranchUpdateSheet: View {
             DialogFooter {
                 Spacer(minLength: 0)
                 Button(action: close) { Text("Fechar").pillLabel() }
-                    .buttonStyle(.denPrimary)
+                    .buttonStyle(.thalamusPrimary)
                     .keyboardShortcut(.defaultAction)
             }
         }

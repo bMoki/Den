@@ -54,7 +54,7 @@ struct ComposerField: View {
                         .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous)
                             .strokeBorder(Theme.borderStrong, lineWidth: 1))
                 }
-                .buttonStyle(.denGhost(radius: 5))
+                .buttonStyle(.thalamusGhost(radius: 5))
                 .help("Enviar resposta sugerida (→)")
                 .accessibilityLabel("Enviar resposta sugerida")
             }

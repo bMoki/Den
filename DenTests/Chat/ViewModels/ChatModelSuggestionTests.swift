@@ -141,7 +141,7 @@ private func suggested(_ live: LiveChatHarness, _ runner: FakeCommandRunner) asy
     var harness = FakeHarness()
     harness.quickPrompt = ["one-shot"]
     let root = FileManager.default.temporaryDirectory
-        .appending(path: "DenTests-" + UUID().uuidString)
+        .appending(path: "ThalamusTests-" + UUID().uuidString)
     let segment = Segment(harness: harness.id, harnessSessionID: "", model: "", entries: [
         TranscriptEntry(timestamp: Date(),
                         kind: .userMessage(text: "crie um backup", attachments: []), raw: .null),

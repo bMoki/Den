@@ -4,7 +4,7 @@ import HarnessCore
 @testable import Den
 
 private func scratchRoot() -> URL {
-    FileManager.default.temporaryDirectory.appending(path: "DenTests-" + UUID().uuidString)
+    FileManager.default.temporaryDirectory.appending(path: "ThalamusTests-" + UUID().uuidString)
 }
 
 @Test func withoutARootThereIsNoUITestEnvironment() {
@@ -35,14 +35,14 @@ private func scratchRoot() -> URL {
     defer { try? FileManager.default.removeItem(at: root) }
     let launch = [UITestEnvironment.rootKey: root.path]
     let first = try #require(UITestEnvironment(launch))
-    defer { first.defaults.removeObject(forKey: "DenTests.relaunch") }
+    defer { first.defaults.removeObject(forKey: "ThalamusTests.relaunch") }
     try FileManager.default.createDirectory(at: first.sessionsRoot,
                                             withIntermediateDirectories: true)
-    first.defaults.set("kept", forKey: "DenTests.relaunch")
+    first.defaults.set("kept", forKey: "ThalamusTests.relaunch")
 
     let relaunched = try #require(UITestEnvironment(launch))
 
-    #expect(relaunched.defaults.string(forKey: "DenTests.relaunch") == "kept")
+    #expect(relaunched.defaults.string(forKey: "ThalamusTests.relaunch") == "kept")
 }
 
 @MainActor
@@ -54,11 +54,11 @@ private func scratchRoot() -> URL {
         try? FileManager.default.removeItem(at: fresh)
     }
     let first = try #require(UITestEnvironment([UITestEnvironment.rootKey: used.path]))
-    first.defaults.set("stale", forKey: "DenTests.freshRoot")
+    first.defaults.set("stale", forKey: "ThalamusTests.freshRoot")
 
     let next = try #require(UITestEnvironment([UITestEnvironment.rootKey: fresh.path]))
 
-    #expect(next.defaults.object(forKey: "DenTests.freshRoot") == nil)
+    #expect(next.defaults.object(forKey: "ThalamusTests.freshRoot") == nil)
 }
 
 @Test func aProjectSetupFillsTheProjectOnlyTheFirstTime() throws {

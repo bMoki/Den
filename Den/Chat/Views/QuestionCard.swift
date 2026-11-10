@@ -39,14 +39,14 @@ struct QuestionCard: View {
                 Button(action: dismiss) {
                     Text("Dispensar").pillLabel()
                 }
-                .buttonStyle(.denGhost)
+                .buttonStyle(.thalamusGhost)
                 .foregroundStyle(Theme.textSecondary)
                 Spacer()
                 if needsSubmit {
                     Button(action: submit) {
                         Text("Responder").pillLabel()
                     }
-                    .buttonStyle(.denPrimary)
+                    .buttonStyle(.thalamusPrimary)
                     .keyboardShortcut(.defaultAction)
                     .disabled(!allAnswered)
                 }

@@ -133,7 +133,7 @@ struct ContentView: View {
                         .labelStyle(.titleAndIcon)
                         .pillLabel()
                 }
-                .buttonStyle(.denPrimary)
+                .buttonStyle(.thalamusPrimary)
                 .padding(.top, 4)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -175,7 +175,7 @@ struct SidebarButton: View {
                 .foregroundStyle(Theme.textMuted)
                 .iconLabel()
         }
-        .buttonStyle(.denGhost)
+        .buttonStyle(.thalamusGhost)
         .help(title)
         .accessibilityLabel(title)
     }

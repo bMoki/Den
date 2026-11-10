@@ -67,7 +67,7 @@ struct NewBranchSheet: View {
                 Spacer(minLength: 0)
                 DialogCancelButton { creation.isPresented = false }
                 Button(action: start) { Text("Criar e preparar").pillLabel() }
-                    .buttonStyle(.denPrimary)
+                    .buttonStyle(.thalamusPrimary)
                     .keyboardShortcut(.defaultAction)
                     .disabled(!creation.canCreate)
             }
@@ -97,7 +97,7 @@ struct NewBranchSheet: View {
                             Button { retry(missing.repo) } label: {
                                 Text("Repetir \(missing.repo)").pillLabel()
                             }
-                                .buttonStyle(.denSecondary)
+                                .buttonStyle(.thalamusSecondary)
                         }
                     }
                 }
@@ -106,7 +106,7 @@ struct NewBranchSheet: View {
                                message: stopped.failure.detail) {
                         if case .notPrepared = creation.phase {
                             Button(action: prepareAgain) { Text("Preparar de novo").pillLabel() }
-                                .buttonStyle(.denSecondary)
+                                .buttonStyle(.thalamusSecondary)
                         }
                     }
                 }
@@ -118,7 +118,7 @@ struct NewBranchSheet: View {
                     .foregroundStyle(Theme.textTertiary)
                 Spacer(minLength: 0)
                 Button { creation.isPresented = false } label: { Text("Fechar").pillLabel() }
-                    .buttonStyle(DenButtonStyle(kind: creation.phase == .finished ? .primary : .secondary))
+                    .buttonStyle(ThalamusButtonStyle(kind: creation.phase == .finished ? .primary : .secondary))
                     .keyboardShortcut(.cancelAction)
             }
     }
@@ -260,9 +260,9 @@ private struct QuestionBox: View {
             HStack(spacing: 8) {
                 Spacer(minLength: 0)
                 Button { reply(false) } label: { Text("Não").pillLabel() }
-                    .buttonStyle(DenButtonStyle(kind: question.default ? .secondary : .primary))
+                    .buttonStyle(ThalamusButtonStyle(kind: question.default ? .secondary : .primary))
                 Button { reply(true) } label: { Text("Sim").pillLabel() }
-                    .buttonStyle(DenButtonStyle(kind: question.default ? .primary : .secondary))
+                    .buttonStyle(ThalamusButtonStyle(kind: question.default ? .primary : .secondary))
             }
         }
         .callout(fill: Theme.accentFill, border: Theme.accent)

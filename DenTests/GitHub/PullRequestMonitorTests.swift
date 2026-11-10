@@ -27,13 +27,13 @@ private struct Rig {
 
 func branchRepo(_ branch: String, _ name: String = "api", host: String = "github.com", gitBranch: String? = nil) -> BranchRepo {
     BranchRepo(branch: branch, name: name, folder: URL(fileURLWithPath: "/wt/\(branch)/\(name)"),
-               remote: GitHubRemote(host: host, owner: "den", name: name), gitBranch: gitBranch ?? branch)
+               remote: GitHubRemote(host: host, owner: "thalamus", name: name), gitBranch: gitBranch ?? branch)
 }
 
 @MainActor
 private func makeRig(branches: Int = 1, host: String = "github.com", limit: Int = 3) -> Rig {
     let file = FileManager.default.temporaryDirectory
-        .appending(path: "DenTests-" + UUID().uuidString).appending(path: "pull-requests.json")
+        .appending(path: "ThalamusTests-" + UUID().uuidString).appending(path: "pull-requests.json")
     let ledger = PullRequestLedger(store: PullRequestStore(url: file))
     let names = (0..<branches).map { "NS-\($0)" }
     let fetcher = FakeFetcher()
@@ -415,7 +415,7 @@ private func makeRig(branches: Int = 1, host: String = "github.com", limit: Int 
     let rig = makeRig()
     rig.ledger.setPullRequest(makePullRequest(), for: rig.repo(0).id)
     let detached = BranchRepo(branch: "NS-0", name: "api", folder: URL(fileURLWithPath: "/wt/NS-0/api"),
-                              remote: GitHubRemote(host: "github.com", owner: "den", name: "api"), gitBranch: nil)
+                              remote: GitHubRemote(host: "github.com", owner: "thalamus", name: "api"), gitBranch: nil)
 
     rig.monitor.track([detached], branches: ["NS-0"])
     rig.monitor.appear("NS-0")

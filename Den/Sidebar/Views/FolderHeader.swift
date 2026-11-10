@@ -35,9 +35,9 @@ struct FolderHeader: View {
         .padding(.horizontal, 10)
         .frame(height: 32)
         .sidebarHeaderRow(hovering: $hovering, isSelected: isSelected, open: open)
-        .denContextMenu([
-            DenMenuSection(id: "new", items: [
-                DenMenuItem(id: "new-session", title: "Nova sessão aqui", action: newSession),
+        .thalamusContextMenu([
+            ThalamusMenuSection(id: "new", items: [
+                ThalamusMenuItem(id: "new-session", title: "Nova sessão aqui", action: newSession),
                 FavoriteTitle.item(isFavorite: isFavorite, toggle: toggleFavorite),
             ]),
         ])

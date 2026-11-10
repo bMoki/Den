@@ -67,7 +67,7 @@ private struct PullRequestRow: View {
                     .foregroundStyle(isDismissed ? Theme.textMuted : Theme.textTertiary)
                     .iconLabel(size: 24)
             }
-            .buttonStyle(.denGhost(radius: 6))
+            .buttonStyle(.thalamusGhost(radius: 6))
             .opacity(hovering || isDismissed ? 1 : 0)
             .help(dismissalTitle)
             .accessibilityLabel("\(dismissalTitle): \(repo.name)")

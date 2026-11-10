@@ -80,7 +80,7 @@ private func queuedLines(_ chat: ChatModel) -> [String] {
 
 @Test func theHistoryReachesMessagesFromBeforeTheSessionWasReopened() {
     let root = FileManager.default.temporaryDirectory
-        .appending(path: "DenTests-" + UUID().uuidString)
+        .appending(path: "ThalamusTests-" + UUID().uuidString)
     let asked = TranscriptEntry(timestamp: Date(),
                                 kind: .userMessage(text: "/review", attachments: []), raw: .null)
     let segment = Segment(harness: HarnessID(rawValue: "test-" + UUID().uuidString),

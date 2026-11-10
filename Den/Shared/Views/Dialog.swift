@@ -36,7 +36,7 @@ struct DialogCancelButton: View {
 
     var body: some View {
         Button(action: action) { Text("Cancelar").pillLabel() }
-            .buttonStyle(.denSecondary)
+            .buttonStyle(.thalamusSecondary)
             .keyboardShortcut(.cancelAction)
     }
 }

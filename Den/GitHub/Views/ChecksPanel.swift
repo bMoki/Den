@@ -113,7 +113,7 @@ struct ChecksPanel: View {
                         .foregroundStyle(Theme.textSecondary)
                         .iconLabel(size: 24)
                 }
-                .buttonStyle(.denGhost(radius: 6))
+                .buttonStyle(.thalamusGhost(radius: 6))
                 .help("Atualizar agora")
                 .accessibilityLabel("Atualizar")
             }

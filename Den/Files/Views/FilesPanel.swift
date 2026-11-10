@@ -73,7 +73,7 @@ struct FilesPanel: View {
                             drop(paths, into: row.node.url)
                         }
                         .id(row.id)
-                        .denContextMenu(menu(for: row.node))
+                        .thalamusContextMenu(menu(for: row.node))
                     }
                 }
             }
@@ -139,41 +139,41 @@ struct FilesPanel: View {
                 .foregroundStyle(Theme.textTertiary)
                 .iconLabel(size: 26)
         }
-        .buttonStyle(.denGhost)
+        .buttonStyle(.thalamusGhost)
         .help(title)
         .accessibilityLabel(title)
     }
 
-    private func menu(for node: FileNode) -> [DenMenuSection] {
+    private func menu(for node: FileNode) -> [ThalamusMenuSection] {
         let mentioning = mention.map { mention in
-            DenMenuSection(id: "mention", items: [
-                DenMenuItem(id: "mention", title: "Mencionar na Sessão", icon: icon("at")) {
+            ThalamusMenuSection(id: "mention", items: [
+                ThalamusMenuItem(id: "mention", title: "Mencionar na Sessão", icon: icon("at")) {
                     mention(tree.relativePath(of: node), node.isDirectory)
                 },
             ])
         }
         return [mentioning].compactMap { $0 } + [
-            DenMenuSection(id: "edit", items: [
-                DenMenuItem(id: "new-file", title: "Novo arquivo", icon: icon("doc.badge.plus")) { ask(.newFile, at: node) },
-                DenMenuItem(id: "new-folder", title: "Nova pasta", icon: icon("folder.badge.plus")) { ask(.newFolder, at: node) },
-                DenMenuItem(id: "rename", title: "Renomear", icon: icon("pencil"), shortcut: FileTreeShortcut.rename.hint) {
+            ThalamusMenuSection(id: "edit", items: [
+                ThalamusMenuItem(id: "new-file", title: "Novo arquivo", icon: icon("doc.badge.plus")) { ask(.newFile, at: node) },
+                ThalamusMenuItem(id: "new-folder", title: "Nova pasta", icon: icon("folder.badge.plus")) { ask(.newFolder, at: node) },
+                ThalamusMenuItem(id: "rename", title: "Renomear", icon: icon("pencil"), shortcut: FileTreeShortcut.rename.hint) {
                     rename(node)
                 },
-                DenMenuItem(id: "move", title: "Mover para…", icon: icon("arrow.right.doc.on.clipboard")) { move(node) },
+                ThalamusMenuItem(id: "move", title: "Mover para…", icon: icon("arrow.right.doc.on.clipboard")) { move(node) },
             ]),
-            DenMenuSection(id: "place", items: [
-                DenMenuItem(id: "reveal", title: "Revelar no Finder", icon: icon("magnifyingglass")) { tree.revealInFinder(node) },
-                DenMenuItem(id: "copy-path", title: "Copiar caminho", icon: icon("doc.on.doc"),
+            ThalamusMenuSection(id: "place", items: [
+                ThalamusMenuItem(id: "reveal", title: "Revelar no Finder", icon: icon("magnifyingglass")) { tree.revealInFinder(node) },
+                ThalamusMenuItem(id: "copy-path", title: "Copiar caminho", icon: icon("doc.on.doc"),
                             shortcut: FileTreeShortcut.copyPath.hint) { tree.copyPath(node) },
             ]),
-            DenMenuSection(id: "trash", items: [
-                DenMenuItem(id: "trash", title: "Mover para a lixeira", icon: .symbol("trash", Theme.removed),
+            ThalamusMenuSection(id: "trash", items: [
+                ThalamusMenuItem(id: "trash", title: "Mover para a lixeira", icon: .symbol("trash", Theme.removed),
                             isDestructive: true, shortcut: FileTreeShortcut.trash.hint) { attempt { try tree.trash(node) } },
             ]),
         ]
     }
 
-    private func icon(_ symbol: String) -> DenMenuIcon {
+    private func icon(_ symbol: String) -> ThalamusMenuIcon {
         .symbol(symbol, Theme.textTertiary)
     }
 

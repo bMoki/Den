@@ -18,8 +18,8 @@ import Foundation
     let folder = parent.appending(path: "Área de trabalho")
 
     let outcome = try #require(await TimedProcess.run(
-        "/bin/sh", ["-c", "pwd; echo \"$DEN_PROBE\""], in: folder,
-        environment: ["DEN_PROBE": "a=b c", "PATH": "/usr/bin:/bin"],
+        "/bin/sh", ["-c", "pwd; echo \"$THALAMUS_PROBE\""], in: folder,
+        environment: ["THALAMUS_PROBE": "a=b c", "PATH": "/usr/bin:/bin"],
         timeout: .seconds(10)))
 
     let lines = outcome.output.split(separator: "\n").map(String.init)
@@ -33,7 +33,7 @@ import Foundation
 }
 
 @Test func aMissingExecutableGivesNil() async {
-    #expect(await TimedProcess.run("/nonexistent/den-tool", [], timeout: .seconds(1)) == nil)
+    #expect(await TimedProcess.run("/nonexistent/thalamus-tool", [], timeout: .seconds(1)) == nil)
 }
 
 @Test func plentyOfOutputOnBothStreamsNeverStalls() async throws {

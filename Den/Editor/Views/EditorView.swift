@@ -62,7 +62,7 @@ struct EditorView: View {
                 .padding(.horizontal, 10)
                 .frame(height: 28)
         }
-        .buttonStyle(.denSecondary)
+        .buttonStyle(.thalamusSecondary)
     }
 
     private var bar: some View {
@@ -139,7 +139,7 @@ struct EditorView: View {
             .frame(height: 28)
             .background(isOn ? Theme.accentFill : .clear, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
         }
-        .buttonStyle(.denGhost)
+        .buttonStyle(.thalamusGhost)
         .accessibilityAddTraits(isOn ? .isSelected : [])
     }
 
@@ -163,7 +163,7 @@ struct EditorView: View {
         case .text:
             switch document.mode {
             case .code:
-                SourceEditor($document.text, language: document.language, configuration: .den, state: $document.editorState,
+                SourceEditor($document.text, language: document.language, configuration: .thalamus, state: $document.editorState,
                              undoManager: document.memory.undoManager, coordinators: [document.memory, EditorClipping.shared])
                     .id("\(document.url.path)#\(document.editorGeneration)")
             case .preview:
@@ -226,7 +226,7 @@ struct EditorView: View {
                 .padding(.horizontal, 14)
                 .frame(maxWidth: .infinity, minHeight: 32, alignment: .leading)
                 .overlay(alignment: .bottom) { Rectangle().fill(Theme.border).frame(height: 1) }
-            SourceEditor(.constant(text), language: document.language, configuration: .denReadOnly, state: .constant(SourceEditorState()),
+            SourceEditor(.constant(text), language: document.language, configuration: .thalamusReadOnly, state: .constant(SourceEditorState()),
                          coordinators: [EditorClipping.shared])
                 .id("\(title)#\(text.hashValue)")
         }
