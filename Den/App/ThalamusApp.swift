@@ -1,8 +1,8 @@
 import SwiftUI
 
 @main
-struct DenApp: App {
-    @NSApplicationDelegateAdaptor private var delegate: DenAppDelegate
+struct ThalamusApp: App {
+    @NSApplicationDelegateAdaptor private var delegate: ThalamusAppDelegate
     private let environment: any AppEnvironment
     @State private var monitor: PullRequestMonitor
     @State private var ns: NsWorkspace
@@ -51,7 +51,7 @@ struct DenApp: App {
     }
 }
 
-final class DenAppDelegate: NSObject, NSApplicationDelegate {
+final class ThalamusAppDelegate: NSObject, NSApplicationDelegate {
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         let leaves = UnsavedAlert.confirm("Salvar as alterações antes de sair?", unsaved: EditorWindows.shared.unsaved()) {
             EditorWindows.shared.settle($0)

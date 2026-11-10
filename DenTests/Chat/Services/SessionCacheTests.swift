@@ -8,7 +8,7 @@ private let other = HarnessID(rawValue: "other-harness")
 
 @Test func catalogRoundTripsPerDirectory() {
     withTemporaryCache { cache in
-        let directory = URL(fileURLWithPath: "/tmp/den-tests/project")
+        let directory = URL(fileURLWithPath: "/tmp/thalamus-tests/project")
         let catalog = CommandCatalog(skills: ["review"], supportsCompact: true)
         cache.remember(catalog, for: directory, harness: harness)
         #expect(cache.rememberedCatalog(for: directory, harness: harness) == catalog)
@@ -17,8 +17,8 @@ private let other = HarnessID(rawValue: "other-harness")
 
 @Test func catalogsOfDifferentDirectoriesNeverBleed() {
     withTemporaryCache { cache in
-        let one = URL(fileURLWithPath: "/tmp/den-tests/one")
-        let two = URL(fileURLWithPath: "/tmp/den-tests/two")
+        let one = URL(fileURLWithPath: "/tmp/thalamus-tests/one")
+        let two = URL(fileURLWithPath: "/tmp/thalamus-tests/two")
         let first = CommandCatalog(skills: ["review"], supportsCompact: true)
         let second = CommandCatalog(skills: ["deploy"], supportsCompact: false)
 
@@ -32,8 +32,8 @@ private let other = HarnessID(rawValue: "other-harness")
 
 @Test func catalogFallsBackToTheLastOneForNewDirectories() {
     withTemporaryCache { cache in
-        let known = URL(fileURLWithPath: "/tmp/den-tests/known")
-        let fresh = URL(fileURLWithPath: "/tmp/den-tests/fresh")
+        let known = URL(fileURLWithPath: "/tmp/thalamus-tests/known")
+        let fresh = URL(fileURLWithPath: "/tmp/thalamus-tests/fresh")
         let catalog = CommandCatalog(skills: ["review"], supportsCompact: true)
         cache.remember(catalog, for: known, harness: harness)
         #expect(cache.rememberedCatalog(for: fresh, harness: harness) == catalog)
@@ -43,7 +43,7 @@ private let other = HarnessID(rawValue: "other-harness")
 
 @Test func emptyCatalogNeverOverwritesARememberedOne() {
     withTemporaryCache { cache in
-        let directory = URL(fileURLWithPath: "/tmp/den-tests/project")
+        let directory = URL(fileURLWithPath: "/tmp/thalamus-tests/project")
         let catalog = CommandCatalog(skills: ["review"], supportsCompact: true)
         cache.remember(catalog, for: directory, harness: harness)
         cache.remember(.empty, for: directory, harness: harness)
@@ -138,7 +138,7 @@ private let modeKnob = HarnessKnob(
 }
 
 @Test func separateCachesNeverSeeEachOther() {
-    let directory = URL(fileURLWithPath: "/tmp/den-tests/project")
+    let directory = URL(fileURLWithPath: "/tmp/thalamus-tests/project")
     let catalog = CommandCatalog(skills: ["review"], supportsCompact: true)
     withTemporaryCache { first in
         first.remember(catalog, for: directory, harness: harness)

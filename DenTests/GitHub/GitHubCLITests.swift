@@ -109,7 +109,7 @@ private func isReady(_ cli: GitHubCLI, at gh: URL) async -> Bool {
     let gh = try fakeGh(healthy)
     defer { cleanUp(gh) }
     let cli = GitHubCLI(configured: gh.path, shell: shell(path: plainPath), candidates: [])
-    #expect(await cli.pullRequest(branch: "den/x", in: gh.deletingLastPathComponent()) == .found(nil))
+    #expect(await cli.pullRequest(branch: "thalamus/x", in: gh.deletingLastPathComponent()) == .found(nil))
 }
 
 @Test func aRateLimitIsRecognized() async throws {
@@ -118,7 +118,7 @@ private func isReady(_ cli: GitHubCLI, at gh: URL) async -> Bool {
         with: "pr) echo 'GraphQL: API rate limit exceeded for user ID 1.' >&2; exit 1 ;;"))
     defer { cleanUp(gh) }
     let cli = GitHubCLI(configured: gh.path, shell: shell(path: plainPath), candidates: [])
-    #expect(await cli.pullRequest(branch: "den/x", in: gh.deletingLastPathComponent())
+    #expect(await cli.pullRequest(branch: "thalamus/x", in: gh.deletingLastPathComponent())
             == .failed(rateLimited: true))
 }
 
@@ -127,7 +127,7 @@ private func isReady(_ cli: GitHubCLI, at gh: URL) async -> Bool {
     defer { cleanUp(gh) }
     let cli = GitHubCLI(configured: gh.path, shell: shell(path: plainPath), candidates: [],
                         timeout: .milliseconds(500))
-    #expect(await cli.pullRequest(branch: "den/x", in: gh.deletingLastPathComponent())
+    #expect(await cli.pullRequest(branch: "thalamus/x", in: gh.deletingLastPathComponent())
             == .failed(rateLimited: false))
 }
 

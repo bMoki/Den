@@ -34,7 +34,7 @@ struct FileNameSheet: View {
                 Spacer(minLength: 0)
                 DialogCancelButton(action: cancel)
                 Button(action: confirm) { Text(request.title).pillLabel() }
-                    .buttonStyle(.denPrimary)
+                    .buttonStyle(.thalamusPrimary)
                     .keyboardShortcut(.defaultAction)
                     .disabled(!isValid)
             }

@@ -73,7 +73,7 @@ cinco mais novos. O app fica zipado ali para o macOS não achar um segundo Den.
 | Como abre | `/Applications/Den.app` | build Debug do Xcode | XCUITest e `Scripts/screenshot` |
 | Bundle id | `gabrielpassos.Den` | `gabrielpassos.Den.dev` | `gabrielpassos.Den.dev` |
 | Ícone | `AppIcon` | `AppIconDev`, com a faixa "DEV" | `AppIconDev` |
-| Sessões, anexos, PRs | `~/Library/Application Support/Den` | `~/Library/Application Support/Den Dev` | uma pasta descartável em `/private/tmp` (`DenUITests-…`, `DenScreenshot-…`) |
+| Sessões, anexos, PRs | `~/Library/Application Support/Den` | `~/Library/Application Support/Den Dev` | uma pasta descartável em `/private/tmp` (`ThalamusUITests-…`, `ThalamusScreenshot-…`) |
 | Preferências | `gabrielpassos.Den` | `Den.Dev` | `Den.UITests`, zeradas a cada pasta nova |
 | CLIs (`ns`, `claude`, `opencode`) | os que o shell de login acha | o `ns` do `cli` em desenvolvimento (veja abaixo); os outros, os que o shell de login acha | os falsos de `Scripts/fake-cli`; nos XCUITests não há `ns` |
 

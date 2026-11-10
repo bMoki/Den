@@ -66,34 +66,34 @@ struct BranchHeader: View {
         .padding(.trailing, 6)
         .padding(.vertical, 6)
         .sidebarHeaderRow(hovering: $hovering, isSelected: isSelected, open: open)
-        .denContextMenu(menu)
+        .thalamusContextMenu(menu)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(branch?.nickname.map { "\($0), \(name)" } ?? name)
     }
 
-    private var menu: [DenMenuSection] {
+    private var menu: [ThalamusMenuSection] {
         let idle = activity == nil
         let adding = addableRepos.isEmpty ? [] : [
-            DenMenuItem(id: "add-repo", title: BranchActionTitle.addRepo, isEnabled: idle, children: [
-                DenMenuSection(items: addableRepos.map { repo in
-                    DenMenuItem(id: repo.rawValue, title: repo.rawValue) { addRepo(repo) }
+            ThalamusMenuItem(id: "add-repo", title: BranchActionTitle.addRepo, isEnabled: idle, children: [
+                ThalamusMenuSection(items: addableRepos.map { repo in
+                    ThalamusMenuItem(id: repo.rawValue, title: repo.rawValue) { addRepo(repo) }
                 }),
             ]),
         ]
         return [
-            DenMenuSection(id: "services", items: [
-                DenMenuItem(id: "start", title: BranchActionTitle.start, isEnabled: idle, action: start),
-                DenMenuItem(id: "stop", title: BranchActionTitle.stop, isEnabled: idle, action: stop),
+            ThalamusMenuSection(id: "services", items: [
+                ThalamusMenuItem(id: "start", title: BranchActionTitle.start, isEnabled: idle, action: start),
+                ThalamusMenuItem(id: "stop", title: BranchActionTitle.stop, isEnabled: idle, action: stop),
             ]),
-            DenMenuSection(id: "branch", items: [
-                DenMenuItem(id: "update", title: BranchActionTitle.update, isEnabled: idle, action: update),
+            ThalamusMenuSection(id: "branch", items: [
+                ThalamusMenuItem(id: "update", title: BranchActionTitle.update, isEnabled: idle, action: update),
             ] + adding + [
-                DenMenuItem(id: "new-session", title: "Nova sessão aqui", action: newSession),
-                DenMenuItem(id: "nickname", title: BranchActionTitle.nickname) { isEditing = true },
+                ThalamusMenuItem(id: "new-session", title: "Nova sessão aqui", action: newSession),
+                ThalamusMenuItem(id: "nickname", title: BranchActionTitle.nickname) { isEditing = true },
                 FavoriteTitle.item(isFavorite: isFavorite, toggle: toggleFavorite),
             ]),
-            DenMenuSection(id: "remove", items: [
-                DenMenuItem(id: "remove", title: BranchActionTitle.remove, isEnabled: idle,
+            ThalamusMenuSection(id: "remove", items: [
+                ThalamusMenuItem(id: "remove", title: BranchActionTitle.remove, isEnabled: idle,
                             isDestructive: true, action: remove),
             ]),
         ]
@@ -155,7 +155,7 @@ struct BranchHeader: View {
                 .foregroundStyle(Theme.textMuted)
                 .iconLabel(size: 22)
         }
-        .buttonStyle(.denGhost(radius: 6))
+        .buttonStyle(.thalamusGhost(radius: 6))
         .help(title)
         .accessibilityLabel(title)
     }

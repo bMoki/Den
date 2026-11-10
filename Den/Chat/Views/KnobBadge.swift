@@ -17,18 +17,18 @@ struct KnobBadge: View {
     ]
 
     static func sections(for knob: HarnessKnob,
-                         choose: @escaping (String) -> Void) -> [DenMenuSection] {
+                         choose: @escaping (String) -> Void) -> [ThalamusMenuSection] {
         knob.groupedOptions.enumerated().map { index, bucket in
-            DenMenuSection(
+            ThalamusMenuSection(
                 id: bucket.group ?? "bucket-\(index)",
                 header: bucket.group,
                 items: bucket.options.map { option in
                     let look = knob.category == .mode ? modeLooks[option.value] : nil
                     let current = option.value == knob.currentValue
-                    return DenMenuItem(
+                    return ThalamusMenuItem(
                         id: option.value,
                         title: option.label,
-                        icon: look.map { DenMenuIcon.symbol($0.symbol, $0.color) },
+                        icon: look.map { ThalamusMenuIcon.symbol($0.symbol, $0.color) },
                         isSelected: current
                     ) {
                         guard !current else { return }
@@ -43,7 +43,7 @@ struct KnobBadge: View {
         let sections = Self.sections(for: knob) { value in
             Task { await chat.choose(knob: knob.id, value: value) }
         }
-        return DenMenuChip(sections: sections, bordered: knob.category == .mode) {
+        return ThalamusMenuChip(sections: sections, bordered: knob.category == .mode) {
             label
         }
         .help("\(knob.name): \(knob.label(for: knob.currentValue) ?? "—")")

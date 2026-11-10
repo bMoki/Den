@@ -34,7 +34,7 @@ struct GitHubSetupBar: View {
                 .padding(.horizontal, 10)
                 .frame(height: 26)
             }
-            .buttonStyle(DenButtonStyle(kind: .secondary, radius: 7))
+            .buttonStyle(ThalamusButtonStyle(kind: .secondary, radius: 7))
             .fixedSize()
             if case .missing = state {
                 Button(action: choose) {
@@ -43,7 +43,7 @@ struct GitHubSetupBar: View {
                         .padding(.horizontal, 10)
                         .frame(height: 26)
                 }
-                .buttonStyle(DenButtonStyle(kind: .secondary, radius: 7))
+                .buttonStyle(ThalamusButtonStyle(kind: .secondary, radius: 7))
                 .fixedSize()
             }
             Button(action: retry) {
@@ -53,7 +53,7 @@ struct GitHubSetupBar: View {
                     .padding(.horizontal, 8)
                     .frame(height: 26)
             }
-            .buttonStyle(.denGhost(radius: 7))
+            .buttonStyle(.thalamusGhost(radius: 7))
             .fixedSize()
             BarDismissButton(action: dismiss)
         }
@@ -67,7 +67,7 @@ struct GitHubSetupBar: View {
 
     private var message: String {
         if case .notLoggedIn(let host) = state { return "O gh precisa de login em \(host)" }
-        return "Instale o GitHub CLI para o Den acompanhar seus PRs"
+        return "Instale o GitHub CLI para o Thalamus acompanhar seus PRs"
     }
 
     private var command: String {

@@ -2,7 +2,7 @@ import Testing
 import AppKit
 @testable import Den
 
-private func tip(_ title: String, detail: String? = "Den · Claude Code") -> PaneTip {
+private func tip(_ title: String, detail: String? = "Thalamus · Claude Code") -> PaneTip {
     PaneTip(title: title, detail: detail, state: nil, anchor: .zero)
 }
 

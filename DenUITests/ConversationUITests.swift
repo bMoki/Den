@@ -16,7 +16,7 @@ final class ConversationUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
         root = URL(fileURLWithPath: "/private/tmp")
-            .appending(path: "DenUITests-" + UUID().uuidString)
+            .appending(path: "ThalamusUITests-" + UUID().uuidString)
         claude = try FakeCLI(appRoot: root, harness: "claude-code")
         openCode = try FakeCLI(appRoot: root, harness: "opencode")
     }
@@ -29,13 +29,13 @@ final class ConversationUITests: XCTestCase {
     @MainActor
     private func launch(projectSetup: String? = nil) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchEnvironment["DEN_UI_TEST_ROOT"] = root.path
-        app.launchEnvironment["DEN_PROJECT_SETUP"] = projectSetup
+        app.launchEnvironment["THALAMUS_UI_TEST_ROOT"] = root.path
+        app.launchEnvironment["THALAMUS_PROJECT_SETUP"] = projectSetup
         for cli in [claude!, openCode!] {
             app.launchEnvironment.merge(cli.launchEnvironment) { $1 }
         }
-        app.launchEnvironment["DEN_CLI_claude-code"] = claude.executable
-        app.launchEnvironment["DEN_CLI_opencode"] = openCode.executable
+        app.launchEnvironment["THALAMUS_CLI_claude-code"] = claude.executable
+        app.launchEnvironment["THALAMUS_CLI_opencode"] = openCode.executable
         app.launchArguments += ["-ApplePersistenceIgnoreState", "YES"]
         app.launch()
         return app
@@ -168,7 +168,7 @@ final class ConversationUITests: XCTestCase {
         app.buttons["Nova"].click()
         let popover = app.popovers.firstMatch
         require(popover, in: app)
-        let menu = popover.scrollViews["den-menu"]
+        let menu = popover.scrollViews["thalamus-menu"]
         require(menu.buttons["Nova sessão"], in: app)
         XCTAssertTrue(menu.buttons["Abrir pasta…"].exists)
 

@@ -32,7 +32,7 @@ BASE = HOME / "Developer" / "ns-dev"
 STATE = HOME / ".local" / "state" / "ns-dev"
 PRODUCT = "nsdev"
 SUITE = "Den.Dev"
-DEN_KEYS = ("Den.nsPath", "Den.nsConfigDir")
+THALAMUS_KEYS = ("Den.nsPath", "Den.nsConfigDir")
 PORT_SHIFT = 100
 PORTS = {
     "NS_MASTER_DB_PORT": 5434,
@@ -152,7 +152,7 @@ def setup():
 
 
 def off():
-    for key in DEN_KEYS:
+    for key in THALAMUS_KEYS:
         subprocess.run(["defaults", "delete", SUITE, key], capture_output=True)
     forget_real_branches()
     print("Den Dev is back on the installed ns and the real workspace; reopen it")

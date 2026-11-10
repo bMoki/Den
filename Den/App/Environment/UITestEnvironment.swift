@@ -2,12 +2,12 @@ import Foundation
 import HarnessCore
 
 struct UITestEnvironment: RootedEnvironment {
-    static let rootKey = "DEN_UI_TEST_ROOT"
-    static let cliKeyPrefix = "DEN_CLI_"
-    static let projectSetupKey = "DEN_PROJECT_SETUP"
+    static let rootKey = "THALAMUS_UI_TEST_ROOT"
+    static let cliKeyPrefix = "THALAMUS_CLI_"
+    static let projectSetupKey = "THALAMUS_PROJECT_SETUP"
     static let defaultsSuite = "Den.UITests"
-    static let ghKey = "DEN_GH"
-    static let nsKey = "DEN_NS"
+    static let ghKey = "THALAMUS_GH"
+    static let nsKey = "THALAMUS_NS"
 
     let root: URL
     let defaults: UserDefaults

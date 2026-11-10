@@ -58,17 +58,17 @@ struct SessionRow: View {
             guard !isReadOnly else { return }
             Task { @MainActor in isEditing = true }
         })
-        .denContextMenu(menuSections)
+        .thalamusContextMenu(menuSections)
         .accessibilityAddTraits(isSelected ? [.isSelected] : [])
     }
 
-    private var menuSections: [DenMenuSection] {
-        let rename = DenMenuSection(id: "edit", items: [
-            DenMenuItem(id: "rename", title: "Renomear") { isEditing = true },
+    private var menuSections: [ThalamusMenuSection] {
+        let rename = ThalamusMenuSection(id: "edit", items: [
+            ThalamusMenuItem(id: "rename", title: "Renomear") { isEditing = true },
         ])
         return (isReadOnly ? [] : [rename]) + [
-            DenMenuSection(id: "danger", items: [
-                DenMenuItem(id: "delete", title: "Apagar sessão…",
+            ThalamusMenuSection(id: "danger", items: [
+                ThalamusMenuItem(id: "delete", title: "Apagar sessão…",
                             isDestructive: true, action: delete),
             ]),
         ]

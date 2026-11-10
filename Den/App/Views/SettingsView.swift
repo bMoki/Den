@@ -43,7 +43,7 @@ private struct GitHubSettings: View {
                         }
                     }
                 }
-                Text("Vazio, o Den procura o gh no PATH do seu shell e em /opt/homebrew/bin e /usr/local/bin.")
+                Text("Vazio, o Thalamus procura o gh no PATH do seu shell e em /opt/homebrew/bin e /usr/local/bin.")
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             }

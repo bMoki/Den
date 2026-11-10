@@ -3,19 +3,19 @@ import CodeEditSourceEditor
 import SwiftUI
 
 extension SourceEditorConfiguration {
-    static let den = SourceEditorConfiguration(
-        appearance: .init(theme: .den, font: .monospacedSystemFont(ofSize: 12.5, weight: .regular), lineHeightMultiple: 1.45, wrapLines: false),
+    static let thalamus = SourceEditorConfiguration(
+        appearance: .init(theme: .thalamus, font: .monospacedSystemFont(ofSize: 12.5, weight: .regular), lineHeightMultiple: 1.45, wrapLines: false),
         peripherals: .init(showMinimap: false, showFoldingRibbon: false))
 
-    static let denReadOnly = {
-        var configuration = den
+    static let thalamusReadOnly = {
+        var configuration = thalamus
         configuration.behavior.isEditable = false
         return configuration
     }()
 }
 
 extension EditorTheme {
-    static let den = EditorTheme(
+    static let thalamus = EditorTheme(
         text: attribute(Theme.text),
         insertionPoint: NSColor(Theme.accent),
         invisibles: attribute(Theme.textFaint),

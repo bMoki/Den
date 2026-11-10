@@ -4,7 +4,7 @@ import HarnessCore
 
 func inertChat() -> ChatModel {
     let root = FileManager.default.temporaryDirectory
-        .appending(path: "DenTests-" + UUID().uuidString)
+        .appending(path: "ThalamusTests-" + UUID().uuidString)
     return ChatModel(store: FileTranscriptStore(root: root),
                      workingDirectory: root,
                      harness: HarnessID(rawValue: "test-" + UUID().uuidString),

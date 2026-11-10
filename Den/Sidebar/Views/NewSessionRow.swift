@@ -22,9 +22,9 @@ struct NewSessionRow: View {
             .frame(height: 32)
             .contentShape(Rectangle())
         }
-        .buttonStyle(.denGhost)
-        .denContextMenu([DenMenuSection(items: workspace.availableHarnesses.map { harness in
-            DenMenuItem(id: harness.rawValue,
+        .buttonStyle(.thalamusGhost)
+        .thalamusContextMenu([ThalamusMenuSection(items: workspace.availableHarnesses.map { harness in
+            ThalamusMenuItem(id: harness.rawValue,
                         title: "Nova sessão com \(HarnessBadge.name(for: harness))",
                         icon: .image(HarnessBadge.menuIcon(for: harness))) {
                 Task { await workspace.newSession(in: directory, harness: harness) }

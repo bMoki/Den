@@ -21,7 +21,7 @@ struct RemoveBranchSheet: View {
                 Spacer(minLength: 0)
                 DialogCancelButton(action: cancel)
                 Button { remove(purge) } label: { Text("Remover branch").pillLabel() }
-                    .buttonStyle(.denDestructive)
+                    .buttonStyle(.thalamusDestructive)
                     .disabled(preview?.uncommitted.isEmpty != true || !unsaved.isEmpty)
             }
         }

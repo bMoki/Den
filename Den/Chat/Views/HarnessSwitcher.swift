@@ -4,10 +4,10 @@ import HarnessCore
 struct HarnessSwitcher: View {
     let chat: ChatModel
 
-    private var sections: [DenMenuSection] {
-        [DenMenuSection(header: "Harness desta sessão",
+    private var sections: [ThalamusMenuSection] {
+        [ThalamusMenuSection(header: "Harness desta sessão",
                         items: chat.availableHarnesses.map { candidate in
-            DenMenuItem(id: candidate.rawValue,
+            ThalamusMenuItem(id: candidate.rawValue,
                         title: HarnessBadge.name(for: candidate),
                         icon: .image(HarnessBadge.menuIcon(for: candidate)),
                         isSelected: candidate == chat.harness,
@@ -18,7 +18,7 @@ struct HarnessSwitcher: View {
     }
 
     var body: some View {
-        DenMenuChip(sections: sections, bordered: true, radius: 10) {
+        ThalamusMenuChip(sections: sections, bordered: true, radius: 10) {
             HStack(spacing: 8) {
                 HarnessBadge(harness: chat.harness, size: 20)
                 Text(chat.harnessName)

@@ -12,17 +12,17 @@ nonisolated private final class CallCounter: @unchecked Sendable {
 }
 
 @Test func parseReadsOnlyWhatFollowsTheMarker() {
-    let data = output("Welcome to fish\n__DEN_ENV__\nPATH=/x:/y\u{0}HOME=/h\u{0}")
+    let data = output("Welcome to fish\n__THALAMUS_ENV__\nPATH=/x:/y\u{0}HOME=/h\u{0}")
     #expect(ShellEnvironment.parse(data) == ["PATH": "/x:/y", "HOME": "/h"])
 }
 
 @Test func parseKeepsEverythingAfterTheFirstEquals() {
-    let data = output("__DEN_ENV__\nDATABASE_URL=postgres://u:p@h/db?a=b\u{0}")
+    let data = output("__THALAMUS_ENV__\nDATABASE_URL=postgres://u:p@h/db?a=b\u{0}")
     #expect(ShellEnvironment.parse(data)?["DATABASE_URL"] == "postgres://u:p@h/db?a=b")
 }
 
 @Test func parseDropsShellBookkeepingVariables() {
-    let data = output("__DEN_ENV__\nPATH=/x\u{0}PWD=/home\u{0}OLDPWD=/\u{0}SHLVL=2\u{0}_=/usr/bin/env\u{0}")
+    let data = output("__THALAMUS_ENV__\nPATH=/x\u{0}PWD=/home\u{0}OLDPWD=/\u{0}SHLVL=2\u{0}_=/usr/bin/env\u{0}")
     #expect(ShellEnvironment.parse(data) == ["PATH": "/x"])
 }
 
@@ -41,8 +41,8 @@ nonisolated private final class CallCounter: @unchecked Sendable {
     let environment = ShellEnvironment(shell: "/bin/zsh", base: [:]) { shell, arguments, _ in
         calls.bump()
         #expect(shell == "/bin/zsh")
-        #expect(arguments == ["-l", "-i", "-c", "echo __DEN_ENV__; /usr/bin/env -0"])
-        return Data("__DEN_ENV__\nPATH=/nvm/bin\u{0}".utf8)
+        #expect(arguments == ["-l", "-i", "-c", "echo __THALAMUS_ENV__; /usr/bin/env -0"])
+        return Data("__THALAMUS_ENV__\nPATH=/nvm/bin\u{0}".utf8)
     }
     let first = await environment.resolve()
     let second = await environment.resolve()
@@ -60,14 +60,14 @@ nonisolated private final class CallCounter: @unchecked Sendable {
 
 @Test func anOutputWithoutPathAlsoFallsBack() async {
     let environment = ShellEnvironment(shell: "/bin/zsh", base: [:]) { _, _, _ in
-        Data("__DEN_ENV__\nHOME=/h\u{0}".utf8)
+        Data("__THALAMUS_ENV__\nHOME=/h\u{0}".utf8)
     }
     #expect(await environment.resolve().warning == ShellEnvironment.fallbackWarning)
 }
 
 @Test func theLiveProbeReadsARealShell() async throws {
     let data = try #require(await ShellProbe.run(
-        shell: "/bin/sh", arguments: ["-c", "echo __DEN_ENV__; /usr/bin/env -0"],
+        shell: "/bin/sh", arguments: ["-c", "echo __THALAMUS_ENV__; /usr/bin/env -0"],
         timeout: .seconds(10)))
     #expect(ShellEnvironment.parse(data)?["PATH"] != nil)
 }

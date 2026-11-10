@@ -1,8 +1,8 @@
 import SwiftUI
 import AppKit
 
-struct DenContextMenu: ViewModifier {
-    let sections: [DenMenuSection]
+struct ThalamusContextMenu: ViewModifier {
+    let sections: [ThalamusMenuSection]
 
     @State private var isOpen = false
     @State private var anchor = UnitPoint.center
@@ -16,7 +16,7 @@ struct DenContextMenu: ViewModifier {
                 isOpen = true
             })
             .popover(isPresented: $isOpen, attachmentAnchor: .point(anchor), arrowEdge: .top) {
-                DenMenuList(sections: sections) { isOpen = false }
+                ThalamusMenuList(sections: sections) { isOpen = false }
                     .presentationBackground(Theme.raised)
                     .environment(\.colorScheme, .dark)
             }
@@ -24,8 +24,8 @@ struct DenContextMenu: ViewModifier {
 }
 
 extension View {
-    func denContextMenu(_ sections: [DenMenuSection]) -> some View {
-        modifier(DenContextMenu(sections: sections))
+    func thalamusContextMenu(_ sections: [ThalamusMenuSection]) -> some View {
+        modifier(ThalamusContextMenu(sections: sections))
     }
 }
 

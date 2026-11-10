@@ -41,10 +41,10 @@ struct PermissionCard: View {
 
                     if option.kind == .allowOnce {
                         button
-                            .buttonStyle(.denPrimary)
+                            .buttonStyle(.thalamusPrimary)
                             .keyboardShortcut(.defaultAction)
                     } else {
-                        button.buttonStyle(.denSecondary)
+                        button.buttonStyle(.thalamusSecondary)
                     }
                 }
                 Spacer(minLength: 0)

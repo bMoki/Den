@@ -1,29 +1,29 @@
 import SwiftUI
 
-enum DenMenuIcon {
+enum ThalamusMenuIcon {
     case symbol(String, Color)
     case image(Image)
 }
 
-struct DenMenuItem: Identifiable {
+struct ThalamusMenuItem: Identifiable {
     let id: String
     var title: String
-    var icon: DenMenuIcon?
+    var icon: ThalamusMenuIcon?
     var isSelected: Bool
     var isEnabled: Bool
     var isDestructive: Bool
     var shortcut: String?
-    var children: [DenMenuSection]
+    var children: [ThalamusMenuSection]
     var action: () -> Void
 
     init(id: String,
          title: String,
-         icon: DenMenuIcon? = nil,
+         icon: ThalamusMenuIcon? = nil,
          isSelected: Bool = false,
          isEnabled: Bool = true,
          isDestructive: Bool = false,
          shortcut: String? = nil,
-         children: [DenMenuSection] = [],
+         children: [ThalamusMenuSection] = [],
          action: @escaping () -> Void = {}) {
         self.id = id
         self.title = title
@@ -37,18 +37,18 @@ struct DenMenuItem: Identifiable {
     }
 }
 
-struct DenMenuSection: Identifiable {
+struct ThalamusMenuSection: Identifiable {
     let id: String
     var header: String?
-    var items: [DenMenuItem]
+    var items: [ThalamusMenuItem]
 
-    init(id: String = "main", header: String? = nil, items: [DenMenuItem]) {
+    init(id: String = "main", header: String? = nil, items: [ThalamusMenuItem]) {
         self.id = id
         self.header = header
         self.items = items
     }
 
-    static func showsIcons(in sections: [DenMenuSection]) -> Bool {
+    static func showsIcons(in sections: [ThalamusMenuSection]) -> Bool {
         sections.contains { $0.items.contains { $0.icon != nil } }
     }
 }

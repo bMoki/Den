@@ -141,8 +141,8 @@ enum FavoriteTitle {
     static let add = "Favoritar"
     static let remove = "Remover dos favoritos"
 
-    static func item(isFavorite: Bool, toggle: @escaping () -> Void) -> DenMenuItem {
-        DenMenuItem(id: "favorite", title: isFavorite ? remove : add, action: toggle)
+    static func item(isFavorite: Bool, toggle: @escaping () -> Void) -> ThalamusMenuItem {
+        ThalamusMenuItem(id: "favorite", title: isFavorite ? remove : add, action: toggle)
     }
 }
 

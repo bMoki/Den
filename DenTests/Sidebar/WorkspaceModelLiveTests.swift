@@ -5,7 +5,7 @@ import HarnessCore
 
 @Test func liveBuildsTheWorkspaceOnTheEnvironmentItIsGiven() async throws {
     let root = FileManager.default.temporaryDirectory
-        .appending(path: "DenTests-" + UUID().uuidString)
+        .appending(path: "ThalamusTests-" + UUID().uuidString)
     let scratch = ScratchDefaults()
     defer {
         scratch.remove()

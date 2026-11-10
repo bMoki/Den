@@ -6,21 +6,21 @@ struct SidebarHeader: View {
     var lightsInset: CGFloat
     var collapse: () -> Void
 
-    private var newSections: [DenMenuSection] {
+    private var newSections: [ThalamusMenuSection] {
         let harnesses = workspace.availableHarnesses.map { harness in
-            DenMenuItem(id: harness.rawValue,
+            ThalamusMenuItem(id: harness.rawValue,
                         title: HarnessBadge.name(for: harness),
                         icon: .image(HarnessBadge.menuIcon(for: harness))) {
                 Task { await workspace.newSession(harness: harness) }
             }
         }
-        return [DenMenuSection(items: [
-            DenMenuItem(id: "new-session", title: "Nova sessão") {
+        return [ThalamusMenuSection(items: [
+            ThalamusMenuItem(id: "new-session", title: "Nova sessão") {
                 Task { await workspace.newSession() }
             },
-            DenMenuItem(id: "new-session-with", title: "Nova sessão com",
-                        children: [DenMenuSection(items: harnesses)]),
-            DenMenuItem(id: "open-folder", title: "Abrir pasta…") {
+            ThalamusMenuItem(id: "new-session-with", title: "Nova sessão com",
+                        children: [ThalamusMenuSection(items: harnesses)]),
+            ThalamusMenuItem(id: "open-folder", title: "Abrir pasta…") {
                 workspace.openFolder()
             },
         ])]
@@ -29,7 +29,7 @@ struct SidebarHeader: View {
     var body: some View {
         HStack(spacing: 8) {
             Spacer(minLength: 4)
-            DenMenuChip(sections: newSections) {
+            ThalamusMenuChip(sections: newSections) {
                 Image(systemName: "square.and.pencil")
                     .font(.system(size: 14))
                     .foregroundStyle(Theme.textMuted)

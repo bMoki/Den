@@ -12,7 +12,7 @@ func withTemporaryCache(_ body: (SessionCache) throws -> Void) rethrows {
 }
 
 let scratchCache: SessionCache = {
-    let suite = "DenTests.scratch"
+    let suite = "ThalamusTests.scratch"
     guard let defaults = UserDefaults(suiteName: suite) else {
         fatalError("could not create suite \(suite)")
     }

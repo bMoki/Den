@@ -88,7 +88,7 @@ private struct DependencyRow: View {
         } else if row.repo.state.needsInstall {
             let title = row.failure == nil ? "Instalar" : "Repetir"
             Button(action: install) { Text(title).pillLabel() }
-                .buttonStyle(.denSecondary)
+                .buttonStyle(.thalamusSecondary)
                 .disabled(isBusy)
                 .help("\(title) as dependências do \(row.id)")
                 .accessibilityLabel("\(title) as dependências do \(row.id)")

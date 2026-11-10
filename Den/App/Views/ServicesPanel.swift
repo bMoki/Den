@@ -38,7 +38,7 @@ struct ServicesPanel: View {
                                 state: status.database, indicator: .database, isFirst: true) {
                                 iconAction("arrow.up.forward.app", title: BranchActionTitle.openDatabase, perform: openDatabase)
                                     .disabled(ns.activity[branch] != nil)
-                                DenMenuChip(sections: databaseMenu, radius: 6, arrowEdge: .leading, opened: { Task { await ns.loadSnapshots() } }, label: {
+                                ThalamusMenuChip(sections: databaseMenu, radius: 6, arrowEdge: .leading, opened: { Task { await ns.loadSnapshots() } }, label: {
                                     Image(systemName: "cylinder.split.1x2")
                                         .font(.system(size: 11, weight: .medium))
                                         .foregroundStyle(Theme.textSecondary)
@@ -47,7 +47,7 @@ struct ServicesPanel: View {
                                 .help("Snapshots")
                                 .accessibilityLabel("Snapshots")
                             }
-                            .denContextMenu(databaseMenu)
+                            .thalamusContextMenu(databaseMenu)
                         }
                     }
                     if ns.dependencies.isShown(for: branch) {
@@ -108,29 +108,29 @@ struct ServicesPanel: View {
         ns.branch(named: branch)?.services.filter { $0.state == .rodando }.map(\.id) ?? []
     }
 
-    private var databaseMenu: [DenMenuSection] {
+    private var databaseMenu: [ThalamusMenuSection] {
         let idle = ns.activity[branch] == nil
         let snapshots = ns.snapshots(of: branch)
         var listed = snapshots.map { snapshot in
-            DenMenuItem(id: snapshot.ref, title: snapshotTitle(snapshot), isEnabled: idle, children: [
-                DenMenuSection(items: [
-                    DenMenuItem(id: "restore", title: "Restaurar…") { restoring = RestoreRequest(selected: snapshot.ref) },
-                    DenMenuItem(id: "remove", title: "Remover…", isDestructive: true) { removing = snapshot },
+            ThalamusMenuItem(id: snapshot.ref, title: snapshotTitle(snapshot), isEnabled: idle, children: [
+                ThalamusMenuSection(items: [
+                    ThalamusMenuItem(id: "restore", title: "Restaurar…") { restoring = RestoreRequest(selected: snapshot.ref) },
+                    ThalamusMenuItem(id: "remove", title: "Remover…", isDestructive: true) { removing = snapshot },
                 ]),
             ])
         }
         if snapshots.isEmpty {
-            listed = [DenMenuItem(id: "none", title: ns.snapshotsProblem ?? "Nenhum snapshot", isEnabled: false)]
+            listed = [ThalamusMenuItem(id: "none", title: ns.snapshotsProblem ?? "Nenhum snapshot", isEnabled: false)]
         }
         return [
-            DenMenuSection(id: "open", items: [
-                DenMenuItem(id: "open", title: BranchActionTitle.openDatabase, isEnabled: idle) { Task { await openDatabase() } },
+            ThalamusMenuSection(id: "open", items: [
+                ThalamusMenuItem(id: "open", title: BranchActionTitle.openDatabase, isEnabled: idle) { Task { await openDatabase() } },
             ]),
-            DenMenuSection(id: "snapshot", items: [
-                DenMenuItem(id: "take", title: "Tirar snapshot…", isEnabled: idle) { takingSnapshot = true },
-                DenMenuItem(id: "restore", title: "Restaurar…", isEnabled: idle) { restoring = RestoreRequest() },
+            ThalamusMenuSection(id: "snapshot", items: [
+                ThalamusMenuItem(id: "take", title: "Tirar snapshot…", isEnabled: idle) { takingSnapshot = true },
+                ThalamusMenuItem(id: "restore", title: "Restaurar…", isEnabled: idle) { restoring = RestoreRequest() },
             ]),
-            DenMenuSection(id: "snapshots", header: "Snapshots desta branch", items: listed),
+            ThalamusMenuSection(id: "snapshots", header: "Snapshots desta branch", items: listed),
         ]
     }
 
@@ -188,7 +188,7 @@ struct ServicesPanel: View {
                 .frame(maxWidth: .infinity)
                 .frame(height: 28)
         }
-        .buttonStyle(.denSecondary)
+        .buttonStyle(.thalamusSecondary)
         .help(help)
     }
 
@@ -264,7 +264,7 @@ struct ServicesPanel: View {
                 .foregroundStyle(Theme.textSecondary)
                 .iconLabel(size: 26)
         }
-        .buttonStyle(.denGhost(radius: 6))
+        .buttonStyle(.thalamusGhost(radius: 6))
         .help(title)
         .accessibilityLabel(title)
     }

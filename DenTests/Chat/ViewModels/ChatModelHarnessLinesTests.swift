@@ -16,7 +16,7 @@ private func question(_ text: String) -> TranscriptEntry {
 
 @Test func aReopenedSessionRemembersWhichHarnessWroteEachReply() {
     let root = FileManager.default.temporaryDirectory
-        .appending(path: "DenTests-" + UUID().uuidString)
+        .appending(path: "ThalamusTests-" + UUID().uuidString)
     let session = Session(title: "handoff", workingDirectory: root, segments: [
         Segment(harness: claude, harnessSessionID: "", model: "",
                 entries: [question("oi"), reply("do Claude")]),

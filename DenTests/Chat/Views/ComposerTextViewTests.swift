@@ -44,7 +44,7 @@ private func lines(_ height: CGFloat) -> Double {
 
 @MainActor
 @Test func pastingHandsTheTextToTheChatFirst() {
-    let board = NSPasteboard(name: .init("DenTests-" + UUID().uuidString))
+    let board = NSPasteboard(name: .init("ThalamusTests-" + UUID().uuidString))
     defer { board.releaseGlobally() }
     board.clearContents()
     board.setString("pasted", forType: .string)
@@ -59,7 +59,7 @@ private func lines(_ height: CGFloat) -> Double {
 
 @MainActor
 @Test func aPasteTheChatDeclinesFallsThroughToTheField() {
-    let board = NSPasteboard(name: .init("DenTests-" + UUID().uuidString))
+    let board = NSPasteboard(name: .init("ThalamusTests-" + UUID().uuidString))
     defer { board.releaseGlobally() }
     board.clearContents()
     board.setString("short", forType: .string)
@@ -72,7 +72,7 @@ private func lines(_ height: CGFloat) -> Double {
 
 @MainActor
 @Test func aPasteboardWithoutTextIsNotCaptured() {
-    let board = NSPasteboard(name: .init("DenTests-" + UUID().uuidString))
+    let board = NSPasteboard(name: .init("ThalamusTests-" + UUID().uuidString))
     defer { board.releaseGlobally() }
     board.clearContents()
 

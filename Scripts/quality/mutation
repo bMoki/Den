@@ -290,7 +290,7 @@ def main(arguments=None):
     outcomes = []
     if mutants:
         print(f"{len(mutants)} mutants", flush=True)
-        with tempfile.TemporaryDirectory(prefix="den-mutation-") as scratch:
+        with tempfile.TemporaryDirectory(prefix="thalamus-mutation-") as scratch:
             workspace = Path(scratch) / PACKAGE.name
             shutil.copytree(ROOT / PACKAGE, workspace, ignore=shutil.ignore_patterns(".build"))
 

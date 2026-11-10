@@ -80,7 +80,7 @@ struct SidebarView: View {
                             .padding(.horizontal, 8)
                             .frame(height: 24)
                         }
-                        .buttonStyle(.denGhost(radius: 6))
+                        .buttonStyle(.thalamusGhost(radius: 6))
                         .help("Nova Branch de workspace")
                         .accessibilityLabel("Nova Branch de workspace")
                     }
@@ -97,7 +97,7 @@ struct SidebarView: View {
                             .foregroundStyle(Theme.textTertiary)
                             .iconLabel(size: 22)
                     }
-                    .buttonStyle(.denGhost(radius: 6))
+                    .buttonStyle(.thalamusGhost(radius: 6))
                     .help("Abrir pasta")
                     .accessibilityLabel("Abrir pasta")
                 }

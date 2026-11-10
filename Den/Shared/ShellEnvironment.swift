@@ -9,7 +9,7 @@ actor ShellEnvironment {
 
     typealias Probe = @Sendable (_ shell: String, _ arguments: [String], _ timeout: Duration) async -> Data?
 
-    nonisolated static let marker = "__DEN_ENV__"
+    nonisolated static let marker = "__THALAMUS_ENV__"
     nonisolated static let fallbackWarning =
         "Não consegui carregar o ambiente do seu shell; usando o PATH padrão"
     nonisolated private static let dropped: Set<String> = ["PWD", "OLDPWD", "SHLVL", "_"]

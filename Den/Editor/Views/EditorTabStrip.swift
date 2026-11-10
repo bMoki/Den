@@ -110,7 +110,7 @@ private struct EditorTab: View {
                 .frame(width: 16, height: 16)
                 .contentShape(Rectangle())
             }
-            .buttonStyle(.denGhost(radius: 4))
+            .buttonStyle(.thalamusGhost(radius: 4))
             .help(document.isDirty ? "Não salvo" : "Fechar")
             .accessibilityLabel(document.isDirty ? "Fechar \(document.name), não salvo" : "Fechar \(document.name)")
         }

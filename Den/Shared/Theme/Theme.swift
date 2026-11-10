@@ -56,7 +56,7 @@ enum Theme {
     static let trafficLightsInset: CGFloat = 78
 }
 
-struct DenButtonStyle: ButtonStyle {
+struct ThalamusButtonStyle: ButtonStyle {
     enum Kind { case primary, secondary, ghost, destructive }
 
     var kind: Kind
@@ -118,13 +118,13 @@ struct DenButtonStyle: ButtonStyle {
     }
 }
 
-extension ButtonStyle where Self == DenButtonStyle {
-    static var denPrimary: DenButtonStyle { DenButtonStyle(kind: .primary) }
-    static var denSecondary: DenButtonStyle { DenButtonStyle(kind: .secondary) }
-    static var denGhost: DenButtonStyle { DenButtonStyle(kind: .ghost) }
-    static var denDestructive: DenButtonStyle { DenButtonStyle(kind: .destructive) }
-    static func denGhost(radius: CGFloat) -> DenButtonStyle {
-        DenButtonStyle(kind: .ghost, radius: radius)
+extension ButtonStyle where Self == ThalamusButtonStyle {
+    static var thalamusPrimary: ThalamusButtonStyle { ThalamusButtonStyle(kind: .primary) }
+    static var thalamusSecondary: ThalamusButtonStyle { ThalamusButtonStyle(kind: .secondary) }
+    static var thalamusGhost: ThalamusButtonStyle { ThalamusButtonStyle(kind: .ghost) }
+    static var thalamusDestructive: ThalamusButtonStyle { ThalamusButtonStyle(kind: .destructive) }
+    static func thalamusGhost(radius: CGFloat) -> ThalamusButtonStyle {
+        ThalamusButtonStyle(kind: .ghost, radius: radius)
     }
 }
 

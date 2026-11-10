@@ -4,7 +4,7 @@ import HarnessCore
 @testable import Den
 
 private func scratchURL() -> URL {
-    FileManager.default.temporaryDirectory.appending(path: "DenTests-" + UUID().uuidString)
+    FileManager.default.temporaryDirectory.appending(path: "ThalamusTests-" + UUID().uuidString)
 }
 
 @Test func aReleaseBuildIsProductionWhateverTheVariablesSay() {
