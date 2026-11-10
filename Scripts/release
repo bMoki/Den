@@ -1,62 +1,93 @@
 #!/bin/sh
-# Builds the real Den from a clean main and installs it in /Applications, after
-# the unit tests and the static gates pass. The app and its data are backed up
-# first, and the build carries its commit, which the About panel shows.
+# Builds the real Thalamus from a clean main and installs it in /Applications,
+# after the unit tests and the static gates pass. The apps and the data are
+# backed up first, and the build carries its commit, which the About panel
+# shows. The first release also retires Den.app into the backup; Den's data is
+# left where it is. docs/fluxo.md describes the backups and the rollback.
 #
 #   Scripts/release              test, build, back up and install
-#   Scripts/release --rollback   put back the app the last release replaced
+#   Scripts/release --rollback   put back the apps the last release replaced
 #
-# Backups go to ~/Library/Application Support/Den Releases, the newest five
-# kept. The app is kept zipped there, so Launch Services never finds a second
-# Den to open. A rollback uses up the app it puts back, so running it again
-# goes one release further back. It swaps the app only; the data each release
-# found stays in its backup as data.zip.
+# THALAMUS_RELEASE_ROOT, for rehearsing the swap only, is a throwaway folder
+# under /tmp or $TMPDIR that stands in for /Applications and Application
+# Support. The script then skips git, the tests and the build (it installs the
+# Release app already in build/Release) and never quits, opens or registers a
+# real app.
 set -eu
 cd "$(dirname "$0")/.."
 
-bundle_id=gabrielpassos.Den
-app=/Applications/Den.app
-data="$HOME/Library/Application Support/Den"
-backups="$HOME/Library/Application Support/Den Releases"
-keep=5
-built=build/Release/Build/Products/Release/Den.app
-lsregister=/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
-
 fail() { echo "release: $*" >&2; exit 1; }
 
-# Den is opened again on the way out when the script closed it, whether the
-# swap worked or not.
+root=${THALAMUS_RELEASE_ROOT:-}
+applications=/Applications
+library=$HOME/Library
+if [ -n "$root" ]; then
+    root=$(cd "$root" 2>/dev/null && pwd -P) || fail "THALAMUS_RELEASE_ROOT is not a folder"
+    case "$root" in
+        /private/tmp/?* | /private/var/folders/?*) ;;
+        *) fail "THALAMUS_RELEASE_ROOT must be a throwaway folder under /tmp or \$TMPDIR" ;;
+    esac
+    applications=$root/Applications
+    library=$root
+fi
+bundle_id=dev.brenosonda.Thalamus
+den_bundle_id=gabrielpassos.Den
+app=$applications/Thalamus.app
+den_app=$applications/Den.app
+data="$library/Application Support/Thalamus"
+backups="$library/Application Support/Thalamus Releases"
+keep=5
+built=build/Release/Build/Products/Release/Thalamus.app
+lsregister=/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
+
+real() { [ -z "$root" ]; }
+
+# What the script closed is opened again on the way out, whether the swap
+# worked or not: Thalamus when it is installed, Den otherwise.
 reopen=no
 unpacked=
-trap 'if [ -n "$unpacked" ]; then rm -rf "$unpacked"; fi; if [ "$reopen" = yes ]; then open "$app"; fi' EXIT
+trap 'if [ -n "$unpacked" ]; then rm -rf "$unpacked"; fi
+if [ "$reopen" = yes ]; then if [ -d "$app" ]; then open "$app"; elif [ -d "$den_app" ]; then open "$den_app"; fi; fi' EXIT
+trap 'exit 130' INT TERM HUP
 
 adhoc() { "$@" CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= PROVISIONING_PROFILE_SPECIFIER=; }
 
-running() { [ "$(osascript -e "application id \"$bundle_id\" is running" 2>/dev/null)" = true ]; }
+running() { real && [ "$(osascript -e "application id \"$1\" is running" 2>/dev/null)" = true ]; }
 
-# Asks an open Den to quit, which first asks about unsaved files; choosing to
+# Asks an open app to quit, which first asks about unsaved files; choosing to
 # stay stops the script before anything is swapped.
-quit_den() {
-    running || return 0
-    echo "Quitting Den..."
-    osascript -e "with timeout of 600 seconds" -e "tell application id \"$bundle_id\" to quit" -e "end timeout" >/dev/null \
-        || fail "Den did not quit; nothing was installed"
+quit_app() {
+    running "$1" || return 0
+    echo "Quitting $2..."
+    osascript -e "with timeout of 600 seconds" -e "tell application id \"$1\" to quit" -e "end timeout" >/dev/null \
+        || fail "$2 did not quit; nothing was installed"
     reopen=yes
     tries=0
-    while running; do
+    while running "$1"; do
         tries=$((tries + 1))
-        [ "$tries" -le 60 ] || fail "Den did not quit within 30 seconds; nothing was installed"
+        [ "$tries" -le 60 ] || fail "$2 did not quit within 30 seconds; nothing was installed"
         sleep 0.5
     done
 }
 
+quit_apps() {
+    quit_app "$bundle_id" Thalamus
+    quit_app "$den_bundle_id" Den
+}
+
 # Copies beside the installed app first, so a failed copy leaves it in place.
 install_app() {
-    rm -rf "$app.new"
-    ditto "$1" "$app.new"
-    rm -rf "$app"
-    mv "$app.new" "$app"
-    "$lsregister" -f "$app"
+    rm -rf "$2.new"
+    ditto "$1" "$2.new"
+    rm -rf "$2"
+    mv "$2.new" "$2"
+    if real; then "$lsregister" -f "$2"; fi
+}
+
+remove_app() {
+    [ -d "$1" ] || return 0
+    if real; then "$lsregister" -u "$1"; fi
+    rm -rf "$1"
 }
 
 describe() {
@@ -67,23 +98,40 @@ describe() {
     echo "$version ($build)${commit:+, $commit}"
 }
 
-# Writes into a hidden folder and names it only once both archives are whole,
-# so a backup cut short is never pruned against or rolled back to.
+# Writes into a hidden folder and names it only once every archive is whole,
+# so a backup cut short is never pruned against or rolled back to. Pruning
+# counts the backups that still hold an app, and drops everything older than
+# the oldest of the newest five, used-up backups included.
 back_up() {
-    [ -d "$app" ] || [ -d "$data" ] || return 0
+    [ -d "$app" ] || [ -d "$den_app" ] || [ -d "$data" ] || return 0
     partial="$backups/.partial"
     rm -rf "$partial"
     mkdir -p "$partial"
-    if [ -d "$app" ]; then ditto -c -k --keepParent "$app" "$partial/Den.app.zip"; fi
+    if [ -d "$app" ]; then ditto -c -k --keepParent "$app" "$partial/Thalamus.app.zip"; fi
+    if [ -d "$den_app" ]; then ditto -c -k --keepParent "$den_app" "$partial/Den.app.zip"; fi
     if [ -d "$data" ]; then ditto -c -k --keepParent "$data" "$partial/data.zip"; fi
     dir="$backups/$(date +%Y-%m-%d_%H%M%S)"
+    while [ -e "$dir" ]; do
+        sleep 1
+        dir="$backups/$(date +%Y-%m-%d_%H%M%S)"
+    done
     mv "$partial" "$dir"
-    find "$backups" -mindepth 1 -maxdepth 1 -type d ! -name '.*' | sort -r | tail -n +$((keep + 1)) |
-        while IFS= read -r old; do rm -rf "$old"; done
+    oldest=$(app_backups | sed -n "${keep}p")
+    if [ -n "$oldest" ]; then
+        find "$backups" -mindepth 1 -maxdepth 1 -type d ! -name '.*' | sort -r |
+            awk -v oldest="$oldest" 'past { print } $0 == oldest { past = 1 }' |
+            while IFS= read -r old; do rm -rf "$old"; done
+    fi
     echo "Backed up to $dir"
 }
 
-release() {
+# The backups that still hold an app to roll back to, newest first.
+app_backups() {
+    find "$backups" -mindepth 2 -maxdepth 2 -name '*.app.zip' ! -path '*/.*/*' 2>/dev/null |
+        while IFS= read -r zip; do dirname "$zip"; done | sort -ru
+}
+
+build() {
     [ "$(git symbolic-ref --short -q HEAD)" = main ] || fail "run it from main"
     [ -z "$(git status --porcelain)" ] || fail "commit or stash the changes first"
     identity=$(security find-identity -v -p codesigning | awk '/"Apple Development/ { print $2; exit }')
@@ -100,24 +148,48 @@ release() {
         CODE_SIGN_IDENTITY="$identity" CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= PROVISIONING_PROFILE_SPECIFIER= \
         CURRENT_PROJECT_VERSION="$(git rev-list --count HEAD)" \
         INFOPLIST_KEY_NSHumanReadableCopyright="Commit $commit"
-    codesign --verify --deep --strict "$built"
-
-    quit_den
-    back_up
-    install_app "$built"
-    echo "Installed Den $(describe "$app")"
 }
 
-rollback() {
-    last=$(find "$backups" -mindepth 2 -maxdepth 2 -name Den.app.zip ! -path '*/.*/*' 2>/dev/null | sort -r | head -n 1)
-    [ -n "$last" ] || fail "no backed-up app to go back to"
-    unpacked=$(mktemp -d)
-    ditto -x -k "$last" "$unpacked"
+release() {
+    if real; then build; fi
+    [ -d "$built" ] || fail "no Release build at $built"
+    codesign --verify --deep --strict "$built"
 
-    quit_den
-    install_app "$unpacked/Den.app"
-    rm "$last"
-    echo "Den is back to $(describe "$app"); its data was left as it is, and $(dirname "$last")/data.zip holds what that release found"
+    quit_apps
+    back_up
+    install_app "$built" "$app"
+    if [ -d "$den_app" ]; then
+        remove_app "$den_app"
+        echo "Den.app left $applications; it is in the backup above"
+    fi
+    echo "Installed Thalamus $(describe "$app")"
+}
+
+# Puts back what the newest backup holds. A backup without Thalamus.app comes
+# from before the first Thalamus release, so Thalamus goes; one without Den.app
+# leaves an installed Den alone, since only the first release removes it.
+rollback() {
+    dir=$(app_backups | head -n 1)
+    [ -n "$dir" ] || fail "no backed-up app to go back to"
+    unpacked=$(mktemp -d)
+    for zip in "$dir"/*.app.zip; do ditto -x -k "$zip" "$unpacked"; done
+
+    quit_apps
+    if [ -d "$unpacked/Thalamus.app" ]; then
+        install_app "$unpacked/Thalamus.app" "$app"
+        echo "Thalamus is back to $(describe "$app")"
+    else
+        remove_app "$app"
+        echo "Thalamus left $applications"
+    fi
+    if [ -d "$unpacked/Den.app" ]; then
+        install_app "$unpacked/Den.app" "$den_app"
+        echo "Den is back to $(describe "$den_app")"
+    fi
+    rm "$dir"/*.app.zip
+    if [ -f "$dir/data.zip" ]; then
+        echo "The data was left as it is; $dir/data.zip holds what that release found"
+    fi
 }
 
 case "${1:-}" in
