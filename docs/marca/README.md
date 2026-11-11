@@ -72,10 +72,49 @@ ele acrescenta embaixo a faixa laranja "DEV" (`#FF8C1A`), com um quarto da
 altura do corpo, abaixo do desenho. Rode de novo sempre que um dos dois SVGs
 mudar.
 
-## Temas
+## Ícone em cada Tema
 
-O ícone ainda não acompanha o tema do app; isso fica para a task de temas
-(veja a pendência em [pendencias.md](../pendencias.md)). A ideia é cada tema
-escolher uma paleta acima e trocar o ícone do Dock em tempo de execução, com
+O ícone do Dock acompanha o Tema (o par de Estilo e Paleta, veja
+[CONTEXT.md](../../CONTEXT.md)): o **Estilo** dá o desenho e a **Paleta** dá
+as cores. O Thalamus troca o ícone do Dock em tempo de execução, com
 `NSApplication.shared.applicationIconImage`. O ícone do Finder continua sendo
-o do `AppIcon`, a Índigo.
+o do `AppIcon`, Padrão com Índigo.
+
+| Estilo | Desenho |
+| --- | --- |
+| Padrão | O B2 cheio, como nos SVGs acima |
+| TTY | O B2 em arte ASCII de pontos e círculos ( `. : o O 0 @` ), abaixo |
+
+Cada Paleta usa, no ícone, as cores da tabela de paletas: o fundo no corpo, a
+cor das metades nos caracteres das metades e a do ponto central no `@` do
+ponto.
+
+### Desenho do TTY
+
+A arte sai da geometria acima, amostrada numa grade de 48 × 24 caracteres
+(um caractere de terminal é duas vezes mais alto que largo) e recortada
+para 36 × 16: cada caractere é escolhido pela cobertura da célula na rampa
+`" .:oO0@"`, e o ponto central é `@`, separado das metades pelo anel de
+recorte. Na fonte do TTY, JetBrains Mono Nerd Font Mono, em negrito.
+
+```
+     .::.                  .::.
+   O@@@@@@0:            :0@@@@@@O
+  0@@@@@@@@@0.        .0@@@@@@@@@0
+ 0@@@@@@@@@@@@:      :@@@@@@@@@@@@0
+.@@@@@@@@@@@@@@:    :@@@@@@@@@@@@@@.
+o@@@@@@@@@@@@@@@.  .@@@@@@@@@@@@@@@o
+O@@@@@@@@@@@@@@0:  :0@@@@@@@@@@@@@@O
+o@@@@@@@@@@@@0. @@@@ .0@@@@@@@@@@@@o
+.@@@@@@@@@@@@  @@@@@@  @@@@@@@@@@@@.
+ 0@@@@@@@@@@0 @@@@@@@@ 0@@@@@@@@@@0
+ :@@@@@@@@@@@. @@@@@@ .@@@@@@@@@@@:
+  O@@@@@@@@@@@o      o@@@@@@@@@@@O
+   O@@@@@@@@@@@@0..0@@@@@@@@@@@@O
+    o@@@@@@@@@@@0  0@@@@@@@@@@@o
+     .0@@@@@@@@0    0@@@@@@@@0.
+       .O0@@@O:      :O@@@0O.
+```
+
+Abaixo de 32 px os caracteres viram textura, então o TTY precisa de um
+desenho próprio para 16 e 32 px; ele ainda não foi feito.
