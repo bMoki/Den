@@ -62,7 +62,7 @@ private struct RepoUpdateRow: View {
                 .lineLimit(2)
                 .truncationMode(.tail)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .help(repo.message ?? "")
+                .tip(repo.message ?? "")
                 .textSelection(.enabled)
             pill
         }

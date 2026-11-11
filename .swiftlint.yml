@@ -157,4 +157,13 @@ custom_rules:
     message: "Ask the Style for the icon by what it means (Theme.image(.close)); add it to Icon and to docs/specs/estilo-tty-icones.md if it is new."
     severity: error
 
+  native_outside_style:
+    name: "Dialogs, tips, popovers and forms are Thalamus components"
+    included: ".*/Thalamus/.*\\.swift"
+    excluded: ".*/(Packages|ThalamusTests|ThalamusUITests|ThalamusTestSupport)/.*"
+    regex: '(\.(help|popover|confirmationDialog|alert)\(|\bForm \{|\bTabView\b|\.pickerStyle\(|\bPicker\()'
+    match_kinds: [identifier, keyword, typeidentifier]
+    message: "The macOS draws these and the Style cannot; use .tip, .floating, .confirmation and the Settings parts."
+    severity: error
+
 reporter: xcode

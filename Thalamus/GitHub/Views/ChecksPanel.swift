@@ -114,7 +114,7 @@ struct ChecksPanel: View {
                         .iconLabel(size: .s24)
                 }
                 .buttonStyle(.thalamusGhost(radius: .r6))
-                .help("Atualizar agora")
+                .tip("Atualizar agora")
                 .accessibilityLabel("Atualizar")
             }
         }

@@ -214,7 +214,7 @@ private struct DetailGroup: View {
             ForEach(Array(list.sorted { $0.tokens > $1.tokens }.enumerated()), id: \.offset) { _, item in
                 ItemRow(name: displayName(of: item), tokens: item.tokens,
                         isDeferred: item.isDeferred)
-                    .help(item.isDeferred ? "\(item.name) · carregada sob demanda" : item.name)
+                    .tip(item.isDeferred ? "\(item.name) · carregada sob demanda" : item.name)
             }
         }
     }

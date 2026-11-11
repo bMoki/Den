@@ -39,13 +39,14 @@ struct EditorTabStrip: View {
         .frame(height: Theme.size(.s36))
         .background(Theme.panel)
         .overlay(alignment: .bottom) { Rectangle().fill(Theme.border).frame(height: Theme.line(.thin)) }
-        .confirmationDialog("Fechar \(closing?.name ?? "") sem salvar?", isPresented: Binding(get: { closing != nil }, set: { if !$0 { closing = nil } })) {
-            Button("Salvar e fechar") { finishClosing(saving: true) }
-            Button("Fechar sem salvar", role: .destructive) { finishClosing(saving: false) }
-            Button("Cancelar", role: .cancel) { closing = nil }
-        } message: {
-            Text("As alterações não salvas deste arquivo se perdem.")
-        }
+        .confirmation("Fechar \(closing?.name ?? "") sem salvar?",
+                      isPresented: Binding(get: { closing != nil }, set: { if !$0 { closing = nil } }),
+                      message: "As alterações não salvas deste arquivo se perdem.", choices: [
+                          ConfirmationChoice(title: "Salvar e fechar") { finishClosing(saving: true) },
+                          ConfirmationChoice(title: "Fechar sem salvar", isDestructive: true) {
+                              finishClosing(saving: false)
+                          },
+                      ])
     }
 
     private func finishClosing(saving: Bool) {
@@ -111,7 +112,7 @@ private struct EditorTab: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.thalamusGhost(radius: .r4))
-            .help(document.isDirty ? "Não salvo" : "Fechar")
+            .tip(document.isDirty ? "Não salvo" : "Fechar")
             .accessibilityLabel(document.isDirty ? "Fechar \(document.name), não salvo" : "Fechar \(document.name)")
         }
         .editorTabLabel(isOn: isOn, trailing: 8)

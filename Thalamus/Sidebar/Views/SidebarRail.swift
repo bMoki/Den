@@ -118,8 +118,8 @@ final class HoverTipPanel {
     }
 
     static func size(of tip: PaneTip) -> NSSize {
-        NSHostingController(rootView: PaneHoverCard(tip: tip)).sizeThatFits(
-            in: NSSize(width: PaneHoverCard.maxWidth + 2 * PaneHoverCard.margin, height: 10_000))
+        NSHostingController.fittingSize(of: PaneHoverCard(tip: tip),
+                                        maxWidth: PaneHoverCard.maxWidth + 2 * PaneHoverCard.margin)
     }
 
     func hide() {
@@ -128,15 +128,8 @@ final class HoverTipPanel {
     }
 
     private func makePanel() -> NSPanel {
-        let panel = NSPanel(contentRect: .zero,
-                            styleMask: [.borderless, .nonactivatingPanel],
-                            backing: .buffered, defer: true)
-        panel.backgroundColor = .clear
-        panel.isOpaque = false
-        panel.hasShadow = false
+        let panel = NSPanel.hoverPanel()
         panel.level = .floating
-        panel.ignoresMouseEvents = true
-        panel.collectionBehavior = [.transient, .ignoresCycle]
         self.panel = panel
         return panel
     }

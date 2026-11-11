@@ -30,7 +30,7 @@ struct NewSessionRow: View {
                 Task { await workspace.newSession(in: directory, harness: harness) }
             }
         })])
-        .help("Iniciar uma sessão nova")
+        .tip("Iniciar uma sessão nova")
     }
 }
 

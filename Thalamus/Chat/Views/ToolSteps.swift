@@ -24,7 +24,7 @@ struct ToolSteps: View {
             }
             .buttonStyle(.plain)
             .onHover { hovering = $0 }
-            .help(isOpen ? "Recolher os passos" : "Ver o que a IA fez")
+            .tip(isOpen ? "Recolher os passos" : "Ver o que a IA fez")
             .accessibilityLabel(isOpen ? "Recolher passos" : "Expandir \(lines.count) passos")
 
             if isOpen {

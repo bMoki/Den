@@ -35,7 +35,7 @@ struct SidebarHeader: View {
                     .foregroundStyle(Theme.textMuted)
                     .iconLabel()
             }
-            .help("Nova sessão")
+            .tip("Nova sessão")
             .accessibilityLabel("Nova")
             SidebarButton(title: "Recolher barra lateral", action: collapse)
         }
@@ -80,7 +80,7 @@ struct SidebarSearch: View {
                         .foregroundStyle(Theme.textTertiary)
                 }
                 .buttonStyle(.plain)
-                .help("Limpar busca")
+                .tip("Limpar busca")
                 .accessibilityLabel("Limpar busca")
             }
         }

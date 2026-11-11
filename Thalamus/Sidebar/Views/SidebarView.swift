@@ -81,7 +81,7 @@ struct SidebarView: View {
                             .frame(height: Theme.size(.s24))
                         }
                         .buttonStyle(.thalamusGhost(radius: .r6))
-                        .help("Nova Branch de workspace")
+                        .tip("Nova Branch de workspace")
                         .accessibilityLabel("Nova Branch de workspace")
                     }
                 }
@@ -98,7 +98,7 @@ struct SidebarView: View {
                             .iconLabel(size: .s22)
                     }
                     .buttonStyle(.thalamusGhost(radius: .r6))
-                    .help("Abrir pasta")
+                    .tip("Abrir pasta")
                     .accessibilityLabel("Abrir pasta")
                 }
 

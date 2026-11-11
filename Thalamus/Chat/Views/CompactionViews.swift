@@ -98,7 +98,7 @@ struct CompactionMark: View {
             rule
         }
         .frame(maxWidth: .infinity)
-        .help("A partir daqui a IA só enxerga o resumo do que veio antes")
+        .tip("A partir daqui a IA só enxerga o resumo do que veio antes")
     }
 
     private var rule: some View {
@@ -134,7 +134,7 @@ struct DigestRow: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .help(isOpen ? "Recolher" : "Ver o conteúdo")
+            .tip(isOpen ? "Recolher" : "Ver o conteúdo")
             .accessibilityLabel(isOpen ? "Recolher \(title)" : "Expandir \(title)")
 
             if isOpen {

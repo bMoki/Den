@@ -59,7 +59,7 @@ private struct PullRequestRow: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .help("Abrir no GitHub")
+            .tip("Abrir no GitHub")
             .accessibilityLabel("\(repo.name): PR \(PullRequestStatus.number(pullRequest)), \(status)")
             Button(action: toggleDismissal) {
                 Theme.image(isDismissed ? .show : .hide)
@@ -69,7 +69,7 @@ private struct PullRequestRow: View {
             }
             .buttonStyle(.thalamusGhost(radius: .r6))
             .opacity(hovering || isDismissed ? 1 : 0)
-            .help(dismissalTitle)
+            .tip(dismissalTitle)
             .accessibilityLabel("\(dismissalTitle): \(repo.name)")
         }
         .padding(.leading, Theme.space(.s12))

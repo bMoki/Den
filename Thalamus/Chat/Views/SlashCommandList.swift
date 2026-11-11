@@ -20,7 +20,7 @@ struct SlashCommandList: View {
         VStack(alignment: .leading, spacing: Theme.space(.s1)) {
             if let group {
                 BackButton(title: group.title, back: back)
-                    .help("Voltar (Esc)")
+                    .tip("Voltar", shortcut: "esc")
             }
 
             ScrollViewReader { proxy in

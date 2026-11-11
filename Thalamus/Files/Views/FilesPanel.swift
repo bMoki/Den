@@ -140,7 +140,7 @@ struct FilesPanel: View {
                 .iconLabel(size: .s26)
         }
         .buttonStyle(.thalamusGhost)
-        .help(title)
+        .tip(title)
         .accessibilityLabel(title)
     }
 

@@ -37,7 +37,7 @@ struct ChatHeader: View {
             }
             .buttonStyle(.plain)
             .layoutPriority(-1)
-            .help("Abrir a página de \(title)")
+            .tip("Abrir a página de \(title)")
             Text("›")
                 .foregroundStyle(Theme.textFaint)
             Text(chat.title)
@@ -72,7 +72,7 @@ struct InspectorToggle: View {
                 .iconLabel(size: .s32)
         }
         .buttonStyle(ThalamusButtonStyle(kind: .secondary))
-        .help(isOpen ? "Ocultar painel" : "Mostrar painel (⌥⌘0)")
+        .tip(isOpen ? "Ocultar painel" : "Mostrar painel", shortcut: "⌥⌘0")
         .accessibilityLabel(isOpen ? "Ocultar painel" : "Mostrar painel")
     }
 }
@@ -97,7 +97,7 @@ struct BranchPill: View {
         .frame(minWidth: isRemoved ? 96 : nil, maxWidth: 220)
         .background(Theme.field, in: RoundedRectangle(cornerRadius: Theme.radius(.r6), style: .continuous))
         .fixedSize(horizontal: !isRemoved, vertical: true)
-        .help(isRemoved ? "Branch de workspace removida" : branch)
+        .tip(isRemoved ? "Branch de workspace removida" : branch)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(isRemoved ? "Branch \(branch), removida" : branch)
     }

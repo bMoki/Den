@@ -41,7 +41,7 @@ struct InspectorView: View {
                         .iconLabel()
                 }
                 .buttonStyle(.thalamusGhost)
-                .help("Recolher painel (⌥⌘0)")
+                .tip("Recolher painel", shortcut: "⌥⌘0")
                 .accessibilityLabel("Fechar painel")
             }
 

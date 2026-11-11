@@ -55,7 +55,7 @@ struct ComposerField: View {
                             .strokeBorder(Theme.borderStrong, lineWidth: Theme.line(.thin)))
                 }
                 .buttonStyle(.thalamusGhost(radius: .r5))
-                .help("Enviar resposta sugerida (→)")
+                .tip("Enviar resposta sugerida", shortcut: "→")
                 .accessibilityLabel("Enviar resposta sugerida")
             }
     }

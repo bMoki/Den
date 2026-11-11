@@ -204,19 +204,38 @@ final class ConversationUITests: XCTestCase {
         let app = launch()
 
         app.buttons["Nova"].click()
-        let popover = app.popovers.firstMatch
-        require(popover, in: app)
-        let menu = popover.scrollViews["thalamus-menu"]
+        let menu = app.scrollViews["thalamus-menu"]
         require(menu.buttons["Nova sessão"], in: app)
         XCTAssertTrue(menu.buttons["Abrir pasta…"].exists)
 
         menu.buttons["Nova sessão com"].click()
-        require(popover.buttons["Voltar"], in: app)
+        require(app.buttons["Voltar"], in: app)
         XCTAssertFalse(menu.buttons["Abrir pasta…"].exists)
         XCTAssertTrue(menu.buttons["Claude Code"].exists)
 
-        popover.buttons["Voltar"].click()
+        app.buttons["Voltar"].click()
         require(menu.buttons["Abrir pasta…"], in: app)
+    }
+
+    @MainActor
+    func testTheSidebarMenuAnswersTheKeyboard() {
+        let app = launch()
+
+        app.buttons["Nova"].click()
+        let menu = app.scrollViews["thalamus-menu"]
+        require(menu.buttons["Nova sessão com"], in: app)
+
+        app.typeKey(.downArrow, modifierFlags: [])
+        app.typeKey(.downArrow, modifierFlags: [])
+        app.typeKey(.rightArrow, modifierFlags: [])
+        require(app.buttons["Voltar"], in: app)
+        XCTAssertTrue(menu.buttons["Claude Code"].exists)
+
+        app.typeKey(.leftArrow, modifierFlags: [])
+        require(menu.buttons["Abrir pasta…"], in: app)
+
+        app.typeKey(.escape, modifierFlags: [])
+        XCTAssertTrue(menu.waitForNonExistence(timeout: 5))
     }
 
     // MARK: - Mentions
@@ -283,7 +302,7 @@ final class ConversationUITests: XCTestCase {
         let row = pageRow("Saudação curta", in: app)
         require(row, in: app)
         row.rightClick()
-        let menu = app.popovers.firstMatch
+        let menu = app.scrollViews["thalamus-menu"]
         require(menu, in: app)
         return menu
     }
@@ -309,8 +328,16 @@ final class ConversationUITests: XCTestCase {
         let app = launch()
 
         sessionMenu(in: app).buttons["Apagar sessão…"].click()
-        // The Touch Bar mirrors the alert's buttons, so look inside the sheet.
         let confirm = app.sheets.buttons["Apagar"]
+        require(confirm, in: app)
+        app.typeKey(.return, modifierFlags: [])
+        XCTAssertTrue(confirm.exists)
+        app.typeKey(.escape, modifierFlags: [])
+        XCTAssertTrue(confirm.waitForNonExistence(timeout: patience))
+        XCTAssertTrue(pageRow("Saudação curta", in: app).exists)
+
+        pageRow("Saudação curta", in: app).rightClick()
+        app.scrollViews["thalamus-menu"].buttons["Apagar sessão…"].click()
         require(confirm, in: app)
         confirm.click()
 

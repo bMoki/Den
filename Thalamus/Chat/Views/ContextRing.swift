@@ -26,12 +26,11 @@ struct ContextRing: View {
         }
         .buttonStyle(.plain)
         .onHover { hovering = $0 }
-        .help(tooltip)
+        .tip(tooltip)
         .accessibilityLabel("Janela de contexto")
         .accessibilityValue(chat.contextFraction.map(ContextFormat.percent) ?? "sem dados")
-        .popover(isPresented: $showsDetails, arrowEdge: .top) {
+        .floating(isPresented: $showsDetails, edge: .top) {
             ContextPanel(chat: chat)
-                .presentationBackground(Theme.raised)
         }
         .onChange(of: showsDetails) { _, shown in
             if shown { Task { await chat.refreshContextUsage() } }

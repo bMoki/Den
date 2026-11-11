@@ -175,7 +175,7 @@ struct SidebarButton: View {
                 .iconLabel()
         }
         .buttonStyle(.thalamusGhost)
-        .help(title)
+        .tip(title)
         .accessibilityLabel(title)
     }
 }

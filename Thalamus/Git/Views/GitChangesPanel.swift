@@ -72,7 +72,7 @@ struct GitChangesPanel: View {
                     Text("· \(model.reviewedCount)/\(model.changeCount) revisados")
                         .foregroundStyle(model.reviewedCount == model.changeCount
                                          ? Theme.added : Theme.textTertiary)
-                        .help("Arquivos revisados")
+                        .tip("Arquivos revisados")
                 }
             } else {
                 Text("Alterações do Git")
@@ -92,7 +92,7 @@ struct GitChangesPanel: View {
             }
             .buttonStyle(.thalamusGhost(radius: .r7))
             .disabled(model.isLoading)
-            .help("Atualizar alterações")
+            .tip("Atualizar alterações")
             .accessibilityLabel("Atualizar alterações")
         }
         .font(Theme.font(.body))
@@ -256,7 +256,7 @@ struct GitChangesPanel: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.thalamusGhost(radius: .r7))
-        .help(repo.root.path)
+        .tip(repo.root.path)
         .accessibilityLabel(isCollapsed ? "Expandir \(repo.name)" : "Recolher \(repo.name)")
     }
 
@@ -291,7 +291,7 @@ struct GitChangesPanel: View {
                 .modifier(ListRowLabel(height: Self.listRowHeight))
             }
             .buttonStyle(.plain)
-            .help(file.path)
+            .tip(file.path)
 
             reviewButton(done: done) {
                 model.setReviewed(!done, for: file, in: repo)
@@ -334,7 +334,7 @@ struct GitChangesPanel: View {
                 .modifier(ListRowLabel(height: Self.listRowHeight))
             }
             .buttonStyle(.plain)
-            .help(dir)
+            .tip(dir)
 
             reviewButton(done: allDone) {
                 withAnimation(.easeOut(duration: 0.15)) {
@@ -355,7 +355,7 @@ struct GitChangesPanel: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .help(done ? "Desmarcar como revisado" : "Marcar como revisado")
+        .tip(done ? "Desmarcar como revisado" : "Marcar como revisado")
         .accessibilityLabel(done ? "Revisado" : "Não revisado")
     }
 
@@ -371,7 +371,7 @@ struct GitChangesPanel: View {
                 .font(Theme.font(.smallPlus, weight: .medium, design: .monospaced))
                 .lineLimit(1)
                 .truncationMode(.head)
-                .help(file.path)
+                .tip(file.path)
             Spacer(minLength: Theme.space(.s6))
             Button {
                 withAnimation(.easeOut(duration: 0.15)) {

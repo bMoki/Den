@@ -156,7 +156,7 @@ struct BranchHeader: View {
                 .iconLabel(size: .s22)
         }
         .buttonStyle(.thalamusGhost(radius: .r6))
-        .help(title)
+        .tip(title)
         .accessibilityLabel(title)
     }
 }

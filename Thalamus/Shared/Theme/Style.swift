@@ -31,7 +31,7 @@ nonisolated struct Style: Sendable {
     }
 
     enum Elevation: CaseIterable, Sendable {
-        case knob, floatingButton, tip, composer, lightbox, inspector
+        case knob, floatingButton, tip, floating, composer, lightbox, inspector
     }
 
     struct Shadow: Sendable {
@@ -86,6 +86,7 @@ nonisolated extension Style {
             case .knob: Shadow(opacity: 0.5, radius: 4, y: 1)
             case .floatingButton: Shadow(opacity: 0.35, radius: 10, y: 3)
             case .tip: Shadow(opacity: 0.45, radius: 12, y: 4)
+            case .floating: Shadow(opacity: 0.4, radius: 14, y: 5)
             case .composer: Shadow(opacity: 0.35, radius: 20, y: 4)
             case .lightbox: Shadow(opacity: 0.33, radius: 24)
             case .inspector: Shadow(opacity: 0.5, radius: 28, x: -8)

@@ -70,7 +70,7 @@ struct ChatComposer: View {
                     .iconLabel(size: .s32)
             }
             .buttonStyle(.thalamusGhost(radius: .r9))
-            .help("Anexar arquivos")
+            .tip("Anexar arquivos")
             .accessibilityLabel("Anexar arquivos")
             sendButton
         }
@@ -94,7 +94,7 @@ struct ChatComposer: View {
                   && chat.prompt.trimmingCharacters(in: .whitespaces).isEmpty
                   && chat.pendingAttachments.isEmpty
                   && chat.pendingPastes.isEmpty)
-        .help(chat.isBusy ? "Parar o que está rodando" : "Enviar mensagem")
+        .tip(chat.isBusy ? "Parar o que está rodando" : "Enviar mensagem")
         .accessibilityLabel(chat.isBusy ? "Parar" : "Enviar mensagem")
     }
 
@@ -228,7 +228,7 @@ struct ChatComposer: View {
             .contentShape(RoundedRectangle(cornerRadius: Theme.radius(.r9)))
         }
         .buttonStyle(.plain)
-        .help("Clique para mostrar o texto inteiro no campo")
+        .tip("Clique para mostrar o texto inteiro no campo")
         .overlay(alignment: .topTrailing) {
             removeButton(help: "Remover texto colado") { chat.removePaste(paste.id) }
         }
@@ -242,7 +242,7 @@ struct ChatComposer: View {
         }
         .buttonStyle(.plain)
         .padding(Theme.space(.s3))
-        .help(help)
+        .tip(help)
         .accessibilityLabel(help)
     }
 

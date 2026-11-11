@@ -43,7 +43,7 @@ struct TerminalPanel: View {
             }
             .buttonStyle(.thalamusGhost(radius: .r5))
             .padding(.leading, Theme.space(.s4))
-            .help("Novo Terminal livre")
+            .tip("Novo Terminal livre")
             .accessibilityLabel("Novo Terminal livre")
             Spacer(minLength: Theme.space(.s8))
             Text(current.isConsole ? "Fechar o Console não para o Serviço"
@@ -61,7 +61,7 @@ struct TerminalPanel: View {
             }
             .buttonStyle(.thalamusGhost(radius: .r5))
             .padding(.horizontal, Theme.space(.s6))
-            .help("Ocultar painel")
+            .tip("Ocultar painel")
             .accessibilityLabel("Ocultar painel")
         }
         .padding(.leading, Theme.space(.s4))
@@ -91,7 +91,7 @@ struct TerminalToggle: View {
         }
         .buttonStyle(ThalamusButtonStyle(kind: .secondary))
         .disabled(isArchived)
-        .help(help)
+        .tip(help, shortcut: "⌃`")
         .accessibilityLabel(isShown ? "Ocultar Terminais livres" : "Mostrar Terminais livres")
         .accessibilityHint(isArchived ? Self.archivedFolderReason : "")
         .onKeyboardShortcut("`", modifiers: .control) { toggle() }
@@ -141,7 +141,7 @@ private struct TerminalTab: View {
             }
             .buttonStyle(.thalamusGhost(radius: .r4))
             .opacity(isSelected || hovering ? 1 : 0)
-            .help(console == nil ? "Fechar Terminal livre" : "Fechar Console")
+            .tip(console == nil ? "Fechar Terminal livre" : "Fechar Console")
             .accessibilityLabel("Fechar \(title)")
         }
         .font(Theme.font(.small))

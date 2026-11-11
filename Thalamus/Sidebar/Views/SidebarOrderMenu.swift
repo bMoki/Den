@@ -18,7 +18,7 @@ struct SidebarOrderMenu: View {
                 .foregroundStyle(Theme.textTertiary)
                 .iconLabel(size: .s22)
         }
-        .help("Ordenar branches")
+        .tip("Ordenar branches")
         .accessibilityLabel("Ordenar branches")
         .accessibilityValue(layout.order.label)
     }

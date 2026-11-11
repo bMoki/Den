@@ -156,3 +156,98 @@ extension DialogWarning where Actions == EmptyView {
         self.init(title: title, detail: detail) { EmptyView() }
     }
 }
+
+struct ConfirmationChoice {
+    let title: String
+    var isDestructive = false
+    let action: () -> Void
+}
+
+extension View {
+    func confirmation(_ title: String, isPresented: Binding<Bool>, message: String,
+                      choices: [ConfirmationChoice]) -> some View {
+        sheet(isPresented: isPresented) {
+            ConfirmationDialog(title: title, message: message, choices: choices) { choice in
+                choice?.action()
+                isPresented.wrappedValue = false
+            }
+        }
+    }
+}
+
+struct ConfirmationDialog: View {
+    static let width: CGFloat = 260
+
+    @State private var titleWhenOpened: String
+    let message: String
+    let choices: [ConfirmationChoice]
+    var finish: (ConfirmationChoice?) -> Void
+
+    init(title: String, message: String, choices: [ConfirmationChoice],
+         finish: @escaping (ConfirmationChoice?) -> Void) {
+        _titleWhenOpened = State(initialValue: title)
+        self.message = message
+        self.choices = choices
+        self.finish = finish
+    }
+
+    static func defaultIndex(of choices: [ConfirmationChoice]) -> Int? {
+        choices.firstIndex { !$0.isDestructive }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Theme.space(.s16)) {
+            VStack(alignment: .leading, spacing: Theme.space(.s6)) {
+                Text(titleWhenOpened)
+                    .font(Theme.font(.body, weight: .bold))
+                Text(message)
+                    .font(Theme.font(.small))
+                    .foregroundStyle(Theme.textSecondary)
+            }
+            .fixedSize(horizontal: false, vertical: true)
+            buttons
+        }
+        .padding(Theme.space(.s18))
+        .frame(width: Self.width)
+        .background(Theme.raised)
+    }
+
+    @ViewBuilder
+    private var buttons: some View {
+        let stacked = choices.count > 1
+        let layout = stacked ? AnyLayout(VStackLayout(spacing: Theme.space(.s8)))
+                             : AnyLayout(HStackLayout(spacing: Theme.space(.s8)))
+        layout {
+            if !stacked { cancel }
+            ForEach(Array(choices.enumerated()), id: \.offset) { index, choice in
+                choiceButton(choice, isDefault: index == Self.defaultIndex(of: choices))
+            }
+            if stacked { cancel }
+        }
+    }
+
+    private var cancel: some View {
+        Button { finish(nil) } label: { label("Cancelar") }
+            .buttonStyle(.thalamusSecondary)
+            .keyboardShortcut(.cancelAction)
+    }
+
+    @ViewBuilder
+    private func choiceButton(_ choice: ConfirmationChoice, isDefault: Bool) -> some View {
+        let button = Button { finish(choice) } label: { label(choice.title) }
+            .buttonStyle(ThalamusButtonStyle(kind: choice.isDestructive ? .destructive
+                                                 : isDefault ? .primary : .secondary))
+        if isDefault {
+            button.keyboardShortcut(.defaultAction)
+        } else {
+            button
+        }
+    }
+
+    private func label(_ title: String) -> some View {
+        Text(title)
+            .font(Theme.font(.body, weight: .medium))
+            .frame(maxWidth: .infinity)
+            .frame(height: Theme.size(.s28))
+    }
+}

@@ -98,7 +98,7 @@ struct EditorView: View {
             .font(Theme.font(.small, design: .monospaced))
             .lineLimit(1)
             .truncationMode(.head)
-            .help(document.url.path)
+            .tip(document.url.path)
     }
 
     private var crumbs: AttributedString {

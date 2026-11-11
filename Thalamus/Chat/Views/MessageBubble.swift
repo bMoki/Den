@@ -63,7 +63,7 @@ struct MessageBubble: View {
                         .onTapGesture {
                             onZoom(data)
                         }
-                        .help("Clique para ampliar")
+                        .tip("Clique para ampliar")
                 }
             }
             Group {
@@ -102,7 +102,7 @@ struct MessageBubble: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .help(isOpen ? "Recolher mensagem" : "Mostrar a mensagem inteira")
+            .tip(isOpen ? "Recolher mensagem" : "Mostrar a mensagem inteira")
         }
     }
 

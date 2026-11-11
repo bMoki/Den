@@ -123,7 +123,7 @@ private struct FileLine: View {
             .lineLimit(1)
             .truncationMode(.head)
             .textSelection(.enabled)
-            .help(path)
+            .tip(path)
     }
 }
 

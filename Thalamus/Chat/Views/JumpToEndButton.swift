@@ -19,7 +19,7 @@ struct JumpToEndButton: View {
                 .buttonStyle(.plain)
                 .padding(.bottom, Theme.space(.s14))
                 .transition(.opacity.combined(with: .scale(scale: 0.8)))
-                .help("Ir para o final")
+                .tip("Ir para o final")
                 .accessibilityLabel("Ir para o final")
             }
         }

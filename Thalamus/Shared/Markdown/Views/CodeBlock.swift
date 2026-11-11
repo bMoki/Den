@@ -42,7 +42,7 @@ struct CodeBlock: View {
         }
         .buttonStyle(.plain)
         .padding(Theme.space(.s6))
-        .help("Copiar código")
+        .tip("Copiar código")
         .accessibilityLabel("Copiar código")
     }
 

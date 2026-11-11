@@ -45,7 +45,7 @@ struct ServicesPanel: View {
                                         .foregroundStyle(Theme.textSecondary)
                                         .iconLabel(size: .s26)
                                 })
-                                .help("Snapshots")
+                                .tip("Snapshots")
                                 .accessibilityLabel("Snapshots")
                             }
                             .thalamusContextMenu(databaseMenu)
@@ -91,18 +91,14 @@ struct ServicesPanel: View {
                                      Task { await ns.restore(branch, from: ref) }
                                  })
         }
-        .confirmationDialog("Remover \(removing?.ref ?? "")?", isPresented: Binding(
+        .confirmation("Remover \(removing?.ref ?? "")?", isPresented: Binding(
             get: { removing != nil },
             set: { if !$0 { removing = nil } }
-        ), titleVisibility: .visible) {
-            Button("Remover", role: .destructive) {
+        ), message: "Apaga o Snapshot e o volume dele. Não dá para desfazer.", choices: [
+            ConfirmationChoice(title: "Remover", isDestructive: true) {
                 if let snapshot = removing { Task { await ns.removeSnapshot(snapshot) } }
-                removing = nil
-            }
-            Button("Cancelar", role: .cancel) { removing = nil }
-        } message: {
-            Text("Apaga o Snapshot e o volume dele. Não dá para desfazer.")
-        }
+            },
+        ])
     }
 
     private var runningServices: [String] {
@@ -190,7 +186,7 @@ struct ServicesPanel: View {
                 .frame(height: Theme.size(.s28))
         }
         .buttonStyle(.thalamusSecondary)
-        .help(help)
+        .tip(help)
     }
 
     private func sectionTitle(_ title: String) -> some View {
@@ -266,7 +262,7 @@ struct ServicesPanel: View {
                 .iconLabel(size: .s26)
         }
         .buttonStyle(.thalamusGhost(radius: .r6))
-        .help(title)
+        .tip(title)
         .accessibilityLabel(title)
     }
 
@@ -279,7 +275,7 @@ struct ServicesPanel: View {
                 .lineLimit(1)
                 .truncationMode(.tail)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .help(service.error ?? "")
+                .tip(service.error ?? "")
             if service.session != nil {
                 Button("Ver no Console") { Task { await openConsole(service) } }
                     .buttonStyle(.plain)

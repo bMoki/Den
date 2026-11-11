@@ -35,7 +35,7 @@ struct HarnessSwitcher: View {
             .contentShape(Rectangle())
         }
         .disabled(!chat.canSwitchHarness)
-        .help(chat.isBusy
+        .tip(chat.isBusy
               ? "Espere o turno terminar para trocar de harness"
               : "Trocar de harness levando a conversa junto")
     }

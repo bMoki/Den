@@ -46,7 +46,7 @@ struct KnobBadge: View {
         return ThalamusMenuChip(sections: sections, bordered: knob.category == .mode) {
             label
         }
-        .help("\(knob.name): \(knob.label(for: knob.currentValue) ?? "—")")
+        .tip("\(knob.name): \(knob.label(for: knob.currentValue) ?? "—")")
         .accessibilityLabel("\(knob.name): \(knob.label(for: knob.currentValue) ?? "—")")
     }
 

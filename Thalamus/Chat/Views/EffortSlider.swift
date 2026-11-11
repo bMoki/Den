@@ -35,13 +35,12 @@ struct EffortPicker: View {
         .buttonStyle(.plain)
         .onHover { hovering = $0 }
         .fixedSize()
-        .help("\(knob.name): \(currentLabel)")
+        .tip("\(knob.name): \(currentLabel)")
         .accessibilityLabel(knob.name)
         .accessibilityValue(currentLabel)
         .accessibilityIdentifier("effort-picker")
-        .popover(isPresented: $isOpen, arrowEdge: .top) {
+        .floating(isPresented: $isOpen, edge: .top) {
             EffortSlider(knob: knob, chat: chat) { isOpen = false }
-                .presentationBackground(Theme.raised)
         }
     }
 }

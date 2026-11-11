@@ -42,10 +42,10 @@ struct PullRequestBar: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .help("Abrir no GitHub · \(repo.branch)")
+            .tip("Abrir no GitHub · \(repo.branch)")
             trailing
             BarDismissButton(action: dismiss)
-                .help("Dispensar até o PR mudar")
+                .tip("Dispensar até o PR mudar")
         }
         .barSurface(fill: fill, stroke: stroke)
         .scaleEffect(pulse ? 1.015 : 1)
@@ -135,12 +135,11 @@ struct PullRequestBar: View {
         }
         .buttonStyle(.plain)
         .onHover { hoveringChecks = $0 }
-        .help("Checks: \(PullRequestStatus.headline(pullRequest)) · clique para ver cada um")
+        .tip("Checks: \(PullRequestStatus.headline(pullRequest)) · clique para ver cada um")
         .accessibilityLabel("Checks")
         .accessibilityValue(PullRequestStatus.headline(pullRequest))
-        .popover(isPresented: $showingChecks, arrowEdge: .top) {
+        .floating(isPresented: $showingChecks, edge: .top) {
             ChecksPanel(pullRequest: pullRequest, checkedAt: checkedAt, refresh: refresh)
-                .presentationBackground(Theme.raised)
         }
     }
 

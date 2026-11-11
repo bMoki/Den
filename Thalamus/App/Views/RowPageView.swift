@@ -41,19 +41,14 @@ struct RowPageView: View {
             }
         }
         .navigationTitle(ns.title(of: row))
-        .confirmationDialog(
+        .confirmation(
             "Apagar \"\(pendingDelete?.title ?? "")\"?",
             isPresented: Binding(
                 get: { pendingDelete != nil },
                 set: { if !$0 { pendingDelete = nil } }
             ),
-            titleVisibility: .visible
-        ) {
-            Button("Apagar", role: .destructive, action: delete)
-            Button("Cancelar", role: .cancel) { pendingDelete = nil }
-        } message: {
-            Text("A conversa e o histórico dela serão removidos permanentemente.")
-        }
+            message: "A conversa e o histórico dela serão removidos permanentemente.",
+            choices: [ConfirmationChoice(title: "Apagar", isDestructive: true, action: delete)])
     }
 
     private var root: URL? {

@@ -19,7 +19,7 @@ struct Lightbox: View {
             }
             .contentShape(Rectangle())
             .onTapGesture { close() }
-            .help("Clique ou Esc para fechar")
+            .tip("Clique ou Esc para fechar")
         }
     }
 

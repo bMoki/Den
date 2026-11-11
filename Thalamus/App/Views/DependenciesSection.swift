@@ -89,7 +89,7 @@ private struct DependencyRow: View {
             Button(action: install) { Text(title).pillLabel() }
                 .buttonStyle(.thalamusSecondary)
                 .disabled(isBusy)
-                .help("\(title) as dependências do \(row.id)")
+                .tip("\(title) as dependências do \(row.id)")
                 .accessibilityLabel("\(title) as dependências do \(row.id)")
         }
     }
@@ -108,7 +108,7 @@ private struct DependencyRow: View {
             .font(Theme.font(.caption, weight: .semibold))
             .foregroundStyle(color)
             .frame(width: Theme.size(.s18), height: Theme.size(.s18))
-            .help(title)
+            .tip(title)
             .accessibilityLabel(title)
     }
 
@@ -139,7 +139,7 @@ private struct CopyableCommand: View {
                 .buttonStyle(.plain)
                 .font(Theme.font(.labelPlus))
                 .foregroundStyle(Theme.textMuted)
-                .help("Copiar o comando")
+                .tip("Copiar o comando")
                 .accessibilityLabel("Copiar \(command)")
         }
         .padding(.leading, Theme.space(.s8))

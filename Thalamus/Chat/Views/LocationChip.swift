@@ -25,7 +25,7 @@ struct LocationChip: View {
         }
         .buttonStyle(.thalamusGhost)
         .fixedSize()
-        .help(chat.workingDirectory.path)
+        .tip(chat.workingDirectory.path)
         .accessibilityLabel("Pasta da sessão: \(chat.workingDirectory.lastPathComponent)")
     }
 
