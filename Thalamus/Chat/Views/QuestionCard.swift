@@ -2,13 +2,39 @@ import SwiftUI
 
 struct QuestionCard: View {
     let prompt: QuestionPrompt
+    var maxHeight: CGFloat
     var answer: ([String: [String]]) -> Void
     var dismiss: () -> Void
 
     @State private var selections: [String: Set<String>] = [:]
+    @State private var footerHeight: CGFloat = 0
+
+    private static let padding: CGFloat = 14
+    private static let spacing: CGFloat = 14
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: Self.spacing) {
+            FittedScroll(maxHeight: questionsMaxHeight, fadesHiddenEnd: true) {
+                questions
+            }
+            .accessibilityIdentifier("agent-questions")
+            footer
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: {
+                    footerHeight = $0
+                }
+        }
+        .padding(Self.padding)
+        .background(Theme.card, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
+            .strokeBorder(Theme.borderControl, lineWidth: 1))
+    }
+
+    private var questionsMaxHeight: CGFloat {
+        max(maxHeight - footerHeight - Self.spacing - Self.padding * 2, 0)
+    }
+
+    private var questions: some View {
+        VStack(alignment: .leading, spacing: Self.spacing) {
             ForEach(prompt.questions, id: \.text) { question in
                 VStack(alignment: .leading, spacing: 8) {
                     if !question.header.isEmpty {
@@ -34,28 +60,33 @@ struct QuestionCard: View {
                     }
                 }
             }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
 
-            HStack(spacing: 8) {
-                Button(action: dismiss) {
-                    Text("Dispensar").pillLabel()
+    private var footer: some View {
+        HStack(spacing: 8) {
+            Button(action: dismiss) {
+                Text("Dispensar").pillLabel()
+            }
+            .buttonStyle(.thalamusGhost)
+            .foregroundStyle(Theme.textSecondary)
+            Spacer()
+            if prompt.questions.count > 1 {
+                Text("\(answeredCount) de \(prompt.questions.count) respondidas")
+                    .font(.system(size: 12))
+                    .foregroundStyle(Theme.textMuted)
+                    .monospacedDigit()
+            }
+            if needsSubmit {
+                Button(action: submit) {
+                    Text("Responder").pillLabel()
                 }
-                .buttonStyle(.thalamusGhost)
-                .foregroundStyle(Theme.textSecondary)
-                Spacer()
-                if needsSubmit {
-                    Button(action: submit) {
-                        Text("Responder").pillLabel()
-                    }
-                    .buttonStyle(.thalamusPrimary)
-                    .keyboardShortcut(.defaultAction)
-                    .disabled(!allAnswered)
-                }
+                .buttonStyle(.thalamusPrimary)
+                .keyboardShortcut(.defaultAction)
+                .disabled(!allAnswered)
             }
         }
-        .padding(14)
-        .background(Theme.card, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-            .strokeBorder(Theme.borderControl, lineWidth: 1))
     }
 
     private struct OptionRow: View {
@@ -118,9 +149,11 @@ struct QuestionCard: View {
         prompt.questions.count > 1 || prompt.questions.contains(where: \.multiSelect)
     }
 
-    private var allAnswered: Bool {
-        prompt.questions.allSatisfy { !(selections[$0.text] ?? []).isEmpty }
+    private var answeredCount: Int {
+        prompt.questions.count { !(selections[$0.text] ?? []).isEmpty }
     }
+
+    private var allAnswered: Bool { answeredCount == prompt.questions.count }
 
     private func submit() {
         guard allAnswered else { return }

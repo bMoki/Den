@@ -167,6 +167,30 @@ nonisolated enum RecordedSession {
         return (Array(lines[...asking]), Array(lines[(asking + 1)...]))
     }
 
+    static func claudeQuestions(_ count: Int) throws -> [String] {
+        let detail = String(repeating: "Uma descrição longa que ocupa mais de uma linha no card. ", count: 3)
+        let questions: [[String: Any]] = (1...count).map { number in
+            [
+                "question": "Pergunta \(number), com um texto que explica o que se decide?",
+                "header": "Tema \(number)",
+                "multiSelect": false,
+                "options": (1...count).map { ["label": optionLabel($0, of: number), "description": detail] },
+            ]
+        }
+        let request: [String: Any] = [
+            "type": "control_request",
+            "request_id": "ask-many",
+            "request": ["subtype": "can_use_tool", "tool_name": "AskUserQuestion",
+                        "input": ["questions": questions], "tool_use_id": "toolu_ask_many"],
+        ]
+        let data = try JSONSerialization.data(withJSONObject: request)
+        return try claudePermission().untilAsking.dropLast() + [String(decoding: data, as: UTF8.self)]
+    }
+
+    static func optionLabel(_ option: Int, of question: Int) -> String {
+        "Opção \(option) da pergunta \(question)"
+    }
+
     static func openCode(_ name: String) throws -> [String] {
         try lines(of: name)
     }
