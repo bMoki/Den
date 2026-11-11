@@ -155,6 +155,7 @@ Ficam: chat e composer, permissões, slash, menções, painel de contexto, alter
 - **T-13.4** Havendo Mensagem na fila, o primeiro ↑ a retira da fila e a devolve ao composer para editar, antes do histórico. Se o harness já a recebeu, o ↑ segue para o histórico. Num harness que não informa a fila, ↑ é só histórico.
 - **T-13.5** Com uma resposta sugerida à vista, Tab a coloca no composer para editar, e → continua aceitando e enviando de uma vez. Ao percorrer o histórico, a resposta sugerida some e volta quando se retorna ao rascunho vazio.
 - **T-13.6** Sem resposta sugerida e sem lista de `/` ou `@` aberta, Tab continua tirando o foco do composer.
+- **T-13.7** Uma Pergunta do agente aparece acima do composer e ocupa no máximo 60% da altura do chat, para que sempre sobre um pedaço da conversa à vista. O que não cabe rola dentro dela, com um esmaecido na borda de baixo enquanto houver conteúdo escondido. Dispensar e Responder ficam sempre à vista, qualquer que seja o número de perguntas e opções. Com mais de uma pergunta, o rodapé mostra quantas já foram respondidas ("2 de 4 respondidas").
 
 ## 14. PRs
 

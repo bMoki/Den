@@ -53,6 +53,10 @@ Em que situação uma Sessão está, ordenada por quanto ela precisa de quem tra
 Uma Sessão sem nenhum desses está ociosa. Quando mais de um vale ao mesmo tempo, prevalece o de cima.
 _Evitar:_ "status da sessão" para o Estado de Serviço, e vice-versa.
 
+### Pergunta do agente
+Um pedido de resposta que o agente faz no meio do turno, com opções para escolher (uma ou várias por pergunta, uma ou mais perguntas de uma vez). Enquanto não é respondida ou dispensada, a Sessão fica em Aguardando decisão.
+_Evitar:_ "pergunta do `ns`" (são as perguntas que o `ns` faz ao criar ou preparar uma Branch de workspace, fora de qualquer Sessão).
+
 ### Padrão de Sessão
 O modelo, o esforço e o modo com que uma Sessão nova de um harness começa. Cada harness tem o seu. Vale só no começo: o que se escolhe depois, dentro da Sessão, é da Sessão.
 _Evitar:_ "configuração da sessão" para o que se escolhe dentro de uma Sessão.
