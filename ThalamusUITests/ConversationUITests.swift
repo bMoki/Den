@@ -114,9 +114,7 @@ final class ConversationUITests: XCTestCase {
         startConversation("Crie prova.txt com o texto ok.", in: app)
         let allow = app.buttons["Permitir"]
         require(allow, in: app)
-        // The card's buttons answer the accessibility hit test as not hittable,
-        // though a real click lands on them, so click where the button is.
-        allow.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
+        allow.center.click()
 
         require(text(containing: "criado com o conte", in: app), in: app)
         XCTAssertFalse(allow.exists)
@@ -142,6 +140,46 @@ final class ConversationUITests: XCTestCase {
         require(app.staticTexts["OK"], in: app)
         XCTAssertTrue(claude.received.contains { $0.contains("Sim, pode continuar.") })
         XCTAssertFalse(app.staticTexts["suggested-reply"].exists)
+    }
+
+    @MainActor
+    func testManyAgentQuestionsScrollAndKeepTheAnswerButtonInTheWindow() throws {
+        let count = 4
+        try claude.on(FakeCLI.userTurn, reply: RecordedSession.claudeQuestions(count))
+        let app = launch()
+
+        startConversation("Me pergunte tudo de uma vez.", in: app)
+        let answer = app.buttons["Responder"]
+        require(answer, in: app)
+        require(app.staticTexts["0 de \(count) respondidas"], in: app)
+
+        let window = app.windows.firstMatch.frame
+        let questions = app.scrollViews["agent-questions"]
+        XCTAssertTrue(window.contains(answer.frame))
+        XCTAssertTrue(app.buttons["Dispensar"].frame.maxY <= window.maxY)
+        XCTAssertLessThanOrEqual(questions.frame.height, window.height * 0.6)
+        XCTAssertGreaterThan(option(1, of: count, in: app).frame.maxY, questions.frame.maxY)
+
+        for number in 1...count {
+            let option = option(1, of: number, in: app)
+            require(option, in: app)
+            while option.frame.maxY > questions.frame.maxY {
+                questions.center.scroll(byDeltaX: 0, deltaY: -120)
+            }
+            option.center.click()
+            require(app.staticTexts["\(number) de \(count) respondidas"], in: app)
+        }
+
+        XCTAssertTrue(window.contains(answer.frame))
+        answer.center.click()
+        XCTAssertTrue(answer.waitForNonExistence(timeout: patience))
+        XCTAssertEqual(claude.received.last?.contains(RecordedSession.optionLabel(1, of: count)), true)
+    }
+
+    @MainActor
+    private func option(_ option: Int, of question: Int, in app: XCUIApplication) -> XCUIElement {
+        app.buttons.containing(NSPredicate(format: "label CONTAINS %@",
+                                           RecordedSession.optionLabel(option, of: question))).firstMatch
     }
 
     @MainActor
@@ -301,4 +339,8 @@ final class ConversationUITests: XCTestCase {
         let tabs = app.staticTexts.matching(NSPredicate(format: "value BEGINSWITH %@", "Terminal livre ·"))
         XCTAssertEqual(tabs.count, 2)
     }
+}
+
+private extension XCUIElement {
+    var center: XCUICoordinate { coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)) }
 }

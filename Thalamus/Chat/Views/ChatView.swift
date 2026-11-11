@@ -13,6 +13,7 @@ struct ChatView: View {
     @State private var scrollPosition = ScrollPosition()
     @State private var readingSpot = ReadingSpot()
     @State private var tableLock = TableScrollLock()
+    @State private var transcriptHeight: CGFloat = .infinity
 
     @AppStorage(InspectorPane.storageKey) private var pane: InspectorPane = .closed
     let gitChanges: GitChangesModel
@@ -28,6 +29,8 @@ struct ChatView: View {
 
         static func bucket(_ value: CGFloat) -> CGFloat { (value / 8).rounded() * 8 }
     }
+
+    private static let questionShare: CGFloat = 0.6
 
     var body: some View {
         InspectorSplit(isShown: pane != .closed) {
@@ -191,8 +194,12 @@ struct ChatView: View {
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 VStack(spacing: 0) {
                     if let branch { PullRequestBars(branch: branch) }
-                    TransientCards(chat: chat) { nearBottom = true }
+                    TransientCards(chat: chat,
+                                   maxQuestionHeight: transcriptHeight * Self.questionShare) { nearBottom = true }
                 }
+            }
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: {
+                transcriptHeight = $0
             }
             .onScrollGeometryChange(for: ScrollEdgeState.self) { geometry in
                 let distance = geometry.contentSize.height

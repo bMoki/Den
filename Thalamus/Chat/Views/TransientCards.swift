@@ -2,6 +2,7 @@ import SwiftUI
 
 struct TransientCards: View {
     let chat: ChatModel
+    var maxQuestionHeight: CGFloat
     var stickToBottom: () -> Void
 
     var body: some View {
@@ -16,6 +17,7 @@ struct TransientCards: View {
                 if let question = chat.pendingQuestion {
                     QuestionCard(
                         prompt: question,
+                        maxHeight: maxQuestionHeight,
                         answer: { selections in
                             stickToBottom()
                             Task { await chat.answerQuestion(selections) }
