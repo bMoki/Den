@@ -64,8 +64,8 @@ struct RowPageView: View {
         ScrollView {
             content(sessions: sessions)
                 .frame(maxWidth: 720, alignment: .leading)
-                .padding(.horizontal, 28)
-                .padding(.vertical, 24)
+                .padding(.horizontal, Theme.space(.s28))
+                .padding(.vertical, Theme.space(.s24))
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .scrollIndicators(.never)
@@ -85,9 +85,9 @@ struct RowPageView: View {
         TopBar(leadingInset: chrome.headerInset) {
             SidebarToggle()
             Text(ns.title(of: row))
-                .font(.system(size: 14, weight: .medium))
+                .font(Theme.font(.large, weight: .medium))
                 .lineLimit(1)
-            Spacer(minLength: 12)
+            Spacer(minLength: Theme.space(.s12))
             if let root {
                 TerminalToggle(row: row, root: root)
                 InspectorToggle(isOpen: pane != .closed, action: toggleInspector)
@@ -101,15 +101,15 @@ struct RowPageView: View {
     }
 
     private func content(sessions: [SessionSummary]) -> some View {
-        VStack(alignment: .leading, spacing: 18) {
-            VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: Theme.space(.s18)) {
+            VStack(alignment: .leading, spacing: Theme.space(.s4)) {
                 title
                 Text(subtitle(count: sessions.count))
-                    .font(.system(size: 12.5))
+                    .font(Theme.font(.smallPlus))
                     .foregroundStyle(Theme.textTertiary)
             }
             if !sessions.isEmpty {
-                VStack(alignment: .leading, spacing: 1) {
+                VStack(alignment: .leading, spacing: Theme.space(.s1)) {
                     ForEach(sessions) { summary in
                         SessionRow(summary: summary, state: workspace.state(for: summary.id), showsActivity: true,
                                    isReadOnly: row == .archived,
@@ -129,13 +129,13 @@ struct RowPageView: View {
     @ViewBuilder
     private var title: some View {
         let nickname = branchStatus?.nickname
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
+        HStack(alignment: .firstTextBaseline, spacing: Theme.space(.s8)) {
             Text(ns.title(of: row))
-                .font(.system(size: 20, weight: .semibold, design: nickname == nil && row.branch != nil ? .monospaced : .default))
+                .font(Theme.font(.title2, weight: .semibold, design: nickname == nil && row.branch != nil ? .monospaced : .default))
                 .lineLimit(1)
             if nickname != nil, let name = row.branch {
                 Text(name)
-                    .font(.system(size: 13, design: .monospaced))
+                    .font(Theme.font(.body, design: .monospaced))
                     .foregroundStyle(Theme.textTertiary)
                     .lineLimit(1)
             }

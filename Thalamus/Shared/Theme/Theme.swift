@@ -2,6 +2,26 @@ import SwiftUI
 
 nonisolated enum Theme {
     static var palette: Palette { .current }
+    static var style: Style { .current }
+
+    static func font(_ size: Style.TextSize, weight: Font.Weight? = nil, design: Font.Design? = nil) -> Font {
+        style.font(size, weight, design)
+    }
+
+    static func inlineCodeFont(_ size: Style.TextSize, weight: Font.Weight? = nil) -> Font {
+        style.inlineCodeFont(size, weight)
+    }
+
+    static func font(fitting box: CGFloat, weight: Font.Weight? = nil) -> Font { style.boxFont(box, weight) }
+    static func nsFont(_ size: Style.TextSize) -> NSFont { style.nsFont(size) }
+    static func nsCodeFont(_ size: Style.TextSize) -> NSFont { style.nsCodeFont(size) }
+    static func radius(_ radius: Style.Radius) -> CGFloat { style.radius(radius) }
+    static func radius(fitting box: CGFloat) -> CGFloat { style.boxRadius(box) }
+    static func line(_ line: Style.Line) -> CGFloat { style.line(line) }
+    static func space(_ space: Style.Space) -> CGFloat { style.space(space) }
+    static func size(_ size: Style.Size) -> CGFloat { style.size(size) }
+    static func image(_ icon: Icon) -> Image { style.image(icon) }
+    static func nsImage(_ icon: Icon) -> NSImage? { style.nsImage(icon) }
 
     static var canvas: Color { palette.surfaces.canvas }
     static var sidebar: Color { palette.surfaces.sidebar }
@@ -58,7 +78,7 @@ struct ThalamusButtonStyle: ButtonStyle {
     enum Kind { case primary, secondary, ghost, destructive }
 
     var kind: Kind
-    var radius: CGFloat = 8
+    var radius: Style.Radius = .r8
 
     func makeBody(configuration: Configuration) -> some View {
         StyledLabel(configuration: configuration, kind: kind, radius: radius)
@@ -67,20 +87,20 @@ struct ThalamusButtonStyle: ButtonStyle {
     private struct StyledLabel: View {
         let configuration: Configuration
         let kind: Kind
-        let radius: CGFloat
+        let radius: Style.Radius
 
         @State private var hovering = false
         @Environment(\.isEnabled) private var isEnabled
 
         var body: some View {
-            let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
+            let shape = RoundedRectangle(cornerRadius: Theme.radius(radius), style: .continuous)
             configuration.label
                 .foregroundStyle(foreground)
                 .background(background, in: shape)
                 .overlay {
                     switch kind {
-                    case .secondary: shape.strokeBorder(Theme.borderControl, lineWidth: 1)
-                    case .destructive: shape.strokeBorder(Theme.removed.opacity(0.4), lineWidth: 1)
+                    case .secondary: shape.strokeBorder(Theme.borderControl, lineWidth: Theme.line(.thin))
+                    case .destructive: shape.strokeBorder(Theme.removed.opacity(0.4), lineWidth: Theme.line(.thin))
                     case .primary, .ghost: EmptyView()
                     }
                 }
@@ -121,7 +141,7 @@ extension ButtonStyle where Self == ThalamusButtonStyle {
     static var thalamusSecondary: ThalamusButtonStyle { ThalamusButtonStyle(kind: .secondary) }
     static var thalamusGhost: ThalamusButtonStyle { ThalamusButtonStyle(kind: .ghost) }
     static var thalamusDestructive: ThalamusButtonStyle { ThalamusButtonStyle(kind: .destructive) }
-    static func thalamusGhost(radius: CGFloat) -> ThalamusButtonStyle {
+    static func thalamusGhost(radius: Style.Radius) -> ThalamusButtonStyle {
         ThalamusButtonStyle(kind: .ghost, radius: radius)
     }
 }
@@ -129,30 +149,30 @@ extension ButtonStyle where Self == ThalamusButtonStyle {
 struct PillLabel: ViewModifier {
     func body(content: Content) -> some View {
         content
-            .font(.system(size: 13, weight: .medium))
-            .padding(.horizontal, 14)
-            .frame(height: 32)
+            .font(Theme.font(.body, weight: .medium))
+            .padding(.horizontal, Theme.space(.s14))
+            .frame(height: Theme.size(.s32))
     }
 }
 
 struct ChipLabel: ViewModifier {
-    var horizontalPadding: CGFloat = 10
+    var horizontalPadding: Style.Space = .s10
 
     func body(content: Content) -> some View {
         content
-            .font(.system(size: 12.5))
-            .padding(.horizontal, horizontalPadding)
-            .frame(height: 30)
+            .font(Theme.font(.smallPlus))
+            .padding(.horizontal, Theme.space(horizontalPadding))
+            .frame(height: Theme.size(.s30))
             .contentShape(Rectangle())
     }
 }
 
 struct IconLabel: ViewModifier {
-    var size: CGFloat = 30
+    var size: Style.Size = .s30
 
     func body(content: Content) -> some View {
         content
-            .frame(width: size, height: size)
+            .frame(width: Theme.size(size), height: Theme.size(size))
             .contentShape(Rectangle())
     }
 }
@@ -160,9 +180,9 @@ struct IconLabel: ViewModifier {
 extension View {
     func pillLabel() -> some View { modifier(PillLabel()) }
 
-    func iconLabel(size: CGFloat = 30) -> some View { modifier(IconLabel(size: size)) }
+    func iconLabel(size: Style.Size = .s30) -> some View { modifier(IconLabel(size: size)) }
 
-    func chipLabel(horizontalPadding: CGFloat = 10) -> some View {
+    func chipLabel(horizontalPadding: Style.Space = .s10) -> some View {
         modifier(ChipLabel(horizontalPadding: horizontalPadding))
     }
 
@@ -177,32 +197,40 @@ extension View {
         }
     }
 
-    func hoverFill(_ hovering: Bool = false, selected: Bool = false, radius: CGFloat = 8) -> some View {
+    func hoverFill(_ hovering: Bool = false, selected: Bool = false, radius: Style.Radius = .r8) -> some View {
         background(selected ? Theme.hover : hovering ? Theme.hover.opacity(0.7) : .clear,
-                   in: RoundedRectangle(cornerRadius: radius, style: .continuous))
+                   in: RoundedRectangle(cornerRadius: Theme.radius(radius), style: .continuous))
+    }
+}
+
+extension View {
+    func card(border: Color = Theme.borderCard) -> some View {
+        let shape = RoundedRectangle(cornerRadius: Theme.radius(.r12), style: .continuous)
+        return background(Theme.card, in: shape)
+            .overlay(shape.strokeBorder(border, lineWidth: Theme.line(.thin)))
     }
 }
 
 struct ChipSurface: ViewModifier {
     var bordered = false
-    var radius: CGFloat = 8
+    var radius: Style.Radius = .r8
     var hovering = false
     var open = false
 
     func body(content: Content) -> some View {
-        let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
+        let shape = RoundedRectangle(cornerRadius: Theme.radius(radius), style: .continuous)
         let active = hovering || open
         return content
             .background(bordered ? (active ? Theme.hoverRaised : Theme.raised)
                                  : (active ? Theme.hover : .clear), in: shape)
             .overlay {
-                if bordered { shape.strokeBorder(Theme.borderStrong, lineWidth: 1) }
+                if bordered { shape.strokeBorder(Theme.borderStrong, lineWidth: Theme.line(.thin)) }
             }
     }
 }
 
 extension View {
-    func chipSurface(bordered: Bool = false, radius: CGFloat = 8,
+    func chipSurface(bordered: Bool = false, radius: Style.Radius = .r8,
                      hovering: Bool = false, open: Bool = false) -> some View {
         modifier(ChipSurface(bordered: bordered, radius: radius,
                              hovering: hovering, open: open))
@@ -215,16 +243,16 @@ struct BackButton: View {
 
     var body: some View {
         Button(action: back) {
-            HStack(spacing: 5) {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 9, weight: .semibold))
+            HStack(spacing: Theme.space(.s5)) {
+                Theme.image(.back)
+                    .font(Theme.font(.mini, weight: .semibold))
                 Text(title)
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(Theme.font(.label, weight: .semibold))
                 Spacer(minLength: 0)
             }
             .foregroundStyle(Theme.textTertiary)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 4)
+            .padding(.horizontal, Theme.space(.s10))
+            .padding(.vertical, Theme.space(.s4))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -232,12 +260,34 @@ struct BackButton: View {
     }
 }
 
-struct Chevron: View {
-    var size: CGFloat = 9
+struct Swatch: View {
+    let color: Color?
 
     var body: some View {
-        Image(systemName: "chevron.down")
-            .font(.system(size: size, weight: .semibold))
+        let shape = RoundedRectangle(cornerRadius: Theme.radius(.r3), style: .continuous)
+        Group {
+            if let color {
+                shape.fill(color)
+            } else {
+                shape.strokeBorder(Theme.textFaint, lineWidth: Theme.line(.thin))
+            }
+        }
+        .frame(width: Theme.size(.s10), height: Theme.size(.s10))
+    }
+}
+
+struct Chevron: View {
+    var size: Style.TextSize = .mini
+
+    var body: some View {
+        Theme.image(.expanded)
+            .font(Theme.font(size, weight: .semibold))
             .foregroundStyle(Theme.textTertiary)
+    }
+}
+
+extension Label where Title == Text, Icon == Image {
+    init(_ title: some StringProtocol, icon: Thalamus.Icon) {
+        self.init { Text(title) } icon: { Theme.image(icon) }
     }
 }

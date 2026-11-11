@@ -12,10 +12,10 @@ struct DependenciesSection: View {
         let rows = dependencies.rows(of: branch)
         if let problem = dependencies.problems[branch] {
             Text(problem)
-                .font(.system(size: 11.5))
+                .font(Theme.font(.captionPlus))
                 .foregroundStyle(Theme.textTertiary)
                 .fixedSize(horizontal: false, vertical: true)
-                .padding(.horizontal, 2)
+                .padding(.horizontal, Theme.space(.s2))
         }
         if !rows.isEmpty {
             VStack(spacing: 0) {
@@ -25,8 +25,7 @@ struct DependenciesSection: View {
                     }
                 }
             }
-            .background(Theme.card, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Theme.borderCard, lineWidth: 1))
+            .card()
         }
     }
 }
@@ -38,40 +37,40 @@ private struct DependencyRow: View {
     var install: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
+        VStack(alignment: .leading, spacing: Theme.space(.s8)) {
+            HStack(spacing: Theme.space(.s8)) {
                 icon
                 Text(row.id)
-                    .font(.system(size: 12, design: .monospaced))
+                    .font(Theme.font(.small, design: .monospaced))
                     .foregroundStyle(Theme.textSecondary)
                     .lineLimit(1)
-                Spacer(minLength: 4)
+                Spacer(minLength: Theme.space(.s4))
                 action
             }
-            .frame(minHeight: 26)
+            .frame(minHeight: Theme.size(.s26))
             if row.repo.state.needsInstall {
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: Theme.space(.s6)) {
                     Text(note)
-                        .font(.system(size: 11.5))
+                        .font(Theme.font(.captionPlus))
                         .foregroundStyle(Theme.textMuted)
                         .fixedSize(horizontal: false, vertical: true)
                     if let failure = row.failure {
                         Text(failure)
-                            .font(.system(size: 11, design: .monospaced))
+                            .font(Theme.font(.caption, design: .monospaced))
                             .foregroundStyle(Theme.removed)
                             .fixedSize(horizontal: false, vertical: true)
                             .textSelection(.enabled)
                     }
                     CopyableCommand(command: row.repo.command)
                 }
-                .padding(.leading, 26)
+                .padding(.leading, Theme.space(.s26))
             }
         }
-        .padding(.leading, 10)
-        .padding(.trailing, 8)
-        .padding(.vertical, 8)
+        .padding(.leading, Theme.space(.s10))
+        .padding(.trailing, Theme.space(.s8))
+        .padding(.vertical, Theme.space(.s8))
         .overlay(alignment: .top) {
-            if !isFirst { Rectangle().fill(Theme.border).frame(height: 1) }
+            if !isFirst { Rectangle().fill(Theme.border).frame(height: Theme.line(.thin)) }
         }
         .accessibilityElement(children: .contain)
     }
@@ -79,11 +78,11 @@ private struct DependencyRow: View {
     @ViewBuilder
     private var action: some View {
         if row.isInstalling {
-            HStack(spacing: 6) {
+            HStack(spacing: Theme.space(.s6)) {
                 ProgressView().controlSize(.mini)
                 Text("Instalando…")
             }
-            .font(.system(size: 11.5))
+            .font(Theme.font(.captionPlus))
             .foregroundStyle(Theme.textMuted)
         } else if row.repo.state.needsInstall {
             let title = row.failure == nil ? "Instalar" : "Repetir"
@@ -105,20 +104,20 @@ private struct DependencyRow: View {
 
     private var icon: some View {
         let (symbol, title, color) = Self.style(of: row.repo.state)
-        return Image(systemName: symbol)
-            .font(.system(size: 11, weight: .semibold))
+        return Theme.image(symbol)
+            .font(Theme.font(.caption, weight: .semibold))
             .foregroundStyle(color)
-            .frame(width: 18, height: 18)
+            .frame(width: Theme.size(.s18), height: Theme.size(.s18))
             .help(title)
             .accessibilityLabel(title)
     }
 
-    static func style(of state: NsClient.RepoDependencies.State) -> (symbol: String, title: String, color: Color) {
+    static func style(of state: NsClient.RepoDependencies.State) -> (symbol: Icon, title: String, color: Color) {
         switch state {
-        case .installed: ("checkmark", "Instaladas", Theme.added)
-        case .reused: ("arrow.triangle.branch", "Da master", Theme.textTertiary)
-        case .divergent: ("exclamationmark.triangle", "Da master, divergentes", Theme.alertText)
-        case .missing: ("xmark", "Faltando", Theme.removed)
+        case .installed: (.done, "Instaladas", Theme.added)
+        case .reused: (.branch, "Da master", Theme.textTertiary)
+        case .divergent: (.warning, "Da master, divergentes", Theme.alertText)
+        case .missing: (.close, "Faltando", Theme.removed)
         }
     }
 }
@@ -129,25 +128,25 @@ private struct CopyableCommand: View {
     @State private var copied = false
 
     var body: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: Theme.space(.s6)) {
             Text(command)
-                .font(.system(size: 11, design: .monospaced))
+                .font(Theme.font(.caption, design: .monospaced))
                 .foregroundStyle(Theme.textSecondary)
                 .lineLimit(1)
                 .textSelection(.enabled)
                 .frame(maxWidth: .infinity, alignment: .leading)
             Button(copied ? "Copiado" : "Copiar", action: copy)
                 .buttonStyle(.plain)
-                .font(.system(size: 10.5))
+                .font(Theme.font(.labelPlus))
                 .foregroundStyle(Theme.textMuted)
                 .help("Copiar o comando")
                 .accessibilityLabel("Copiar \(command)")
         }
-        .padding(.leading, 8)
-        .padding(.trailing, 6)
-        .padding(.vertical, 4)
-        .background(Theme.canvas, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(Theme.border))
+        .padding(.leading, Theme.space(.s8))
+        .padding(.trailing, Theme.space(.s6))
+        .padding(.vertical, Theme.space(.s4))
+        .background(Theme.canvas, in: RoundedRectangle(cornerRadius: Theme.radius(.r6), style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: Theme.radius(.r6), style: .continuous).strokeBorder(Theme.border))
     }
 
     private func copy() {

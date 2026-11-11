@@ -4,7 +4,7 @@ struct MarkdownText: View {
     let text: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: Theme.space(.s10)) {
             ForEach(Self.blocks(for: text)) { block in
                 render(block)
             }
@@ -20,50 +20,50 @@ struct MarkdownText: View {
             MarkdownTableView(table: table)
 
         case .paragraph(let content):
-            InlineCode.text(content, size: 14)
-                .lineSpacing(3)
+            InlineCode.text(content, size: .large)
+                .lineSpacing(Theme.space(.s3))
                 .fixedSize(horizontal: false, vertical: true)
 
         case .heading(let level, let content):
             InlineCode.text(content, size: Self.headingSize(level), weight: .semibold)
                 .fixedSize(horizontal: false, vertical: true)
-                .padding(.top, 2)
+                .padding(.top, Theme.space(.s2))
 
         case .code(let code, let language):
             CodeBlock(code: code, language: language)
 
         case .listItem(let marker, let depth, let content):
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
+            HStack(alignment: .firstTextBaseline, spacing: Theme.space(.s6)) {
                 Text(marker)
-                    .font(.system(size: 14))
+                    .font(Theme.font(.large))
                     .foregroundStyle(Theme.textTertiary)
-                    .frame(minWidth: 14, alignment: .trailing)
-                InlineCode.text(content, size: 14)
-                    .lineSpacing(3)
+                    .frame(minWidth: Theme.size(.s14), alignment: .trailing)
+                InlineCode.text(content, size: .large)
+                    .lineSpacing(Theme.space(.s3))
                     .fixedSize(horizontal: false, vertical: true)
             }
-            .padding(.leading, CGFloat(max(0, depth - 1)) * 16)
+            .padding(.leading, CGFloat(max(0, depth - 1)) * Theme.space(.s16))
 
         case .quote(let content):
-            HStack(alignment: .top, spacing: 8) {
-                RoundedRectangle(cornerRadius: 1)
+            HStack(alignment: .top, spacing: Theme.space(.s8)) {
+                RoundedRectangle(cornerRadius: Theme.radius(.r1))
                     .fill(Theme.borderControl)
-                    .frame(width: 3)
-                InlineCode.text(content, size: 14)
+                    .frame(width: Theme.size(.s3))
+                InlineCode.text(content, size: .large)
                     .foregroundStyle(Theme.textMuted)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
         case .divider:
-            Rectangle().fill(Theme.border).frame(height: 1)
+            Rectangle().fill(Theme.border).frame(height: Theme.line(.thin))
         }
     }
 
-    private static func headingSize(_ level: Int) -> CGFloat {
+    private static func headingSize(_ level: Int) -> Style.TextSize {
         switch level {
-        case 1: 19
-        case 2: 16.5
-        default: 14.5
+        case 1: .heading1
+        case 2: .heading2
+        default: .heading3
         }
     }
 

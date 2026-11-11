@@ -129,7 +129,7 @@ struct ChatView: View {
         } ?? true
         let lastID = blocks.last?.id
         return ScrollView {
-                LazyVStack(alignment: .leading, spacing: 20) {
+                LazyVStack(alignment: .leading, spacing: Theme.space(.s20)) {
                     if blocks.isEmpty, !chat.isBusy, chat.streaming.isEmpty {
                         SessionWelcome(chat: chat)
                     }
@@ -171,14 +171,14 @@ struct ChatView: View {
                         AssistantTurn(harness: chat.harness, showsHeader: tailStartsTurn,
                                       moment: nil) {
                             ThinkingRow(chat: chat)
-                                .padding(.vertical, 4)
+                                .padding(.vertical, Theme.space(.s4))
                         }
                         .id("typing")
                     }
                 }
-                .padding(.horizontal, 32)
-                .padding(.top, 28)
-                .padding(.bottom, 30)
+                .padding(.horizontal, Theme.space(.s32))
+                .padding(.top, Theme.space(.s28))
+                .padding(.bottom, Theme.space(.s30))
                 .frame(maxWidth: 784, alignment: .leading)
                 .frame(maxWidth: .infinity, alignment: .center)
             }

@@ -53,6 +53,10 @@ struct ThalamusApp: App {
 }
 
 final class ThalamusAppDelegate: NSObject, NSApplicationDelegate {
+    func applicationWillFinishLaunching(_ notification: Notification) {
+        NSApp.appearance = NSAppearance(named: Theme.palette.appearance)
+    }
+
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         let leaves = UnsavedAlert.confirm("Salvar as alterações antes de sair?", unsaved: EditorWindows.shared.unsaved()) {
             EditorWindows.shared.settle($0)

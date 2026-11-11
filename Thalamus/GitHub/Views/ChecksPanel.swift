@@ -9,10 +9,10 @@ struct ChecksRing: View {
     var body: some View {
         ZStack {
             Circle()
-                .stroke(Theme.borderControl, lineWidth: 2.5)
+                .stroke(Theme.borderControl, lineWidth: Theme.line(.ring))
             Circle()
                 .trim(from: 0, to: arc)
-                .stroke(summary.color, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                .stroke(summary.color, style: StrokeStyle(lineWidth: Theme.line(.ring), lineCap: .round))
                 .rotationEffect(.degrees(isRunning && turning ? 270 : -90))
                 .animation(isRunning ? .linear(duration: 1.1).repeatForever(autoreverses: false)
                                      : .easeInOut(duration: 0.4), value: turning)
@@ -76,25 +76,25 @@ struct ChecksPanel: View {
 
     var body: some View {
         let checks = PullRequestStatus.ordered(pullRequest.checks)
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: Theme.space(.s12)) {
             HStack(alignment: .firstTextBaseline) {
                 Text("Checks")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(Theme.font(.body, weight: .semibold))
                 Spacer()
                 Text(PullRequestStatus.headline(pullRequest))
-                    .font(.system(size: 11.5, design: .monospaced))
+                    .font(Theme.font(.captionPlus, design: .monospaced))
                     .foregroundStyle(Theme.textSecondary)
             }
-            HStack(spacing: 2) {
+            HStack(spacing: Theme.space(.s2)) {
                 ForEach(Array(checks.enumerated()), id: \.offset) { _, check in
                     Rectangle().fill(check.state.color).frame(maxWidth: .infinity)
                 }
             }
-            .frame(height: 8)
+            .frame(height: Theme.size(.s8))
             .background(Theme.borderStrong)
             .clipShape(Capsule())
             FittedScroll(maxHeight: Self.maxListHeight) {
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: Theme.space(.s2)) {
                     ForEach(Array(checks.enumerated()), id: \.offset) { _, check in
                         CheckRow(check: check)
                     }
@@ -104,21 +104,21 @@ struct ChecksPanel: View {
                 TimelineView(.periodic(from: .now, by: 1)) { context in
                     Text(PullRequestStatus.updatedLabel(since: checkedAt, now: context.date))
                 }
-                .font(.system(size: 11))
+                .font(Theme.font(.caption))
                 .foregroundStyle(Theme.textTertiary)
                 Spacer()
                 Button(action: refresh) {
-                    Image(systemName: "arrow.clockwise")
-                        .font(.system(size: 11, weight: .semibold))
+                    Theme.image(.restart)
+                        .font(Theme.font(.caption, weight: .semibold))
                         .foregroundStyle(Theme.textSecondary)
-                        .iconLabel(size: 24)
+                        .iconLabel(size: .s24)
                 }
-                .buttonStyle(.thalamusGhost(radius: 6))
+                .buttonStyle(.thalamusGhost(radius: .r6))
                 .help("Atualizar agora")
                 .accessibilityLabel("Atualizar")
             }
         }
-        .padding(16)
+        .padding(Theme.space(.s16))
         .frame(width: 340)
         .foregroundStyle(Theme.text)
         .background(Theme.raised)
@@ -134,27 +134,27 @@ private struct CheckRow: View {
         Button {
             if let url = check.url { NSWorkspace.shared.open(url) }
         } label: {
-            HStack(spacing: 8) {
+            HStack(spacing: Theme.space(.s8)) {
                 swatch
                 Text(check.name)
                     .foregroundStyle(check.state == .skipped ? Theme.textTertiary : Theme.text)
                     .lineLimit(1)
                     .truncationMode(.middle)
-                Spacer(minLength: 8)
+                Spacer(minLength: Theme.space(.s8))
                 TimelineView(.periodic(from: .now, by: 1)) { context in
                     Text(PullRequestStatus.detail(of: check, at: context.date))
                 }
-                .font(.system(size: 11.5, design: .monospaced))
+                .font(Theme.font(.captionPlus, design: .monospaced))
                 .foregroundStyle(Theme.textSecondary)
-                Image(systemName: "arrow.up.right")
-                    .font(.system(size: 9, weight: .semibold))
+                Theme.image(.openInBrowser)
+                    .font(Theme.font(.mini, weight: .semibold))
                     .foregroundStyle(Theme.textTertiary)
                     .opacity(check.url == nil ? 0 : 1)
             }
-            .font(.system(size: 12.5))
-            .padding(.horizontal, 6)
-            .frame(height: 26)
-            .hoverFill(hovering && check.url != nil, radius: 6)
+            .font(Theme.font(.smallPlus))
+            .padding(.horizontal, Theme.space(.s6))
+            .frame(height: Theme.size(.s26))
+            .hoverFill(hovering && check.url != nil, radius: .r6)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -165,17 +165,9 @@ private struct CheckRow: View {
     @ViewBuilder
     private var swatch: some View {
         if check.state == .running {
-            SpinningRing(color: check.state.color, size: 10)
+            SpinningRing(color: check.state.color, size: .s10)
         } else {
-            RoundedRectangle(cornerRadius: 3, style: .continuous)
-                .fill(check.state == .queued ? .clear : check.state.color)
-                .overlay {
-                    if check.state == .queued {
-                        RoundedRectangle(cornerRadius: 3, style: .continuous)
-                            .strokeBorder(Theme.textFaint, lineWidth: 1)
-                    }
-                }
-                .frame(width: 10, height: 10)
+            Swatch(color: check.state == .queued ? nil : check.state.color)
         }
     }
 }

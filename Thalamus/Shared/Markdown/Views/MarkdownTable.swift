@@ -40,10 +40,10 @@ struct MarkdownTableView: View {
         .scrollBounceBehavior(.basedOnSize)
         .frame(height: content.height > 0 ? min(content.height, Self.maxHeight) : nil)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.card, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
-            .strokeBorder(Theme.borderCard, lineWidth: 1))
-        .padding(.vertical, 2)
+        .background(Theme.card, in: RoundedRectangle(cornerRadius: Theme.radius(.r10), style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: Theme.radius(.r10), style: .continuous)
+            .strokeBorder(Theme.borderCard, lineWidth: Theme.line(.thin)))
+        .padding(.vertical, Theme.space(.s2))
         .onGeometryChange(for: CGFloat.self) { proxy in
             (proxy.size.width / 4).rounded() * 4
         } action: { width in
@@ -64,7 +64,7 @@ struct MarkdownTableView: View {
                              fixedWidths: fixedWidths, header: true)
                     }
                 }
-                Rectangle().fill(Theme.border).frame(height: 1).gridCellColumns(columns)
+                Rectangle().fill(Theme.border).frame(height: Theme.line(.thin)).gridCellColumns(columns)
             }
             ForEach(Array(table.rows.enumerated()), id: \.offset) { index, cells in
                 GridRow {
@@ -85,12 +85,12 @@ struct MarkdownTableView: View {
                       fixedWidths: Bool, header: Bool) -> some View {
         let isCompact = compact.contains(column)
         InlineCode.text(column < cells.count ? cells[column] : AttributedString(""),
-                        size: header ? 12 : 13, weight: header ? .semibold : .regular)
+                        size: header ? .small : .body, weight: header ? .semibold : .regular)
             .foregroundStyle(header ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary))
             .multilineTextAlignment(Self.textAlignment(table.alignments, at: column))
             .fixedSize(horizontal: false, vertical: true)
-            .padding(.horizontal, 10)
-            .padding(.vertical, header ? 6 : 7)
+            .padding(.horizontal, Theme.space(.s10))
+            .padding(.vertical, Theme.space(header ? .s6 : .s7))
             .frame(width: fixedWidths && !isCompact ? Self.flexibleFixed : nil,
                    alignment: Self.alignment(table.alignments, at: column))
             .frame(maxWidth: fixedWidths || isCompact ? nil : .infinity,

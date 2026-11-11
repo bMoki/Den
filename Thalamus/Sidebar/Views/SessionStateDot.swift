@@ -1,8 +1,18 @@
 import SwiftUI
 
-struct SessionStateDot: View {
-    static let box: CGFloat = 8
-    static let diameter: CGFloat = 6
+struct SessionStateMark: View {
+    let state: SessionState
+
+    var body: some View {
+        switch Theme.style.sessionStates {
+        case .animatedDot: SessionStateDot(state: state)
+        }
+    }
+}
+
+private struct SessionStateDot: View {
+    private static let box: CGFloat = 8
+    private static let diameter: CGFloat = 6
 
     private static let ripplePeriod = 1.8
     private static let rippleGrowth: CGFloat = 1.6
@@ -37,7 +47,7 @@ struct SessionStateDot: View {
             let eased = UnitCurve.easeOut.value(at: Self.progress(at: context.date, period: Self.ripplePeriod))
             dot.overlay(
                 Circle()
-                    .strokeBorder(state.color, lineWidth: 1)
+                    .strokeBorder(state.color, lineWidth: Theme.line(.thin))
                     .scaleEffect(1 + Self.rippleGrowth * eased)
                     .opacity(Self.rippleOpacity * (1 - eased))
             )

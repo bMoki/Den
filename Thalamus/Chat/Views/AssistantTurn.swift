@@ -8,19 +8,19 @@ struct AssistantTurn<Content: View>: View {
     @ViewBuilder var content: () -> Content
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .top, spacing: Theme.space(.s12)) {
             Group {
                 if showsHeader {
-                    HarnessBadge(harness: harness, size: 28)
+                    HarnessBadge(harness: harness, size: .s28)
                 } else {
                     Color.clear
                 }
             }
-            .frame(width: 28, height: showsHeader ? 28 : 1)
+            .frame(width: Theme.size(.s28), height: showsHeader ? Theme.size(.s28) : Theme.line(.thin))
 
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: Theme.space(.s8)) {
                 if showsHeader {
-                    HStack(spacing: 6) {
+                    HStack(spacing: Theme.space(.s6)) {
                         Text(HarnessBadge.name(for: harness))
                             .fontWeight(.medium)
                         if let moment {
@@ -29,10 +29,10 @@ struct AssistantTurn<Content: View>: View {
                                 .monospacedDigit()
                         }
                     }
-                    .font(.system(size: 12))
+                    .font(Theme.font(.small))
                     .foregroundStyle(Theme.textTertiary)
-                    .frame(height: 28, alignment: .center)
-                    .padding(.bottom, -6)
+                    .frame(height: Theme.size(.s28), alignment: .center)
+                    .padding(.bottom, -Theme.space(.s6))
                 }
                 content()
             }

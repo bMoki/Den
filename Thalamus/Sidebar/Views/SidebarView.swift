@@ -57,7 +57,7 @@ struct SidebarView: View {
     private var list: some View {
         let groups = groups
         return ScrollView {
-            LazyVStack(alignment: .leading, spacing: 1) {
+            LazyVStack(alignment: .leading, spacing: Theme.space(.s1)) {
                 if let problem = ns.problem {
                     NsProblemNotice(problem: problem, keepsLastBranches: ns.status != nil)
                 }
@@ -70,17 +70,17 @@ struct SidebarView: View {
                     section(.branches, in: groups, top: groups.favorites.isEmpty ? 0 : 14) {
                         SidebarOrderMenu(layout: $workspace.layout)
                         Button(action: ns.newBranch) {
-                            HStack(spacing: 4) {
-                                Image(systemName: "plus")
-                                    .font(.system(size: 10, weight: .semibold))
+                            HStack(spacing: Theme.space(.s4)) {
+                                Theme.image(.add)
+                                    .font(Theme.font(.label, weight: .semibold))
                                 Text("Branch")
-                                    .font(.system(size: 12))
+                                    .font(Theme.font(.small))
                             }
                             .foregroundStyle(Theme.textMuted)
-                            .padding(.horizontal, 8)
-                            .frame(height: 24)
+                            .padding(.horizontal, Theme.space(.s8))
+                            .frame(height: Theme.size(.s24))
                         }
-                        .buttonStyle(.thalamusGhost(radius: 6))
+                        .buttonStyle(.thalamusGhost(radius: .r6))
                         .help("Nova Branch de workspace")
                         .accessibilityLabel("Nova Branch de workspace")
                     }
@@ -92,12 +92,12 @@ struct SidebarView: View {
 
                 section(.otherFolders, in: groups, top: ns.status == nil && groups.favorites.isEmpty ? 0 : 14) {
                     Button(action: workspace.openFolder) {
-                        Image(systemName: "plus")
-                            .font(.system(size: 11, weight: .semibold))
+                        Theme.image(.add)
+                            .font(Theme.font(.caption, weight: .semibold))
                             .foregroundStyle(Theme.textTertiary)
-                            .iconLabel(size: 22)
+                            .iconLabel(size: .s22)
                     }
-                    .buttonStyle(.thalamusGhost(radius: 6))
+                    .buttonStyle(.thalamusGhost(radius: .r6))
                     .help("Abrir pasta")
                     .accessibilityLabel("Abrir pasta")
                 }
@@ -106,15 +106,15 @@ struct SidebarView: View {
                     ArchivedRow(count: groups.archived.count, isSelected: selectedRow == .archived) {
                         workspace.showPage(.archived)
                     }
-                    .padding(.top, 14)
+                    .padding(.top, Theme.space(.s14))
                 }
 
                 if groups.isEmpty {
                     SidebarEmptyList(search: workspace.search)
                 }
             }
-            .padding(.horizontal, 8)
-            .padding(.bottom, 12)
+            .padding(.horizontal, Theme.space(.s8))
+            .padding(.bottom, Theme.space(.s12))
         }
         .scrollIndicators(.never)
         .frame(maxHeight: .infinity)
@@ -244,22 +244,22 @@ private struct NsProblemNotice: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 3) {
+        VStack(alignment: .leading, spacing: Theme.space(.s3)) {
             Text("ns indisponível")
-                .font(.system(size: 12, weight: .semibold))
+                .font(Theme.font(.small, weight: .semibold))
             Text("\(problem). \(consequence)")
-                .font(.system(size: 12))
+                .font(Theme.font(.small))
                 .fixedSize(horizontal: false, vertical: true)
         }
         .foregroundStyle(Theme.alertText)
-        .padding(.horizontal, 10)
-        .padding(.vertical, 9)
+        .padding(.horizontal, Theme.space(.s10))
+        .padding(.vertical, Theme.space(.s9))
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.alertFill, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous)
-            .strokeBorder(Theme.alertBorder, lineWidth: 1))
-        .padding(.horizontal, 4)
-        .padding(.bottom, 8)
+        .background(Theme.alertFill, in: RoundedRectangle(cornerRadius: Theme.radius(.r9), style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: Theme.radius(.r9), style: .continuous)
+            .strokeBorder(Theme.alertBorder, lineWidth: Theme.line(.thin)))
+        .padding(.horizontal, Theme.space(.s4))
+        .padding(.bottom, Theme.space(.s8))
         .accessibilityElement(children: .combine)
     }
 }

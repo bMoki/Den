@@ -6,14 +6,14 @@ struct KnobBadge: View {
     let chat: ChatModel
     var compact = false
 
-    static let modeLooks: [String: (symbol: String, color: Color)] = [
-        "auto": ("forward.fill", Theme.modified),
-        "plan": ("list.bullet.clipboard", Theme.hunk),
-        "acceptEdits": ("pencil.line", Theme.renamed),
-        "manual": ("shield", Theme.textSecondary),
-        "dontAsk": ("forward.fill", Theme.accent),
-        "bypassPermissions": ("exclamationmark.shield", Theme.removed),
-        "build": ("hammer", Theme.added),
+    static let modeLooks: [String: (symbol: Icon, color: Color)] = [
+        "auto": (.modeAuto, Theme.modified),
+        "plan": (.modePlan, Theme.hunk),
+        "acceptEdits": (.modeAcceptEdits, Theme.renamed),
+        "manual": (.modeManual, Theme.textSecondary),
+        "dontAsk": (.modeAuto, Theme.accent),
+        "bypassPermissions": (.modeBypass, Theme.removed),
+        "build": (.agentBuild, Theme.added),
     ]
 
     static func sections(for knob: HarnessKnob,
@@ -53,10 +53,10 @@ struct KnobBadge: View {
     private var label: some View {
         let current = knob.currentValue
         let look = knob.category == .mode ? Self.modeLooks[current ?? ""] : nil
-        return HStack(spacing: 6) {
+        return HStack(spacing: Theme.space(.s6)) {
             if let look {
-                Image(systemName: look.symbol)
-                    .font(.system(size: 11, weight: .medium))
+                Theme.image(look.symbol)
+                    .font(Theme.font(.caption, weight: .medium))
                     .foregroundStyle(look.color)
             }
             if !compact || knob.category == .model || (look == nil && knob.category == .mode) {
@@ -65,7 +65,7 @@ struct KnobBadge: View {
                     .fontWeight(knob.category == .model ? .medium : .regular)
                     .lineLimit(1)
             }
-            Chevron(size: 8)
+            Chevron(size: .tiny)
         }
         .chipLabel()
     }

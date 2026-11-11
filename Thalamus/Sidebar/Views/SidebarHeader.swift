@@ -27,11 +27,11 @@ struct SidebarHeader: View {
     }
 
     var body: some View {
-        HStack(spacing: 8) {
-            Spacer(minLength: 4)
+        HStack(spacing: Theme.space(.s8)) {
+            Spacer(minLength: Theme.space(.s4))
             ThalamusMenuChip(sections: newSections) {
-                Image(systemName: "square.and.pencil")
-                    .font(.system(size: 14))
+                Theme.image(.newSession)
+                    .font(Theme.font(.large))
                     .foregroundStyle(Theme.textMuted)
                     .iconLabel()
             }
@@ -39,8 +39,8 @@ struct SidebarHeader: View {
             .accessibilityLabel("Nova")
             SidebarButton(title: "Recolher barra lateral", action: collapse)
         }
-        .padding(.leading, lightsInset + 6)
-        .padding(.trailing, 10)
+        .padding(.leading, lightsInset + Theme.space(.s6))
+        .padding(.trailing, Theme.space(.s10))
         .frame(height: Theme.headerHeight)
         .windowDragArea()
     }
@@ -59,13 +59,13 @@ struct SidebarSearch: View {
     @FocusState private var searchFocused: Bool
 
     var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: 12, weight: .medium))
+        HStack(spacing: Theme.space(.s8)) {
+            Theme.image(.search)
+                .font(Theme.font(.small, weight: .medium))
                 .foregroundStyle(Theme.textTertiary)
             TextField("Buscar sessões…", text: $workspace.search)
                 .textFieldStyle(.plain)
-                .font(.system(size: 13))
+                .font(Theme.font(.body))
                 .focused($searchFocused)
                 .onExitCommand {
                     workspace.search = ""
@@ -75,8 +75,8 @@ struct SidebarSearch: View {
                 Button {
                     workspace.search = ""
                 } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 12))
+                    Theme.image(.clearSearch)
+                        .font(Theme.font(.small))
                         .foregroundStyle(Theme.textTertiary)
                 }
                 .buttonStyle(.plain)
@@ -84,13 +84,13 @@ struct SidebarSearch: View {
                 .accessibilityLabel("Limpar busca")
             }
         }
-        .padding(.horizontal, 12)
-        .frame(height: 34)
-        .background(Theme.field, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
-            .strokeBorder(searchFocused ? Theme.accent.opacity(0.55) : .clear, lineWidth: 1))
-        .padding(.horizontal, 12)
-        .padding(.bottom, 10)
+        .padding(.horizontal, Theme.space(.s12))
+        .frame(height: Theme.size(.s34))
+        .background(Theme.field, in: RoundedRectangle(cornerRadius: Theme.radius(.r10), style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: Theme.radius(.r10), style: .continuous)
+            .strokeBorder(searchFocused ? Theme.accent.opacity(0.55) : .clear, lineWidth: Theme.line(.thin)))
+        .padding(.horizontal, Theme.space(.s12))
+        .padding(.bottom, Theme.space(.s10))
         .onKeyboardShortcut("f", modifiers: [.command, .shift]) { searchFocused = true }
     }
 }

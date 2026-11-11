@@ -8,19 +8,19 @@ enum FileTypeIcon {
         "ts": "com.microsoft.typescript",
     ]
 
-    private static let aliases: [String: String] = [
-        "jsx": "react", "tsx": "react",
-        "mjs": "js", "cjs": "js",
-        "yaml": "yml",
-        "jpeg": "jpg",
+    private static let icons: [String: Icon] = [
+        "java": .javaFile,
+        "js": .javaScriptFile, "mjs": .javaScriptFile, "cjs": .javaScriptFile,
+        "jsx": .reactFile, "tsx": .reactFile,
+        "swift": .swiftFile,
+        "ts": .typeScriptFile,
     ]
 
     static func image(for name: String) -> NSImage {
         let ext = (name as NSString).pathExtension.lowercased()
         if let cached = cache[ext] { return cached }
 
-        let assetName = "filetype-" + (aliases[ext] ?? ext)
-        if let custom = NSImage(named: assetName) {
+        if let icon = icons[ext], let custom = Theme.nsImage(icon) {
             cache[ext] = custom
             return custom
         }
@@ -41,7 +41,7 @@ struct GitChangesPanel: View {
     @State private var openFolders: Set<String> = []
     @State private var collapsedRepos: Set<String> = []
 
-    private static let listRowHeight: CGFloat = 30
+    private static var listRowHeight: CGFloat { Theme.size(.s30) }
     private static let maxListHeight: CGFloat = 260
 
     var body: some View {
@@ -58,15 +58,15 @@ struct GitChangesPanel: View {
             $0.added += counts.added
             $0.removed += counts.removed
         }
-        return HStack(spacing: 8) {
+        return HStack(spacing: Theme.space(.s8)) {
             if model.changeCount > 0 {
                 Text(model.changeCount == 1 ? "1 arquivo" : "\(model.changeCount) arquivos")
                     .foregroundStyle(Theme.textSecondary)
                 Text("+\(totals.added)")
-                    .font(.system(size: 12, design: .monospaced))
+                    .font(Theme.font(.small, design: .monospaced))
                     .foregroundStyle(Theme.added)
                 Text("−\(totals.removed)")
-                    .font(.system(size: 12, design: .monospaced))
+                    .font(Theme.font(.small, design: .monospaced))
                     .foregroundStyle(Theme.removed)
                 if model.reviewedCount > 0 {
                     Text("· \(model.reviewedCount)/\(model.changeCount) revisados")
@@ -78,28 +78,28 @@ struct GitChangesPanel: View {
                 Text("Alterações do Git")
                     .foregroundStyle(Theme.textTertiary)
             }
-            Spacer(minLength: 4)
+            Spacer(minLength: Theme.space(.s4))
             if model.isLoading, model.loadedOnce {
                 ProgressView().controlSize(.mini)
             }
             Button {
                 Task { await model.load(directory: directory, force: true) }
             } label: {
-                Image(systemName: "arrow.clockwise")
-                    .font(.system(size: 12, weight: .medium))
+                Theme.image(.restart)
+                    .font(Theme.font(.small, weight: .medium))
                     .foregroundStyle(Theme.textTertiary)
-                    .iconLabel(size: 26)
+                    .iconLabel(size: .s26)
             }
-            .buttonStyle(.thalamusGhost(radius: 7))
+            .buttonStyle(.thalamusGhost(radius: .r7))
             .disabled(model.isLoading)
             .help("Atualizar alterações")
             .accessibilityLabel("Atualizar alterações")
         }
-        .font(.system(size: 13))
-        .padding(.leading, 16)
-        .padding(.trailing, 10)
-        .frame(height: 44)
-        .overlay(alignment: .bottom) { Rectangle().fill(Theme.border).frame(height: 1) }
+        .font(Theme.font(.body))
+        .padding(.leading, Theme.space(.s16))
+        .padding(.trailing, Theme.space(.s10))
+        .frame(height: Theme.size(.s44))
+        .overlay(alignment: .bottom) { Rectangle().fill(Theme.border).frame(height: Theme.line(.thin)) }
     }
 
     // MARK: - Content
@@ -110,24 +110,24 @@ struct GitChangesPanel: View {
             placeholder { ProgressView().controlSize(.small) }
         } else if !model.hasRepo {
             placeholder {
-                Image(systemName: "folder.badge.questionmark")
-                    .font(.system(size: 24))
+                Theme.image(.notARepository)
+                    .font(Theme.font(.largeTitle))
                     .foregroundStyle(Theme.textFaint)
                 Text("Sem repositório Git nesta pasta")
-                    .font(.system(size: 13))
+                    .font(Theme.font(.body))
                     .foregroundStyle(Theme.textTertiary)
             }
         } else if model.changeCount == 0 {
             placeholder {
-                Image(systemName: "checkmark.circle")
-                    .font(.system(size: 24))
+                Theme.image(.clean)
+                    .font(Theme.font(.largeTitle))
                     .foregroundStyle(Theme.added)
                 Text("Sem alterações")
-                    .font(.system(size: 13, weight: .medium))
+                    .font(Theme.font(.body, weight: .medium))
                     .foregroundStyle(Theme.textSecondary)
                 if let branch = model.repos.first?.branch {
                     Text("Tudo limpo em \(branch)")
-                        .font(.system(size: 12, design: .monospaced))
+                        .font(Theme.font(.small, design: .monospaced))
                         .foregroundStyle(Theme.textTertiary)
                 }
             }
@@ -144,7 +144,7 @@ struct GitChangesPanel: View {
     }
 
     private func placeholder(@ViewBuilder body: () -> some View) -> some View {
-        VStack(spacing: 8) { body() }
+        VStack(spacing: Theme.space(.s8)) { body() }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
@@ -179,10 +179,10 @@ struct GitChangesPanel: View {
     }
 
     private var fileList: some View {
-        let height = min(CGFloat(visibleRowCount) * (Self.listRowHeight + 1) + 12,
+        let height = min(CGFloat(visibleRowCount) * (Self.listRowHeight + Theme.line(.thin)) + Theme.space(.s12),
                          Self.maxListHeight)
         return ScrollView {
-            LazyVStack(alignment: .leading, spacing: 1) {
+            LazyVStack(alignment: .leading, spacing: Theme.space(.s1)) {
                 ForEach(model.repos) { repo in
                     if model.repos.count > 1 {
                         repoHeader(repo)
@@ -197,26 +197,26 @@ struct GitChangesPanel: View {
                                 if openFolders.contains(repo.id + "/" + dir) {
                                     ForEach(files) { file in
                                         fileRow(file, in: repo, within: dir)
-                                            .padding(.leading, 18)
+                                            .padding(.leading, Theme.space(.s18))
                                     }
                                 }
                             }
                         }
                         if repo.truncatedFiles {
                             Text("Mostrando só os primeiros arquivos")
-                                .font(.system(size: 11.5))
+                                .font(Theme.font(.captionPlus))
                                 .foregroundStyle(Theme.textTertiary)
-                                .padding(.horizontal, 10)
+                                .padding(.horizontal, Theme.space(.s10))
                                 .frame(height: Self.listRowHeight)
                         }
                     }
                 }
             }
-            .padding(6)
+            .padding(Theme.space(.s6))
         }
         .scrollIndicators(.automatic)
         .frame(height: height)
-        .overlay(alignment: .bottom) { Rectangle().fill(Theme.border).frame(height: 1) }
+        .overlay(alignment: .bottom) { Rectangle().fill(Theme.border).frame(height: Theme.line(.thin)) }
     }
 
     private func repoHeader(_ repo: GitChangesModel.Repo) -> some View {
@@ -230,32 +230,32 @@ struct GitChangesPanel: View {
                 }
             }
         } label: {
-            HStack(spacing: 7) {
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 9, weight: .bold))
+            HStack(spacing: Theme.space(.s7)) {
+                Theme.image(.next)
+                    .font(Theme.font(.mini, weight: .bold))
                     .foregroundStyle(Theme.textTertiary)
                     .rotationEffect(.degrees(isCollapsed ? 0 : 90))
-                Image(systemName: "arrow.triangle.branch")
-                    .font(.system(size: 11, weight: .semibold))
+                Theme.image(.branch)
+                    .font(Theme.font(.caption, weight: .semibold))
                     .foregroundStyle(Theme.accent)
                 Text(repo.name)
-                    .font(.system(size: 12.5, weight: .semibold))
+                    .font(Theme.font(.smallPlus, weight: .semibold))
                 if let branch = repo.branch {
                     Text(branch)
-                        .font(.system(size: 11.5, design: .monospaced))
+                        .font(Theme.font(.captionPlus, design: .monospaced))
                         .foregroundStyle(Theme.textTertiary)
                 }
                 Spacer(minLength: 0)
                 Text("\(repo.files.count)")
-                    .font(.system(size: 11))
+                    .font(Theme.font(.caption))
                     .monospacedDigit()
                     .foregroundStyle(Theme.textTertiary)
             }
-            .padding(.horizontal, 8)
+            .padding(.horizontal, Theme.space(.s8))
             .frame(height: Self.listRowHeight)
             .contentShape(Rectangle())
         }
-        .buttonStyle(.thalamusGhost(radius: 7))
+        .buttonStyle(.thalamusGhost(radius: .r7))
         .help(repo.root.path)
         .accessibilityLabel(isCollapsed ? "Expandir \(repo.name)" : "Recolher \(repo.name)")
     }
@@ -268,17 +268,17 @@ struct GitChangesPanel: View {
         let counts = Self.counts(of: file)
         let display = dir.map { String(file.path.dropFirst($0.count)) }
             ?? sessionRelativePath(of: file.path, in: repo)
-        return HStack(spacing: 8) {
+        return HStack(spacing: Theme.space(.s8)) {
             Button {
                 selection = rowKey
             } label: {
-                HStack(spacing: 9) {
+                HStack(spacing: Theme.space(.s9)) {
                     badge(for: file.state)
                     pathText(display: display)
                         .opacity(done ? 0.5 : 1)
                         .lineLimit(1)
                         .truncationMode(.head)
-                    Spacer(minLength: 4)
+                    Spacer(minLength: Theme.space(.s4))
                     if counts.added > 0 {
                         Text("+\(counts.added)")
                             .foregroundStyle(Theme.added)
@@ -288,10 +288,7 @@ struct GitChangesPanel: View {
                             .foregroundStyle(Theme.removed)
                     }
                 }
-                .font(.system(size: 11.5, design: .monospaced))
-                .padding(.leading, 8)
-                .frame(height: Self.listRowHeight)
-                .contentShape(Rectangle())
+                .modifier(ListRowLabel(height: Self.listRowHeight))
             }
             .buttonStyle(.plain)
             .help(file.path)
@@ -299,9 +296,9 @@ struct GitChangesPanel: View {
             reviewButton(done: done) {
                 model.setReviewed(!done, for: file, in: repo)
             }
-            .padding(.trailing, 4)
+            .padding(.trailing, Theme.space(.s4))
         }
-        .hoverFill(selected: isSelected, radius: 7)
+        .hoverFill(selected: isSelected, radius: .r7)
     }
 
     private func groupRow(dir: String, files: [GitChangesModel.FileChange],
@@ -311,33 +308,30 @@ struct GitChangesPanel: View {
         let reviewed = files.count { model.isReviewed($0, in: repo) }
         let allDone = reviewed == files.count && !files.isEmpty
         let displayDir = dir.hasSuffix("/") ? String(dir.dropLast()) : dir
-        return HStack(spacing: 8) {
+        return HStack(spacing: Theme.space(.s8)) {
             Button {
                 withAnimation(.easeOut(duration: 0.15)) {
                     if isOpen { openFolders.remove(folderKey) } else { openFolders.insert(folderKey) }
                 }
             } label: {
-                HStack(spacing: 9) {
+                HStack(spacing: Theme.space(.s9)) {
                     badge(for: .untracked)
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 8, weight: .bold))
+                    Theme.image(.next)
+                        .font(Theme.font(.tiny, weight: .bold))
                         .foregroundStyle(Theme.textTertiary)
                         .rotationEffect(.degrees(isOpen ? 90 : 0))
-                    Image(systemName: isOpen ? "folder.fill" : "folder")
-                        .font(.system(size: 11))
+                    Theme.image(isOpen ? .folderWithSessions : .folder)
+                        .font(Theme.font(.caption))
                         .foregroundStyle(allDone ? Theme.textTertiary : Theme.accent)
                     pathText(display: sessionRelativePath(of: displayDir, in: repo) + "/")
                         .opacity(allDone ? 0.5 : 1)
                         .lineLimit(1)
                         .truncationMode(.head)
-                    Spacer(minLength: 4)
+                    Spacer(minLength: Theme.space(.s4))
                     Text(reviewed > 0 ? "\(reviewed)/\(files.count)" : "\(files.count)")
                         .foregroundStyle(allDone ? Theme.added : Theme.textTertiary)
                 }
-                .font(.system(size: 11.5, design: .monospaced))
-                .padding(.leading, 8)
-                .frame(height: Self.listRowHeight)
-                .contentShape(Rectangle())
+                .modifier(ListRowLabel(height: Self.listRowHeight))
             }
             .buttonStyle(.plain)
             .help(dir)
@@ -347,17 +341,17 @@ struct GitChangesPanel: View {
                     for file in files { model.setReviewed(!allDone, for: file, in: repo) }
                 }
             }
-            .padding(.trailing, 4)
+            .padding(.trailing, Theme.space(.s4))
         }
     }
 
     private func reviewButton(done: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Image(systemName: done ? "checkmark.circle.fill" : "circle")
-                .font(.system(size: 13))
+            Theme.image(done ? .taskDone : .radioOff)
+                .font(Theme.font(.body))
                 .foregroundStyle(done ? Theme.added : Theme.textFaint)
                 .contentTransition(.symbolEffect(.replace))
-                .frame(width: 22, height: 22)
+                .frame(width: Theme.size(.s22), height: Theme.size(.s22))
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -368,38 +362,38 @@ struct GitChangesPanel: View {
     private func fileHeader(_ file: GitChangesModel.FileChange,
                             in repo: GitChangesModel.Repo) -> some View {
         let done = model.isReviewed(file, in: repo)
-        return HStack(spacing: 8) {
+        return HStack(spacing: Theme.space(.s8)) {
             Image(nsImage: FileTypeIcon.image(for: file.name))
                 .resizable()
                 .scaledToFit()
-                .frame(width: 18, height: 18)
+                .frame(width: Theme.size(.s18), height: Theme.size(.s18))
             Text(sessionRelativePath(of: file.path, in: repo))
-                .font(.system(size: 12.5, weight: .medium, design: .monospaced))
+                .font(Theme.font(.smallPlus, weight: .medium, design: .monospaced))
                 .lineLimit(1)
                 .truncationMode(.head)
                 .help(file.path)
-            Spacer(minLength: 6)
+            Spacer(minLength: Theme.space(.s6))
             Button {
                 withAnimation(.easeOut(duration: 0.15)) {
                     model.setReviewed(!done, for: file, in: repo)
                 }
             } label: {
-                HStack(spacing: 5) {
-                    Image(systemName: done ? "checkmark.circle.fill" : "checkmark.circle")
+                HStack(spacing: Theme.space(.s5)) {
+                    Theme.image(done ? .taskDone : .clean)
                     Text(done ? "Revisado" : "Marcar revisado")
                 }
-                .font(.system(size: 12, weight: .medium))
+                .font(Theme.font(.small, weight: .medium))
                 .foregroundStyle(done ? Theme.added : Theme.textSecondary)
-                .padding(.horizontal, 10)
-                .frame(height: 26)
+                .padding(.horizontal, Theme.space(.s10))
+                .frame(height: Theme.size(.s26))
             }
-            .buttonStyle(ThalamusButtonStyle(kind: .secondary, radius: 7))
+            .buttonStyle(ThalamusButtonStyle(kind: .secondary, radius: .r7))
         }
-        .padding(.leading, 14)
-        .padding(.trailing, 10)
-        .frame(height: 42)
+        .padding(.leading, Theme.space(.s14))
+        .padding(.trailing, Theme.space(.s10))
+        .frame(height: Theme.size(.s42))
         .background(Theme.raised)
-        .overlay(alignment: .bottom) { Rectangle().fill(Theme.border).frame(height: 1) }
+        .overlay(alignment: .bottom) { Rectangle().fill(Theme.border).frame(height: Theme.line(.thin)) }
     }
 
     private func diff(_ file: GitChangesModel.FileChange) -> some View {
@@ -407,23 +401,23 @@ struct GitChangesPanel: View {
             LazyVStack(alignment: .leading, spacing: 0) {
                 if file.lines.isEmpty {
                     Text(file.state == .deleted ? "Arquivo apagado" : "Sem diff para mostrar")
-                        .font(.system(size: 12))
+                        .font(Theme.font(.small))
                         .foregroundStyle(Theme.textTertiary)
-                        .padding(14)
+                        .padding(Theme.space(.s14))
                 }
                 ForEach(file.lines) { line in
                     GitDiffRow(line: line)
                 }
                 if file.truncated {
                     Text("Diff longo — mostrando o início")
-                        .font(.system(size: 11.5))
+                        .font(Theme.font(.captionPlus))
                         .italic()
                         .foregroundStyle(Theme.textTertiary)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 8)
+                        .padding(.horizontal, Theme.space(.s14))
+                        .padding(.vertical, Theme.space(.s8))
                 }
             }
-            .padding(.vertical, 4)
+            .padding(.vertical, Theme.space(.s4))
             .textSelection(.enabled)
         }
         .id(file.path)
@@ -467,10 +461,22 @@ struct GitChangesPanel: View {
 
     private func badge(for state: GitFileState) -> some View {
         Text(state.badge)
-            .font(.system(size: 11, weight: .semibold, design: .monospaced))
+            .font(Theme.font(.caption, weight: .semibold, design: .monospaced))
             .foregroundStyle(state.color)
-            .frame(width: 14)
+            .frame(width: Theme.size(.s14))
             .accessibilityLabel(state.accessibilityName)
     }
 
+}
+
+private struct ListRowLabel: ViewModifier {
+    let height: CGFloat
+
+    func body(content: Content) -> some View {
+        content
+            .font(Theme.font(.captionPlus, design: .monospaced))
+            .padding(.leading, Theme.space(.s8))
+            .frame(height: height)
+            .contentShape(Rectangle())
+    }
 }

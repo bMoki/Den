@@ -4,11 +4,11 @@ struct DisclosureChevron: View {
     let isOpen: Bool
 
     var body: some View {
-        Image(systemName: "chevron.right")
-            .font(.system(size: 10, weight: .semibold))
+        Theme.image(.next)
+            .font(Theme.font(.label, weight: .semibold))
             .foregroundStyle(Theme.textTertiary)
             .rotationEffect(.degrees(isOpen ? 90 : 0))
-            .frame(width: 12)
+            .frame(width: Theme.size(.s12))
     }
 }
 
@@ -29,7 +29,7 @@ struct SessionCountLabel: View {
 
     var body: some View {
         Text("\(count)")
-            .font(.system(size: 11))
+            .font(Theme.font(.caption))
             .monospacedDigit()
             .foregroundStyle(Theme.textTertiary)
             .accessibilityLabel(noun.describe(count))
@@ -41,8 +41,8 @@ struct SessionTallyLabel: View {
 
     var body: some View {
         if let prevailing = sessions.prevailing {
-            HStack(spacing: 5) {
-                SessionStateDot(state: prevailing.state)
+            HStack(spacing: Theme.space(.s5)) {
+                SessionStateMark(state: prevailing.state)
                 SessionCountLabel(count: prevailing.count)
             }
             .describedAs(prevailing.label)
@@ -70,7 +70,7 @@ struct SidebarSectionTitle<Trailing: View>: View {
     }
 
     var body: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: Theme.space(.s4)) {
             if let expansion {
                 Button(action: expansion.toggle) { label.contentShape(Rectangle()) }
                     .buttonStyle(.plain)
@@ -80,18 +80,18 @@ struct SidebarSectionTitle<Trailing: View>: View {
             } else {
                 label
             }
-            HStack(spacing: 4, content: trailing)
+            HStack(spacing: Theme.space(.s4), content: trailing)
                 .fixedSize()
         }
-        .padding(.leading, 10)
-        .padding(.trailing, 4)
-        .frame(height: 28)
+        .padding(.leading, Theme.space(.s10))
+        .padding(.trailing, Theme.space(.s4))
+        .frame(height: Theme.size(.s28))
     }
 
     private var label: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: Theme.space(.s4)) {
             Text(title)
-                .font(.system(size: 12, weight: .medium))
+                .font(Theme.font(.small, weight: .medium))
                 .foregroundStyle(Theme.textTertiary)
                 .lineLimit(1)
                 .truncationMode(.tail)
@@ -114,9 +114,9 @@ struct SidebarCollapsibleTitle<Actions: View>: View {
                                                     toggle: animatedToggle)) {
             actions()
             Button(action: animatedToggle) {
-                HStack(spacing: 4) {
+                HStack(spacing: Theme.space(.s4)) {
                     ZStack(alignment: .trailing) {
-                        Text("999").font(.system(size: 11)).monospacedDigit().hidden()
+                        Text("999").font(Theme.font(.caption)).monospacedDigit().hidden()
                         SessionCountLabel(count: hidden, noun: .hiddenRows)
                             .opacity(hidden > 0 ? 1 : 0)
                     }
@@ -164,19 +164,19 @@ struct ArchivedRow: View {
     @State private var hovering = false
 
     var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "archivebox")
-                .font(.system(size: 12))
+        HStack(spacing: Theme.space(.s8)) {
+            Theme.image(.archive)
+                .font(Theme.font(.small))
                 .foregroundStyle(Theme.textTertiary)
-                .frame(width: 16)
+                .frame(width: Theme.size(.s16))
             Text(SidebarRow.archivedTitle)
-                .font(.system(size: 13, weight: .medium))
+                .font(Theme.font(.body, weight: .medium))
                 .foregroundStyle(Theme.textSecondary)
-            Spacer(minLength: 4)
+            Spacer(minLength: Theme.space(.s4))
             SessionCountLabel(count: count)
         }
-        .padding(.horizontal, 10)
-        .frame(height: 32)
+        .padding(.horizontal, Theme.space(.s10))
+        .frame(height: Theme.size(.s32))
         .sidebarHeaderRow(hovering: $hovering, isSelected: isSelected, open: open)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isButton)

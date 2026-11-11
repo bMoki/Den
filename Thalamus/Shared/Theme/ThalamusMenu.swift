@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum ThalamusMenuIcon {
-    case symbol(String, Color)
+    case symbol(Icon, Color)
     case image(Image)
 }
 

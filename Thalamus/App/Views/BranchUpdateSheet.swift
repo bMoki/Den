@@ -4,11 +4,15 @@ struct BranchUpdateSheet: View {
     let report: NsWorkspace.UpdateReport
     var close: () -> Void
 
+    private var branch: Text {
+        Text(report.branch).font(Theme.font(.smallPlus, design: .monospaced))
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             DialogHeading(title: Text(BranchActionTitle.update),
-                          subtitle: Text("Trouxe a branch principal de cada Repo para \(Text(report.branch).font(.system(size: 12.5, design: .monospaced)))."))
-            VStack(alignment: .leading, spacing: 14) {
+                          subtitle: Text("Trouxe a branch principal de cada Repo para \(branch)."))
+            VStack(alignment: .leading, spacing: Theme.space(.s14)) {
                 VStack(spacing: 0) {
                     ForEach(Array(report.repos.enumerated()), id: \.element.repo) { index, repo in
                         RepoUpdateRow(repo: repo, isFirst: index == 0)
@@ -16,12 +20,12 @@ struct BranchUpdateSheet: View {
                 }
                 if let conflictNote {
                     Text(conflictNote)
-                        .font(.system(size: 12.5))
+                        .font(Theme.font(.smallPlus))
                         .foregroundStyle(Theme.textTertiary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
-            .padding(EdgeInsets(top: 14, leading: 20, bottom: 4, trailing: 20))
+            .dialogBody()
             DialogFooter {
                 Spacer(minLength: 0)
                 Button(action: close) { Text("Fechar").pillLabel() }
@@ -32,7 +36,6 @@ struct BranchUpdateSheet: View {
         .frame(width: 560)
         .background(Theme.raised)
         .foregroundStyle(Theme.text)
-        .preferredColorScheme(.dark)
     }
 
     private var conflictNote: String? {
@@ -49,12 +52,12 @@ private struct RepoUpdateRow: View {
     let isFirst: Bool
 
     var body: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: Theme.space(.s10)) {
             Text(repo.repo)
-                .font(.system(size: 12.5, design: .monospaced))
+                .font(Theme.font(.smallPlus, design: .monospaced))
                 .frame(width: 110, alignment: .leading)
             Text(detail)
-                .font(.system(size: 12))
+                .font(Theme.font(.small))
                 .foregroundStyle(Theme.textTertiary)
                 .lineLimit(2)
                 .truncationMode(.tail)
@@ -63,10 +66,10 @@ private struct RepoUpdateRow: View {
                 .textSelection(.enabled)
             pill
         }
-        .padding(.horizontal, 2)
-        .padding(.vertical, 9)
+        .padding(.horizontal, Theme.space(.s2))
+        .padding(.vertical, Theme.space(.s9))
         .overlay(alignment: .top) {
-            if !isFirst { Rectangle().fill(Theme.border).frame(height: 1) }
+            if !isFirst { Rectangle().fill(Theme.border).frame(height: Theme.line(.thin)) }
         }
         .accessibilityElement(children: .combine)
     }
@@ -90,17 +93,17 @@ private struct RepoUpdateRow: View {
 
     private struct PillStyle {
         let title: String
-        var symbol: String?
+        var symbol: Icon?
         let color: Color
         let fill: Color
     }
 
     private var style: PillStyle {
         switch repo.status {
-        case .updated: PillStyle(title: "Atualizado", symbol: "checkmark", color: Theme.added, fill: Theme.addedFill)
+        case .updated: PillStyle(title: "Atualizado", symbol: .done, color: Theme.added, fill: Theme.addedFill)
         case .conflict:
-            PillStyle(title: "Conflito", symbol: "exclamationmark.triangle", color: Theme.removed, fill: Theme.removedFill)
-        case .failed: PillStyle(title: "Falhou", symbol: "xmark", color: Theme.removed, fill: Theme.removedFill)
+            PillStyle(title: "Conflito", symbol: .warning, color: Theme.removed, fill: Theme.removedFill)
+        case .failed: PillStyle(title: "Falhou", symbol: .close, color: Theme.removed, fill: Theme.removedFill)
         case .skipped: PillStyle(title: "Ignorado", color: Theme.alertText, fill: Theme.alertFill)
         case .upToDate: PillStyle(title: "Já em dia", color: Theme.textSecondary, fill: Theme.field)
         }
@@ -108,15 +111,15 @@ private struct RepoUpdateRow: View {
 
     private var pill: some View {
         let style = style
-        return HStack(spacing: 5) {
+        return HStack(spacing: Theme.space(.s5)) {
             if let symbol = style.symbol {
-                Image(systemName: symbol).font(.system(size: 9, weight: .bold))
+                Theme.image(symbol).font(Theme.font(.mini, weight: .bold))
             }
-            Text(style.title).font(.system(size: 11.5, weight: .medium))
+            Text(style.title).font(Theme.font(.captionPlus, weight: .medium))
         }
         .foregroundStyle(style.color)
-        .padding(.horizontal, 8)
-        .frame(height: 24)
-        .background(style.fill, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+        .padding(.horizontal, Theme.space(.s8))
+        .frame(height: Theme.size(.s24))
+        .background(style.fill, in: RoundedRectangle(cornerRadius: Theme.radius(.r7), style: .continuous))
     }
 }

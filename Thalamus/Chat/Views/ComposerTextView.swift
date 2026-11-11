@@ -14,10 +14,10 @@ struct ComposerTextView: NSViewRepresentable {
     var onTakeGhost: () -> Void = {}
     var history = ComposerHistoryKeys()
 
-    static let font = NSFont.systemFont(ofSize: 13)
+    static var font: NSFont { Theme.nsFont(.body) }
     static let maxLines = 6
     static let lineHeight = NSLayoutManager().defaultLineHeight(for: font)
-    static let ghostTrailing: CGFloat = 30
+    static var ghostTrailing: CGFloat { Theme.space(.s30) }
     static let ghostMaxLines = 3
 
     static func height(of text: String, width: CGFloat) -> CGFloat {

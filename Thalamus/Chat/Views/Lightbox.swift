@@ -12,9 +12,9 @@ struct Lightbox: View {
                 Image(nsImage: image)
                     .resizable()
                     .scaledToFit()
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .shadow(radius: 24)
-                    .padding(36)
+                    .clipShape(RoundedRectangle(cornerRadius: Theme.radius(.r12)))
+                    .elevation(.lightbox)
+                    .padding(Theme.space(.s36))
                     .transition(.scale(scale: 0.55).combined(with: .opacity))
             }
             .contentShape(Rectangle())

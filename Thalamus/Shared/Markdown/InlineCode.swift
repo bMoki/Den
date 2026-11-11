@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct InlineCode: TextAttribute {
-    static let padding: CGFloat = 3
+    static var padding: CGFloat { Theme.space(.s3) }
 
     static var color: Color { Theme.inlineCode }
 
@@ -10,11 +10,11 @@ struct InlineCode: TextAttribute {
         let isCode: Bool
     }
 
-    static func text(_ content: AttributedString, size: CGFloat,
+    static func text(_ content: AttributedString, size: Style.TextSize,
                      weight: Font.Weight = .regular) -> Text {
         let segments = segments(of: content, size: size, weight: weight)
         guard segments.contains(where: \.isCode) else {
-            return Text(content).font(.system(size: size, weight: weight))
+            return Text(content).font(Theme.font(size, weight: weight))
         }
         var interpolation = LocalizedStringKey.StringInterpolation(
             literalCapacity: 0, interpolationCount: segments.count)
@@ -23,19 +23,17 @@ struct InlineCode: TextAttribute {
             interpolation.appendInterpolation(segment.isCode ? piece.customAttribute(InlineCode()) : piece)
         }
         return Text(LocalizedStringKey(stringInterpolation: interpolation))
-            .font(.system(size: size, weight: weight))
+            .font(Theme.font(size, weight: weight))
     }
 
-    static func segments(of content: AttributedString, size: CGFloat,
+    static func segments(of content: AttributedString, size: Style.TextSize,
                          weight: Font.Weight = .regular) -> [Segment] {
         var segments: [Segment] = []
         for (intent, range) in content.runs[\.inlinePresentationIntent] {
             var slice = AttributedString(content[range])
             let isCode = intent?.contains(.code) == true
             if let intent, isCode {
-                let font = Font.system(size: size - 1,
-                                       weight: intent.contains(.stronglyEmphasized) ? .semibold : weight,
-                                       design: .monospaced)
+                let font = Theme.inlineCodeFont(size, weight: intent.contains(.stronglyEmphasized) ? .semibold : weight)
                 slice.font = intent.contains(.emphasized) ? font.italic() : font
                 slice.foregroundColor = color
             }
@@ -79,16 +77,16 @@ struct InlineCode: TextAttribute {
 
 struct InlineCodeRenderer: TextRenderer {
     var displayPadding: EdgeInsets {
-        EdgeInsets(top: 1, leading: InlineCode.padding, bottom: 1, trailing: InlineCode.padding)
+        EdgeInsets(top: Theme.space(.s1), leading: InlineCode.padding, bottom: Theme.space(.s1), trailing: InlineCode.padding)
     }
 
     func draw(layout: Text.Layout, in context: inout GraphicsContext) {
         for line in layout {
             let runs = line.map { (bounds: $0.typographicBounds.rect, isCode: $0[InlineCode.self] != nil) }
             for rect in InlineCode.pills(in: runs) {
-                let pill = RoundedRectangle(cornerRadius: 4, style: .continuous).path(in: rect)
+                let pill = RoundedRectangle(cornerRadius: Theme.radius(.r4), style: .continuous).path(in: rect)
                 context.fill(pill, with: .color(InlineCode.color.opacity(0.10)))
-                context.stroke(pill, with: .color(InlineCode.color.opacity(0.25)), lineWidth: 0.5)
+                context.stroke(pill, with: .color(InlineCode.color.opacity(0.25)), lineWidth: Theme.line(.hairline))
             }
         }
         for line in layout {

@@ -4,7 +4,8 @@ import SwiftUI
 
 extension SourceEditorConfiguration {
     static let thalamus = SourceEditorConfiguration(
-        appearance: .init(theme: .thalamus, font: .monospacedSystemFont(ofSize: 12.5, weight: .regular), lineHeightMultiple: 1.45, wrapLines: false),
+        appearance: .init(theme: .thalamus, font: Theme.nsCodeFont(.smallPlus),
+                           lineHeightMultiple: Theme.style.codeLineHeight, wrapLines: false),
         peripherals: .init(showMinimap: false, showFoldingRibbon: false))
 
     static let thalamusReadOnly = {

@@ -4,40 +4,40 @@ struct SessionWelcome: View {
     let chat: ChatModel
 
     var body: some View {
-        VStack(spacing: 18) {
-            HarnessBadge(harness: chat.harness, size: 40)
-            VStack(spacing: 5) {
+        VStack(spacing: Theme.space(.s18)) {
+            HarnessBadge(harness: chat.harness, size: .s40)
+            VStack(spacing: Theme.space(.s5)) {
                 Text("\(chat.harnessName) em \(chat.workingDirectory.lastPathComponent)")
-                    .font(.system(size: 17, weight: .semibold))
+                    .font(Theme.font(.title3, weight: .semibold))
                 Text("Descreva o que quer mudar. O agente lê, edita e executa no projeto.")
-                    .font(.system(size: 13))
+                    .font(Theme.font(.body))
                     .foregroundStyle(Theme.textTertiary)
                     .multilineTextAlignment(.center)
             }
-            HStack(spacing: 8) {
-                hint(Text("@").font(.system(size: 12, weight: .semibold, design: .monospaced)),
+            HStack(spacing: Theme.space(.s8)) {
+                hint(Text("@").font(Theme.font(.small, weight: .semibold, design: .monospaced)),
                      "cita arquivos")
-                hint(Text("/").font(.system(size: 12, weight: .semibold, design: .monospaced)),
+                hint(Text("/").font(Theme.font(.small, weight: .semibold, design: .monospaced)),
                      "abre comandos")
-                hint(Image(systemName: "paperclip").font(.system(size: 11, weight: .medium)),
+                hint(Theme.image(.attach).font(Theme.font(.caption, weight: .medium)),
                      "anexa imagens e PDFs")
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(.top, 120)
+        .padding(.top, Theme.space(.s120))
     }
 
     private func hint(_ glyph: some View, _ text: String) -> some View {
-        HStack(spacing: 6) {
+        HStack(spacing: Theme.space(.s6)) {
             glyph
                 .foregroundStyle(Theme.accent)
             Text(text)
-                .font(.system(size: 12))
+                .font(Theme.font(.small))
                 .foregroundStyle(Theme.textSecondary)
         }
-        .padding(.horizontal, 10)
-        .frame(height: 28)
+        .padding(.horizontal, Theme.space(.s10))
+        .frame(height: Theme.size(.s28))
         .background(Theme.raised, in: Capsule())
-        .overlay(Capsule().strokeBorder(Theme.border, lineWidth: 1))
+        .overlay(Capsule().strokeBorder(Theme.border, lineWidth: Theme.line(.thin)))
     }
 }

@@ -13,7 +13,7 @@ struct IndicatorSettings: View {
                 }
                 .pickerStyle(.segmented)
                 Text("A cor mostra o Estado. Em Pontos, os ícones escolhidos ficam guardados para quando voltar a Ícones.")
-                    .font(.system(size: 11))
+                    .font(Theme.font(.caption))
                     .foregroundStyle(.secondary)
             }
             Section("Serviços") {
@@ -55,16 +55,16 @@ private struct IndicatorRow: View {
     var body: some View {
         LabeledContent(title) {
             Button { choosing = true } label: {
-                HStack(spacing: 6) {
+                HStack(spacing: Theme.space(.s6)) {
                     if let icon = current {
-                        IndicatorGlyph(icon: icon, color: .primary, size: 14)
+                        IndicatorGlyph(icon: icon, color: .primary, size: .s14)
                         Text(icon.title)
                     } else {
                         ServiceDot(state: .rodando, isDatabase: target == .database)
                         Text("Ponto")
                     }
-                    Image(systemName: "chevron.up.chevron.down")
-                        .font(.system(size: 9, weight: .semibold))
+                    Theme.image(.picker)
+                        .font(Theme.font(.mini, weight: .semibold))
                         .foregroundStyle(.secondary)
                 }
             }
@@ -89,16 +89,16 @@ private struct IndicatorChooser: View {
     @State private var typed = ""
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: Theme.space(.s12)) {
             group("Sugestões", icons: target.suggestions)
             group("Todos", icons: IndicatorIcon.catalog)
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: Theme.space(.s6)) {
                 caption("Símbolo do sistema")
-                HStack(spacing: 8) {
+                HStack(spacing: Theme.space(.s8)) {
                     TextField("Símbolo", text: $typed, prompt: Text("ex.: hammer"))
                         .labelsHidden()
                         .multilineTextAlignment(.leading)
-                        .font(.system(size: 12, design: .monospaced))
+                        .font(Theme.font(.small, design: .monospaced))
                         .onSubmit(useTyped)
                     preview
                     Button("Usar", action: useTyped)
@@ -106,28 +106,28 @@ private struct IndicatorChooser: View {
                 }
                 if !trimmed.isEmpty, !typedExists {
                     Text("Símbolo não encontrado")
-                        .font(.system(size: 11))
+                        .font(Theme.font(.caption))
                         .foregroundStyle(Theme.palette.checks.failed)
                 }
             }
         }
-        .padding(14)
+        .padding(Theme.space(.s14))
         .frame(width: 300)
     }
 
     private var trimmed: String { typed.trimmingCharacters(in: .whitespaces) }
-    private var typedExists: Bool { IndicatorIcon.symbolExists(trimmed) }
+    private var typedExists: Bool { Style.symbolExists(trimmed) }
 
     private var preview: some View {
         Group {
             if typedExists {
-                IndicatorGlyph(icon: .symbol(trimmed), color: .primary, size: 16)
+                IndicatorGlyph(icon: .symbol(trimmed), color: .primary, size: .s16)
             } else {
-                Image(systemName: "questionmark.square.dashed")
+                Theme.image(.noIndicator)
                     .foregroundStyle(.tertiary)
             }
         }
-        .frame(width: 20, height: 20)
+        .frame(width: Theme.size(.s20), height: Theme.size(.s20))
         .accessibilityHidden(true)
     }
 
@@ -138,20 +138,20 @@ private struct IndicatorChooser: View {
 
     private func caption(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 11, weight: .semibold))
+            .font(Theme.font(.caption, weight: .semibold))
             .foregroundStyle(.secondary)
     }
 
     private func group(_ title: String, icons: [IndicatorIcon]) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: Theme.space(.s6)) {
             caption(title)
-            LazyVGrid(columns: Array(repeating: GridItem(.fixed(30), spacing: 4), count: 8), alignment: .leading, spacing: 4) {
+            LazyVGrid(columns: Array(repeating: GridItem(.fixed(30), spacing: Theme.space(.s4)), count: 8), alignment: .leading, spacing: Theme.space(.s4)) {
                 ForEach(icons) { icon in
                     Button { choose(icon) } label: {
-                        IndicatorGlyph(icon: icon, color: .primary, size: 15)
-                            .frame(width: 30, height: 30)
+                        IndicatorGlyph(icon: icon, color: .primary, size: .s15)
+                            .frame(width: Theme.size(.s30), height: Theme.size(.s30))
                             .background(icon == current ? Theme.accent.opacity(0.25) : .clear,
-                                        in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                                        in: RoundedRectangle(cornerRadius: Theme.radius(.r6), style: .continuous))
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)

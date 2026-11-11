@@ -6,24 +6,24 @@ struct CompactionProgressCard: View {
     @State private var phase: CGFloat = 0
 
     var body: some View {
-        HStack(alignment: .top, spacing: 11) {
+        HStack(alignment: .top, spacing: Theme.space(.s11)) {
             ZStack {
                 Circle()
                     .fill(Theme.accent.opacity(0.16))
-                    .frame(width: 30, height: 30)
-                Image(systemName: "arrow.down.right.and.arrow.up.left")
-                    .font(.system(size: 12, weight: .semibold))
+                    .frame(width: Theme.size(.s30), height: Theme.size(.s30))
+                Theme.image(.compact)
+                    .font(Theme.font(.small, weight: .semibold))
                     .foregroundStyle(Theme.accent)
             }
 
-            VStack(alignment: .leading, spacing: 7) {
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
+            VStack(alignment: .leading, spacing: Theme.space(.s7)) {
+                HStack(alignment: .firstTextBaseline, spacing: Theme.space(.s8)) {
                     Text("Compactando a conversa")
-                        .font(.system(size: 12, weight: .semibold))
-                    Spacer(minLength: 8)
+                        .font(Theme.font(.small, weight: .semibold))
+                    Spacer(minLength: Theme.space(.s8))
                     TimelineView(.periodic(from: .now, by: 1)) { context in
                         Text(Self.elapsed(context.date.timeIntervalSince(since)))
-                            .font(.system(size: 10))
+                            .font(Theme.font(.label))
                             .monospacedDigit()
                             .foregroundStyle(.secondary)
                     }
@@ -32,17 +32,13 @@ struct CompactionProgressCard: View {
                 track
 
                 Text("Resumindo o histórico para liberar contexto")
-                    .font(.system(size: 10))
+                    .font(Theme.font(.label))
                     .foregroundStyle(.secondary)
             }
         }
-        .padding(14)
+        .padding(Theme.space(.s14))
         .frame(maxWidth: 440, alignment: .leading)
-        .background(Theme.card, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(Theme.accent.opacity(0.3), lineWidth: 1)
-        )
+        .card(border: Theme.accent.opacity(0.3))
         .onAppear {
             phase = 0
             withAnimation(.linear(duration: 1.6).repeatForever(autoreverses: false)) {
@@ -70,7 +66,7 @@ struct CompactionProgressCard: View {
                 }
                 .clipShape(Capsule())
         }
-        .frame(height: 5)
+        .frame(height: Theme.size(.s5))
     }
 
     private static func elapsed(_ duration: TimeInterval) -> String {
@@ -83,22 +79,22 @@ struct CompactionMark: View {
     let text: String
 
     var body: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: Theme.space(.s10)) {
             rule
-            HStack(spacing: 6) {
-                Image(systemName: "arrow.down.right.and.arrow.up.left")
-                    .font(.system(size: 9, weight: .semibold))
+            HStack(spacing: Theme.space(.s6)) {
+                Theme.image(.compact)
+                    .font(Theme.font(.mini, weight: .semibold))
                 Text(text)
-                    .font(.system(size: 10, weight: .medium))
+                    .font(Theme.font(.label, weight: .medium))
                     .monospacedDigit()
                     .lineLimit(1)
                     .fixedSize()
             }
             .foregroundStyle(Theme.textTertiary)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
+            .padding(.horizontal, Theme.space(.s12))
+            .padding(.vertical, Theme.space(.s6))
             .background(Theme.raised, in: Capsule())
-            .overlay(Capsule().strokeBorder(Theme.border, lineWidth: 1))
+            .overlay(Capsule().strokeBorder(Theme.border, lineWidth: Theme.line(.thin)))
             rule
         }
         .frame(maxWidth: .infinity)
@@ -108,7 +104,7 @@ struct CompactionMark: View {
     private var rule: some View {
         Rectangle()
             .fill(Theme.border)
-            .frame(height: 1)
+            .frame(height: Theme.line(.thin))
     }
 }
 
@@ -120,21 +116,21 @@ struct DigestRow: View {
     let toggle: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: Theme.space(.s6)) {
             Button(action: toggle) {
-                HStack(spacing: 6) {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 8, weight: .bold))
+                HStack(spacing: Theme.space(.s6)) {
+                    Theme.image(.next)
+                        .font(Theme.font(.tiny, weight: .bold))
                         .rotationEffect(.degrees(isOpen ? 90 : 0))
-                    Image(systemName: mono ? "terminal" : "text.quote")
-                        .font(.system(size: 10))
+                    Theme.image(mono ? .terminal : .summary)
+                        .font(Theme.font(.label))
                     Text(title)
-                        .font(.system(size: 12.5, weight: .medium))
+                        .font(Theme.font(.smallPlus, weight: .medium))
                     Spacer(minLength: 0)
                 }
                 .foregroundStyle(Theme.textMuted)
-                .padding(.horizontal, 12)
-                .frame(height: 38)
+                .padding(.horizontal, Theme.space(.s12))
+                .frame(height: Theme.size(.s38))
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -143,13 +139,11 @@ struct DigestRow: View {
 
             if isOpen {
                 body(of: text)
-                    .padding(.horizontal, 14)
-                    .padding(.bottom, 12)
+                    .padding(.horizontal, Theme.space(.s14))
+                    .padding(.bottom, Theme.space(.s12))
             }
         }
-        .background(Theme.card, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-            .strokeBorder(Theme.borderCard, lineWidth: 1))
+        .card()
     }
 
     @ViewBuilder
@@ -157,7 +151,7 @@ struct DigestRow: View {
         let shown = String(text.prefix(20_000))
         if mono {
             Text(shown)
-                .font(.system(size: 12, design: .monospaced))
+                .font(Theme.font(.small, design: .monospaced))
                 .foregroundStyle(Theme.textSecondary)
                 .textSelection(.enabled)
                 .fixedSize(horizontal: false, vertical: true)

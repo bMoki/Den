@@ -11,18 +11,18 @@ struct TakeSnapshotSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             DialogHeading(title: Text("Tirar snapshot"),
-                          subtitle: Text("Guarda o estado atual do banco de \(Text(branch).font(.system(size: 12.5, design: .monospaced)))."))
-            VStack(alignment: .leading, spacing: 8) {
+                          subtitle: Text("Guarda o estado atual do banco de \(Text(branch).font(Theme.font(.smallPlus, design: .monospaced)))."))
+            VStack(alignment: .leading, spacing: Theme.space(.s8)) {
                 DialogNameField(name: $name, accessibilityLabel: "Nome do snapshot", submit: submit)
                 Text(note)
-                    .font(.system(size: 12, design: .monospaced))
+                    .font(Theme.font(.small, design: .monospaced))
                     .foregroundStyle(problem == nil ? Theme.textTertiary : Theme.alertText)
                 if replacing {
                     DialogWarning(title: "Já existe um Snapshot com esse nome.",
                                   detail: "Substituir apaga o Snapshot anterior de \(branch).")
                 }
             }
-            .padding(EdgeInsets(top: 14, leading: 20, bottom: 4, trailing: 20))
+            .dialogBody()
             DialogFooter {
                 Spacer(minLength: 0)
                 DialogCancelButton(action: cancel)
@@ -35,7 +35,6 @@ struct TakeSnapshotSheet: View {
         .frame(width: 460)
         .background(Theme.raised)
         .foregroundStyle(Theme.text)
-        .preferredColorScheme(.dark)
     }
 
     private var trimmed: String { name.trimmingCharacters(in: .whitespaces) }
@@ -85,22 +84,22 @@ struct RestoreSnapshotSheet: View {
             DialogHeading(title: Text("Restaurar banco"),
                           subtitle: Text("Escolha um Snapshot. Pode ser de outra branch."))
             ScrollView {
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: Theme.space(.s12)) {
                     if sources.isEmpty {
                         Text(problem ?? "Nenhum Snapshot encontrado.")
-                            .font(.system(size: 12.5))
+                            .font(Theme.font(.smallPlus))
                             .foregroundStyle(Theme.textTertiary)
-                            .frame(maxWidth: .infinity, minHeight: 60)
+                            .frame(maxWidth: .infinity, minHeight: Theme.size(.s60))
                     }
                     ForEach(sources, id: \.branch) { group in
                         if group.branch == firstOrphan {
                             Text("Órfãos")
-                                .font(.system(size: 11.5, weight: .semibold))
+                                .font(Theme.font(.captionPlus, weight: .semibold))
                                 .foregroundStyle(Theme.textSecondary)
-                                .padding(.top, 4)
+                                .padding(.top, Theme.space(.s4))
                                 .accessibilityAddTraits(.isHeader)
                         }
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: Theme.space(.s2)) {
                             groupTitle(group)
                             ForEach(group.snapshots) { snapshot in
                                 SnapshotChoice(snapshot: snapshot, isSelected: selected == snapshot.ref) {
@@ -110,19 +109,19 @@ struct RestoreSnapshotSheet: View {
                         }
                     }
                 }
-                .padding(EdgeInsets(top: 14, leading: 20, bottom: 4, trailing: 20))
+                .dialogBody()
             }
             .frame(maxHeight: 300)
             .fixedSize(horizontal: false, vertical: true)
             if let selected {
-                VStack(alignment: .leading, spacing: 10) {
+                VStack(alignment: .leading, spacing: Theme.space(.s10)) {
                     confirmation(selected)
                     if !running.isEmpty {
                         DialogWarning(title: "\(runningSummary) (\(running.joined(separator: ", "))).",
                                       detail: "O Thalamus não vai pará-los nem reiniciá-los; eles podem precisar de reinício depois.")
                     }
                 }
-                .padding(EdgeInsets(top: 12, leading: 20, bottom: 4, trailing: 20))
+                .padding(EdgeInsets(top: Theme.space(.s12), leading: Theme.space(.s20), bottom: Theme.space(.s4), trailing: Theme.space(.s20)))
             }
             DialogFooter {
                 Spacer(minLength: 0)
@@ -137,7 +136,6 @@ struct RestoreSnapshotSheet: View {
         .frame(width: 560)
         .background(Theme.raised)
         .foregroundStyle(Theme.text)
-        .preferredColorScheme(.dark)
     }
 
     private var runningSummary: String {
@@ -149,35 +147,35 @@ struct RestoreSnapshotSheet: View {
     }
 
     private func groupTitle(_ source: NsClient.SnapshotGroup) -> some View {
-        HStack(spacing: 5) {
-            Text(source.branch).font(.system(size: 11.5, weight: .semibold, design: .monospaced))
+        HStack(spacing: Theme.space(.s5)) {
+            Text(source.branch).font(Theme.font(.captionPlus, weight: .semibold, design: .monospaced))
             if source.orphan {
-                Text("· branch removida").font(.system(size: 11.5))
+                Text("· branch removida").font(Theme.font(.captionPlus))
             } else if source.branch == branch {
-                Text("· esta branch").font(.system(size: 11.5))
+                Text("· esta branch").font(Theme.font(.captionPlus))
             }
         }
         .foregroundStyle(Theme.textTertiary)
-        .padding(.horizontal, 2)
-        .padding(.bottom, 2)
+        .padding(.horizontal, Theme.space(.s2))
+        .padding(.bottom, Theme.space(.s2))
     }
 
     private func confirmation(_ ref: String) -> some View {
-        Grid(alignment: .leading, horizontalSpacing: 10, verticalSpacing: 6) {
+        Grid(alignment: .leading, horizontalSpacing: Theme.space(.s10), verticalSpacing: Theme.space(.s6)) {
             GridRow {
                 Text("Snapshot").foregroundStyle(Theme.textTertiary)
-                Text(ref).font(.system(size: 12.5, weight: .medium, design: .monospaced))
+                Text(ref).font(Theme.font(.smallPlus, weight: .medium, design: .monospaced))
             }
             GridRow {
                 Text("Restaura em").foregroundStyle(Theme.textTertiary)
-                Text(branch).font(.system(size: 12.5, weight: .medium, design: .monospaced))
+                Text(branch).font(Theme.font(.smallPlus, weight: .medium, design: .monospaced))
             }
         }
-        .font(.system(size: 12.5))
-        .padding(EdgeInsets(top: 12, leading: 14, bottom: 12, trailing: 14))
+        .font(Theme.font(.smallPlus))
+        .padding(EdgeInsets(top: Theme.space(.s12), leading: Theme.space(.s14), bottom: Theme.space(.s12), trailing: Theme.space(.s14)))
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.card, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Theme.border))
+        .background(Theme.card, in: RoundedRectangle(cornerRadius: Theme.radius(.r10), style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: Theme.radius(.r10), style: .continuous).strokeBorder(Theme.border))
         .accessibilityElement(children: .combine)
     }
 }
@@ -191,23 +189,23 @@ private struct SnapshotChoice: View {
 
     var body: some View {
         Button(action: choose) {
-            HStack(spacing: 9) {
+            HStack(spacing: Theme.space(.s9)) {
                 Circle()
-                    .strokeBorder(isSelected ? Theme.action : Theme.borderControl, lineWidth: isSelected ? 4.5 : 1.5)
-                    .frame(width: 14, height: 14)
+                    .strokeBorder(isSelected ? Theme.action : Theme.borderControl, lineWidth: Theme.line(isSelected ? .heavy : .medium))
+                    .frame(width: Theme.size(.s14), height: Theme.size(.s14))
                 Text(snapshot.name)
-                    .font(.system(size: 12.5, design: .monospaced))
+                    .font(Theme.font(.smallPlus, design: .monospaced))
                     .lineLimit(1)
                     .truncationMode(.middle)
-                Spacer(minLength: 8)
+                Spacer(minLength: Theme.space(.s8))
                 if let age = snapshot.age {
                     Text(age)
-                        .font(.system(size: 11.5))
+                        .font(Theme.font(.captionPlus))
                         .foregroundStyle(Theme.textTertiary)
                 }
             }
-            .padding(.horizontal, 10)
-            .frame(height: 32)
+            .padding(.horizontal, Theme.space(.s10))
+            .frame(height: Theme.size(.s32))
             .background(isSelected ? Theme.hoverRaised : hovering ? Theme.hover : .clear, in: DialogBox.shape)
             .contentShape(Rectangle())
         }

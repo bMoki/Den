@@ -11,12 +11,12 @@ struct RemoveBranchSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            DialogHeading(title: Text("Remover \(Text(removal.branch).font(.system(size: 14, weight: .semibold, design: .monospaced)))?"),
+            DialogHeading(title: Text("Remover \(Text(removal.branch).font(Theme.font(.large, weight: .semibold, design: .monospaced)))?"),
                           subtitle: Text("Apaga as worktrees de todos os Repos. As Sessões desta branch ficam arquivadas."))
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: Theme.space(.s12)) {
                 content
             }
-            .padding(EdgeInsets(top: 14, leading: 20, bottom: 4, trailing: 20))
+            .dialogBody()
             DialogFooter {
                 Spacer(minLength: 0)
                 DialogCancelButton(action: cancel)
@@ -28,7 +28,6 @@ struct RemoveBranchSheet: View {
         .frame(width: 500)
         .background(Theme.raised)
         .foregroundStyle(Theme.text)
-        .preferredColorScheme(.dark)
     }
 
     private var unsaved: [EditorDocument] {
@@ -48,13 +47,13 @@ struct RemoveBranchSheet: View {
     private var content: some View {
         switch removal.state {
         case .loading:
-            HStack(spacing: 8) {
+            HStack(spacing: Theme.space(.s8)) {
                 ProgressView().controlSize(.small)
                 Text("Procurando alterações não commitadas…")
-                    .font(.system(size: 12.5))
+                    .font(Theme.font(.smallPlus))
                     .foregroundStyle(Theme.textTertiary)
             }
-            .frame(height: 34)
+            .frame(height: Theme.size(.s34))
         case .failed(let message):
             DialogWarning(title: "Não deu para verificar os Repos.", detail: message)
         case .ready(let preview):
@@ -71,12 +70,12 @@ struct RemoveBranchSheet: View {
             if !unsaved.isEmpty {
                 DialogWarning(title: "Não dá para remover: há abas com alterações não salvas.",
                               detail: "Salve ou descarte e tente de novo.")
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: Theme.space(.s4)) {
                     ForEach(unsaved, id: \.url) { document in
                         FileLine(path: relative(document.url))
                     }
                 }
-                .padding(10)
+                .padding(Theme.space(.s10))
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .dialogCard()
             }
@@ -90,25 +89,25 @@ private struct UncommittedRow: View {
     let isFirst: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 10) {
+        VStack(alignment: .leading, spacing: Theme.space(.s6)) {
+            HStack(spacing: Theme.space(.s10)) {
                 Text(repo.repo)
-                    .font(.system(size: 12.5, design: .monospaced))
+                    .font(Theme.font(.smallPlus, design: .monospaced))
                     .frame(maxWidth: .infinity, alignment: .leading)
                 Text(repo.files.count == 1 ? "1 arquivo" : "\(repo.files.count) arquivos")
-                    .font(.system(size: 11.5, weight: .medium))
+                    .font(Theme.font(.captionPlus, weight: .medium))
                     .foregroundStyle(Theme.alertText)
-                    .padding(.horizontal, 8)
-                    .frame(height: 22)
-                    .background(Theme.alertFill, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                    .padding(.horizontal, Theme.space(.s8))
+                    .frame(height: Theme.size(.s22))
+                    .background(Theme.alertFill, in: RoundedRectangle(cornerRadius: Theme.radius(.r7), style: .continuous))
             }
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: Theme.space(.s4)) {
                 ForEach(repo.files, id: \.self) { FileLine(path: $0) }
             }
         }
-        .padding(10)
+        .padding(Theme.space(.s10))
         .overlay(alignment: .top) {
-            if !isFirst { Rectangle().fill(Theme.border).frame(height: 1) }
+            if !isFirst { Rectangle().fill(Theme.border).frame(height: Theme.line(.thin)) }
         }
         .accessibilityElement(children: .combine)
     }
@@ -119,7 +118,7 @@ private struct FileLine: View {
 
     var body: some View {
         Text(path)
-            .font(.system(size: 11.5, design: .monospaced))
+            .font(Theme.font(.captionPlus, design: .monospaced))
             .foregroundStyle(Theme.textSecondary)
             .lineLimit(1)
             .truncationMode(.head)

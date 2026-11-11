@@ -18,16 +18,16 @@ struct EffortPicker: View {
 
     var body: some View {
         Button { isOpen.toggle() } label: {
-            HStack(spacing: 6) {
-                Image(systemName: "gauge.with.dots.needle.50percent")
-                    .font(.system(size: 12, weight: .medium))
+            HStack(spacing: Theme.space(.s6)) {
+                Theme.image(.effort)
+                    .font(Theme.font(.small, weight: .medium))
                     .foregroundStyle(isOpen ? Theme.accent : Theme.textTertiary)
                 if showsLabel {
                     Text(currentLabel)
                         .foregroundStyle(Theme.textSecondary)
                         .lineLimit(1)
                 }
-                Chevron(size: 8)
+                Chevron(size: .tiny)
             }
             .chipLabel()
             .hoverFill(hovering, selected: isOpen)
@@ -42,7 +42,6 @@ struct EffortPicker: View {
         .popover(isPresented: $isOpen, arrowEdge: .top) {
             EffortSlider(knob: knob, chat: chat) { isOpen = false }
                 .presentationBackground(Theme.raised)
-                .environment(\.colorScheme, .dark)
         }
     }
 }
@@ -57,7 +56,7 @@ struct EffortSlider: View {
     @State private var finished = false
 
     static let unsetLabel = "Padrão"
-    private static let thumb: CGFloat = 18
+    private static var thumb: CGFloat { Theme.size(.s18) }
     private static let trackWidth: CGFloat = 248
 
     private var stops: Int { knob.options.count }
@@ -71,14 +70,14 @@ struct EffortSlider: View {
     private var shownLabel: String { shown.map { knob.options[$0].label } ?? Self.unsetLabel }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: Theme.space(.s14)) {
             HStack(alignment: .firstTextBaseline) {
                 Text(knob.name)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(Theme.font(.body, weight: .semibold))
                     .foregroundStyle(Theme.text)
                 Spacer()
                 Text(shownLabel)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(Theme.font(.body, weight: .medium))
                     .foregroundStyle(draft != nil && draft != committed ? Theme.accentSoft
                                      : committed == nil ? Theme.textTertiary : Theme.text)
                     .contentTransition(.numericText())
@@ -90,11 +89,11 @@ struct EffortSlider: View {
                 Spacer()
                 Text(knob.options.last?.label ?? "")
             }
-            .font(.system(size: 11))
+            .font(Theme.font(.caption))
             .foregroundStyle(Theme.textTertiary)
         }
-        .padding(16)
-        .frame(width: Self.trackWidth + 32)
+        .padding(Theme.space(.s16))
+        .frame(width: Self.trackWidth + Theme.space(.s32))
         .focusable()
         .focusEffectDisabled()
         .onKeyPress(.leftArrow) { move(by: -1); return .handled }
@@ -122,29 +121,29 @@ struct EffortSlider: View {
             let step = (proxy.size.width - Self.thumb) / CGFloat(stops - 1)
             let center = proxy.size.height / 2
             let x = { (index: Int) in Self.thumb / 2 + CGFloat(index) * step }
-            let thumb = dragging ? Self.thumb + 2 : Self.thumb
+            let thumb = dragging ? Self.thumb + Theme.space(.s2) : Self.thumb
 
             ZStack(alignment: .leading) {
                 Capsule()
                     .fill(Theme.borderControl)
-                    .frame(height: 6)
+                    .frame(height: Theme.size(.s6))
                 if let shown {
                     Capsule()
                         .fill(Theme.accent)
-                        .frame(width: x(shown), height: 6)
+                        .frame(width: x(shown), height: Theme.size(.s6))
                 }
                 ForEach(0..<stops, id: \.self) { index in
                     Circle()
                         .fill(index <= (shown ?? -1) ? Theme.onAction.opacity(0.5) : Theme.textFaint)
-                        .frame(width: 5, height: 5)
+                        .frame(width: Theme.size(.s5), height: Theme.size(.s5))
                         .position(x: x(index), y: center)
                 }
                 if let shown {
                     Circle()
                         .fill(Theme.text)
-                        .overlay(Circle().strokeBorder(Theme.accent, lineWidth: dragging ? 3 : 0))
+                        .overlay(Circle().strokeBorder(Theme.accent, lineWidth: dragging ? Theme.line(.thick) : 0))
                         .frame(width: thumb, height: thumb)
-                        .shadow(color: Theme.shadow.opacity(0.5), radius: 4, y: 1)
+                        .elevation(.knob)
                         .position(x: x(shown), y: center)
                 }
             }
@@ -167,7 +166,7 @@ struct EffortSlider: View {
                     }
             )
         }
-        .frame(width: Self.trackWidth, height: 24)
+        .frame(width: Self.trackWidth, height: Theme.size(.s24))
     }
 
     private func nearest(_ location: CGFloat, step: CGFloat) -> Int {

@@ -32,7 +32,7 @@ final class PanelTerminal: Identifiable {
         view.nativeForegroundColor = NSColor(Theme.textSecondary)
         view.caretColor = NSColor(Theme.textSecondary)
         view.installColors(Theme.palette.terminalANSI.map(Self.terminalColor))
-        view.font = .monospacedSystemFont(ofSize: 12, weight: .regular)
+        view.font = Theme.nsCodeFont(.small)
         view.startProcess(executable: launch.executable,
                           args: launch.arguments,
                           environment: launch.environment,

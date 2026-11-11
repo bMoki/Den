@@ -14,7 +14,7 @@ struct SessionDefaultSettings: View {
         Form {
             Section {
                 Text("Vale para as Sessões novas. O que se escolhe dentro de uma Sessão fica só nela.")
-                    .font(.system(size: 11))
+                    .font(Theme.font(.caption))
                     .foregroundStyle(.secondary)
             }
             ForEach(registry.ids, id: \.self) { harness in
@@ -31,7 +31,7 @@ struct SessionDefaultSettings: View {
         let knobs = offered[harness] ?? []
         if knobs.isEmpty {
             Text("Abra uma Sessão do \(registry.displayName(for: harness)) para ver as opções.")
-                .font(.system(size: 11))
+                .font(Theme.font(.caption))
                 .foregroundStyle(.secondary)
         }
         ForEach(knobs) { knob in
@@ -97,7 +97,7 @@ private struct SessionDefaultRow: View {
 
     static func unavailableNote(_ value: String) -> some View {
         Text("O harness não oferece mais \(value): as Sessões novas usam o padrão do harness.")
-            .font(.system(size: 11))
+            .font(Theme.font(.caption))
             .foregroundStyle(Theme.palette.checks.warning)
     }
 }

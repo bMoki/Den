@@ -134,6 +134,7 @@ nonisolated struct Palette: Sendable {
         var attribute: Color
     }
 
+    var appearance: NSAppearance.Name
     var surfaces: Surfaces
     var borders: Borders
     var texts: Texts
@@ -166,6 +167,7 @@ nonisolated extension Palette {
         let textTertiary = Color(hex: 0x7F879A)
         let textFaint = Color(hex: 0x555C6C)
         return Palette(
+            appearance: .darkAqua,
             surfaces: Surfaces(canvas: Color(hex: 0x0F1115), sidebar: Color(hex: 0x14171D),
                                panel: Color(hex: 0x121419), raised: Color(hex: 0x1A1E26),
                                field: Color(hex: 0x1D212A), card: Color(hex: 0x161920),

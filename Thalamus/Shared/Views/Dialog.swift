@@ -5,14 +5,14 @@ struct DialogHeading: View {
     let subtitle: Text
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            title.font(.system(size: 15, weight: .semibold))
+        VStack(alignment: .leading, spacing: Theme.space(.s4)) {
+            title.font(Theme.font(.headline, weight: .semibold))
             subtitle
-                .font(.system(size: 12.5))
+                .font(Theme.font(.smallPlus))
                 .foregroundStyle(Theme.textTertiary)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(EdgeInsets(top: 18, leading: 20, bottom: 4, trailing: 20))
+        .padding(EdgeInsets(top: Theme.space(.s18), leading: Theme.space(.s20), bottom: Theme.space(.s4), trailing: Theme.space(.s20)))
     }
 }
 
@@ -20,15 +20,15 @@ struct DialogFooter<Content: View>: View {
     @ViewBuilder var content: () -> Content
 
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: Theme.space(.s8)) {
             content()
         }
-        .padding(EdgeInsets(top: 14, leading: 20, bottom: 18, trailing: 20))
+        .padding(EdgeInsets(top: Theme.space(.s14), leading: Theme.space(.s20), bottom: Theme.space(.s18), trailing: Theme.space(.s20)))
     }
 }
 
 enum DialogBox {
-    static let shape = RoundedRectangle(cornerRadius: 8, style: .continuous)
+    static let shape = RoundedRectangle(cornerRadius: Theme.radius(.r8), style: .continuous)
 }
 
 struct DialogCancelButton: View {
@@ -42,11 +42,16 @@ struct DialogCancelButton: View {
 }
 
 extension View {
+    func dialogBody() -> some View {
+        padding(EdgeInsets(top: Theme.space(.s14), leading: Theme.space(.s20),
+                           bottom: Theme.space(.s4), trailing: Theme.space(.s20)))
+    }
+
     func dialogField(focused: Bool, design: Font.Design = .monospaced) -> some View {
         textFieldStyle(.plain)
-            .font(.system(size: 13, design: design))
-            .padding(.horizontal, 11)
-            .frame(height: 34)
+            .font(Theme.font(.body, design: design))
+            .padding(.horizontal, Theme.space(.s11))
+            .frame(height: Theme.size(.s34))
             .background(Theme.field, in: DialogBox.shape)
             .overlay(DialogBox.shape.strokeBorder(focused ? Theme.accent.opacity(0.7) : Theme.borderControl))
     }
@@ -60,9 +65,9 @@ struct DialogNameField: View {
     @FocusState private var focused: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: Theme.space(.s8)) {
             Text("Nome")
-                .font(.system(size: 12, weight: .medium))
+                .font(Theme.font(.small, weight: .medium))
                 .foregroundStyle(Theme.textSecondary)
             TextField("", text: $name)
                 .focused($focused)
@@ -82,30 +87,30 @@ struct DialogCheckbox: View {
 
     var body: some View {
         Button { isOn.toggle() } label: {
-            HStack(spacing: 9) {
+            HStack(spacing: Theme.space(.s9)) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 4, style: .continuous)
+                    RoundedRectangle(cornerRadius: Theme.radius(.r4), style: .continuous)
                         .fill(isOn ? Theme.action : .clear)
-                    RoundedRectangle(cornerRadius: 4, style: .continuous)
-                        .strokeBorder(isOn ? Theme.action : Theme.borderControl, lineWidth: 1.5)
+                    RoundedRectangle(cornerRadius: Theme.radius(.r4), style: .continuous)
+                        .strokeBorder(isOn ? Theme.action : Theme.borderControl, lineWidth: Theme.line(.medium))
                     if isOn {
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 9, weight: .bold))
+                        Theme.image(.done)
+                            .font(Theme.font(.mini, weight: .bold))
                             .foregroundStyle(Theme.onAction)
                     }
                 }
-                .frame(width: 16, height: 16)
+                .frame(width: Theme.size(.s16), height: Theme.size(.s16))
                 Text(title)
-                    .font(.system(size: 12.5, design: .monospaced))
+                    .font(Theme.font(.smallPlus, design: .monospaced))
                 Spacer(minLength: 0)
                 if let note {
                     Text(note)
-                        .font(.system(size: 11))
+                        .font(Theme.font(.caption))
                         .foregroundStyle(Theme.textTertiary)
                 }
             }
-            .padding(.horizontal, 10)
-            .frame(height: 34)
+            .padding(.horizontal, Theme.space(.s10))
+            .frame(height: Theme.size(.s34))
             .background(Theme.card, in: DialogBox.shape)
             .overlay(DialogBox.shape.strokeBorder(Theme.border))
             .contentShape(Rectangle())
@@ -125,12 +130,12 @@ struct DialogWarning<Actions: View>: View {
     @ViewBuilder var actions: Actions
 
     var body: some View {
-        HStack(spacing: 10) {
-            HStack(alignment: .firstTextBaseline, spacing: 9) {
-                Image(systemName: "exclamationmark.triangle")
-                    .font(.system(size: 12))
+        HStack(spacing: Theme.space(.s10)) {
+            HStack(alignment: .firstTextBaseline, spacing: Theme.space(.s9)) {
+                Theme.image(.warning)
+                    .font(Theme.font(.small))
                 Text("\(title) \(Text(detail).foregroundStyle(Theme.alertText.opacity(0.8)))")
-                    .font(.system(size: 12.5))
+                    .font(Theme.font(.smallPlus))
                     .fixedSize(horizontal: false, vertical: true)
                     .textSelection(.enabled)
             }
@@ -139,10 +144,10 @@ struct DialogWarning<Actions: View>: View {
             actions
         }
         .foregroundStyle(Theme.alertText)
-        .padding(EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12))
+        .padding(EdgeInsets(top: Theme.space(.s10), leading: Theme.space(.s12), bottom: Theme.space(.s10), trailing: Theme.space(.s12)))
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.alertFill, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Theme.alertBorder))
+        .background(Theme.alertFill, in: RoundedRectangle(cornerRadius: Theme.radius(.r10), style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: Theme.radius(.r10), style: .continuous).strokeBorder(Theme.alertBorder))
     }
 }
 

@@ -7,11 +7,11 @@ struct SettingsView: View {
     var body: some View {
         TabView {
             GitHubSettings()
-                .tabItem { Label("GitHub", systemImage: "arrow.triangle.pull") }
+                .tabItem { Label("GitHub", icon: .pullRequest) }
             IndicatorSettings(defaults: defaults)
-                .tabItem { Label("Indicadores", systemImage: "circle.grid.2x2") }
+                .tabItem { Label("Indicadores", icon: .indicatorsTab) }
             SessionDefaultSettings(defaults: defaults)
-                .tabItem { Label("Sessões", systemImage: "bubble.left.and.text.bubble.right") }
+                .tabItem { Label("Sessões", icon: .sessionsTab) }
         }
         .frame(width: 520)
     }
@@ -28,7 +28,7 @@ private struct GitHubSettings: View {
                     HStack {
                         TextField("Caminho", text: $path, prompt: Text("Detectar automaticamente"))
                             .labelsHidden()
-                            .font(.system(size: 12, design: .monospaced))
+                            .font(Theme.font(.small, design: .monospaced))
                             .onSubmit(apply)
                         Button("Escolher…", action: choose)
                     }
@@ -44,7 +44,7 @@ private struct GitHubSettings: View {
                     }
                 }
                 Text("Vazio, o Thalamus procura o gh no PATH do seu shell e em /opt/homebrew/bin e /usr/local/bin.")
-                    .font(.system(size: 11))
+                    .font(Theme.font(.caption))
                     .foregroundStyle(.secondary)
             }
         }
@@ -56,12 +56,12 @@ private struct GitHubSettings: View {
     private var stateLabel: some View {
         switch monitor.cli {
         case .ready(_, let version):
-            Label("gh \(version) · logado em github.com", systemImage: "checkmark")
+            Label("gh \(version) · logado em github.com", icon: .done)
                 .foregroundStyle(Theme.palette.checks.passed)
         case .missing:
-            Label("Não encontrado", systemImage: "xmark").foregroundStyle(Theme.palette.checks.failed)
+            Label("Não encontrado", icon: .close).foregroundStyle(Theme.palette.checks.failed)
         case .notLoggedIn(let host):
-            Label("Sem login em \(host)", systemImage: "exclamationmark.triangle").foregroundStyle(Theme.palette.checks.warning)
+            Label("Sem login em \(host)", icon: .warning).foregroundStyle(Theme.palette.checks.warning)
         case .unknown:
             Text("Verificando…").foregroundStyle(.secondary)
         }

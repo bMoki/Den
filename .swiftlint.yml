@@ -140,5 +140,21 @@ custom_rules:
     match_kinds: [identifier, keyword, number, typeidentifier]
     message: "Ask the Palette for the color (Theme or Theme.palette); hierarchical styles like .secondary are fine."
     severity: error
+  shape_outside_style:
+    name: "Fonts, shapes and spacing come from the Style"
+    included: ".*/Thalamus/.*\\.swift"
+    excluded: ".*/(Packages|ThalamusTests|ThalamusUITests|ThalamusTestSupport)/.*|.*/Thalamus/Shared/Theme/Style\\.swift"
+    regex: '(\.system\(size:|\.(systemFont|boldSystemFont|monospacedSystemFont|monospacedDigitSystemFont)\(ofSize|\bFont\.custom\(|\b(cornerRadius|lineWidth|[sS]pacing|minLength):\s*([^,()]*\?\s*)?-?(0\.\d*[1-9]|[1-9])|(?<![A-Za-z])radius:\s*[0-9]|\.shadow\(|\b(padding|lineSpacing)\(((\.\w+|\[[^\]]*\]),\s*)?-?(0\.\d*[1-9]|[1-9])|\bEdgeInsets\([^)]*:\s*-?(0\.\d*[1-9]|[1-9]))'
+    match_kinds: [identifier, keyword, number, typeidentifier]
+    message: "Ask the Style for fonts, radii, lines, spacing and shadows (Theme.font, Theme.radius, Theme.line, Theme.space, .elevation)."
+    severity: error
+  icon_outside_style:
+    name: "Icons come from the Style"
+    included: ".*/Thalamus/.*\\.swift"
+    excluded: ".*/(Packages|ThalamusTests|ThalamusUITests|ThalamusTestSupport)/.*|.*/Thalamus/Shared/Theme/Style\\.swift"
+    regex: '(\b(systemName|systemImage|systemSymbolName):|\bImage\((?=")|\bNSImage\(named:)'
+    match_kinds: [identifier, keyword, typeidentifier]
+    message: "Ask the Style for the icon by what it means (Theme.image(.close)); add it to Icon and to docs/specs/estilo-tty-icones.md if it is new."
+    severity: error
 
 reporter: xcode

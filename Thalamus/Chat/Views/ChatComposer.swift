@@ -14,7 +14,7 @@ struct ChatComposer: View {
     private static let placeholder = "Peça uma alteração…"
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: Theme.space(.s8)) {
             slashSuggestions
             mentionSuggestions
 
@@ -25,9 +25,9 @@ struct ChatComposer: View {
             ComposerField(chat: chat, focusRequested: $focusRequested,
                           placeholder: Self.placeholder, submit: submit,
                           stickToBottom: stickToBottom)
-                .padding(.horizontal, 8)
-                .padding(.top, 6)
-                .padding(.bottom, 4)
+                .padding(.horizontal, Theme.space(.s8))
+                .padding(.top, Theme.space(.s6))
+                .padding(.bottom, Theme.space(.s4))
 
             ViewThatFits(in: .horizontal) {
                 controls(.full)
@@ -35,28 +35,24 @@ struct ChatComposer: View {
                 controls(.compact)
             }
         }
-        .padding(8)
-        .background(Theme.raised, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
-            .strokeBorder(Theme.borderControl, lineWidth: 1))
-        .shadow(color: Theme.shadow.opacity(0.35), radius: 20, y: 4)
+        .padding(Theme.space(.s8))
+        .background(Theme.raised, in: RoundedRectangle(cornerRadius: Theme.radius(.r16), style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: Theme.radius(.r16), style: .continuous)
+            .strokeBorder(Theme.borderControl, lineWidth: Theme.line(.thin)))
+        .elevation(.composer)
         .overlay(alignment: .topLeading) { ComposerStatusChip(chat: chat, keys: keys) }
-        .padding(.horizontal, 32)
-        .padding(.top, 6)
-        .padding(.bottom, 20)
-        .frame(maxWidth: 784)
-        .frame(maxWidth: .infinity)
+        .composerColumn()
     }
 
     enum Density { case full, medium, compact }
 
     private func controls(_ density: Density) -> some View {
-        HStack(spacing: 6) {
+        HStack(spacing: Theme.space(.s6)) {
             LocationChip(chat: chat, compact: density == .compact)
             ForEach(chat.knobs.filter { $0.category == .mode }) {
                 KnobBadge(knob: $0, chat: chat, compact: density != .full)
             }
-            Spacer(minLength: 6)
+            Spacer(minLength: Theme.space(.s6))
             if chat.contextTokens > 0 || chat.contextWindow != nil {
                 ContextRing(chat: chat, showsLabel: density != .compact)
             }
@@ -68,12 +64,12 @@ struct ChatComposer: View {
                 }
             }
             Button(action: attachFiles) {
-                Image(systemName: "paperclip")
-                    .font(.system(size: 15))
+                Theme.image(.attach)
+                    .font(Theme.font(.headline))
                     .foregroundStyle(Theme.textSecondary)
-                    .iconLabel(size: 32)
+                    .iconLabel(size: .s32)
             }
-            .buttonStyle(.thalamusGhost(radius: 9))
+            .buttonStyle(.thalamusGhost(radius: .r9))
             .help("Anexar arquivos")
             .accessibilityLabel("Anexar arquivos")
             sendButton
@@ -88,12 +84,12 @@ struct ChatComposer: View {
                 submit()
             }
         } label: {
-            Image(systemName: chat.isBusy ? "stop.fill" : "arrow.up")
-                .font(.system(size: chat.isBusy ? 12 : 15, weight: .bold))
+            Theme.image(chat.isBusy ? .stop : .send)
+                .font(Theme.font(chat.isBusy ? .small : .headline, weight: .bold))
                 .contentTransition(.symbolEffect(.replace))
-                .frame(width: 34, height: 34)
+                .frame(width: Theme.size(.s34), height: Theme.size(.s34))
         }
-        .buttonStyle(ThalamusButtonStyle(kind: .primary, radius: 10))
+        .buttonStyle(ThalamusButtonStyle(kind: .primary, radius: .r10))
         .disabled(!chat.isBusy
                   && chat.prompt.trimmingCharacters(in: .whitespaces).isEmpty
                   && chat.pendingAttachments.isEmpty
@@ -111,9 +107,9 @@ struct ChatComposer: View {
                              group: slash.group,
                              choose: { if slash.run($0, in: chat) { stickToBottom() } },
                              back: { slash.leaveGroup(in: chat) })
-                .padding(4)
+                .padding(Theme.space(.s4))
                 .background(Theme.canvas.opacity(0.5),
-                            in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+                            in: RoundedRectangle(cornerRadius: Theme.radius(.r11), style: .continuous))
         }
     }
 
@@ -122,32 +118,32 @@ struct ChatComposer: View {
         let matches = mentions.matches(prompt: chat.prompt)
         if !matches.isEmpty {
             let selected = min(mentions.selection, matches.count - 1)
-            VStack(alignment: .leading, spacing: 1) {
+            VStack(alignment: .leading, spacing: Theme.space(.s1)) {
                 ForEach(Array(matches.enumerated()), id: \.element.id) { index, candidate in
-                    HStack(spacing: 8) {
-                        Image(systemName: candidate.isDirectory ? "folder" : "doc.text")
-                            .font(.system(size: 11))
-                            .frame(width: 14)
+                    HStack(spacing: Theme.space(.s8)) {
+                        Theme.image(candidate.isDirectory ? .folder : .read)
+                            .font(Theme.font(.caption))
+                            .frame(width: Theme.size(.s14))
                             .foregroundStyle(index == selected ? Theme.accent : Theme.textTertiary)
                         Text(candidate.path)
-                            .font(.system(size: 12, design: .monospaced))
+                            .font(Theme.font(.small, design: .monospaced))
                             .lineLimit(1)
                             .truncationMode(.middle)
                         Spacer(minLength: 0)
                     }
-                    .padding(.horizontal, 10)
-                    .frame(height: 28)
+                    .padding(.horizontal, Theme.space(.s10))
+                    .frame(height: Theme.size(.s28))
                     .background(index == selected ? Theme.hoverRaised : .clear,
-                                in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                                in: RoundedRectangle(cornerRadius: Theme.radius(.r7), style: .continuous))
                     .foregroundStyle(index == selected ? Theme.text : Theme.textSecondary)
                     .contentShape(Rectangle())
                     .onTapGesture { mentions.accept(candidate, in: chat) }
                 }
             }
-            .padding(4)
+            .padding(Theme.space(.s4))
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Theme.canvas.opacity(0.5),
-                        in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+                        in: RoundedRectangle(cornerRadius: Theme.radius(.r11), style: .continuous))
         }
     }
 
@@ -160,35 +156,35 @@ struct ChatComposer: View {
 
     private var pendingAttachmentRow: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
+            HStack(spacing: Theme.space(.s8)) {
                 ForEach(chat.pendingAttachments) { pending in
                     if pending.isImage, let image = ImageCache.decodedImage(pending.data) {
                         Image(nsImage: image)
                             .resizable()
                             .scaledToFill()
-                            .frame(width: 56, height: 56)
-                            .clipShape(RoundedRectangle(cornerRadius: 9))
-                            .overlay(RoundedRectangle(cornerRadius: 9)
-                                .strokeBorder(Theme.borderStrong, lineWidth: 1))
+                            .frame(width: Theme.size(.s56), height: Theme.size(.s56))
+                            .clipShape(RoundedRectangle(cornerRadius: Theme.radius(.r9)))
+                            .overlay(RoundedRectangle(cornerRadius: Theme.radius(.r9))
+                                .strokeBorder(Theme.borderStrong, lineWidth: Theme.line(.thin)))
                             .overlay(alignment: .topTrailing) {
                                 removeButton(help: "Remover imagem") {
                                     chat.removeAttachment(pending.id)
                                 }
                             }
                     } else {
-                        HStack(spacing: 7) {
-                            Image(systemName: "doc.fill")
-                                .font(.system(size: 14))
+                        HStack(spacing: Theme.space(.s7)) {
+                            Theme.image(.attachedFile)
+                                .font(Theme.font(.large))
                                 .foregroundStyle(Theme.accent)
                             Text(pending.name ?? "arquivo")
-                                .font(.system(size: 12))
+                                .font(Theme.font(.small))
                                 .lineLimit(1)
                                 .truncationMode(.middle)
                                 .frame(maxWidth: 160, alignment: .leading)
                         }
-                        .padding(.horizontal, 12)
-                        .frame(height: 56)
-                        .background(Theme.hover, in: RoundedRectangle(cornerRadius: 9))
+                        .padding(.horizontal, Theme.space(.s12))
+                        .frame(height: Theme.size(.s56))
+                        .background(Theme.hover, in: RoundedRectangle(cornerRadius: Theme.radius(.r9)))
                         .overlay(alignment: .topTrailing) {
                             removeButton(help: "Remover arquivo") {
                                 chat.removeAttachment(pending.id)
@@ -198,10 +194,10 @@ struct ChatComposer: View {
                 }
                 ForEach(chat.pendingPastes) { pasteChip($0) }
             }
-            .padding(.top, 2)
-            .padding(.horizontal, 4)
+            .padding(.top, Theme.space(.s2))
+            .padding(.horizontal, Theme.space(.s4))
         }
-        .frame(height: 62)
+        .frame(height: Theme.size(.s62))
     }
 
     private func pasteChip(_ paste: PastedText) -> some View {
@@ -209,27 +205,27 @@ struct ChatComposer: View {
             chat.expandPaste(paste.id)
             focusRequested = true
         } label: {
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 5) {
-                    Image(systemName: "doc.plaintext")
+            VStack(alignment: .leading, spacing: Theme.space(.s2)) {
+                HStack(spacing: Theme.space(.s5)) {
+                    Theme.image(.attachment)
                         .foregroundStyle(Theme.accent)
                     Text("Texto colado")
                         .fontWeight(.medium)
                 }
-                .font(.system(size: 11.5))
+                .font(Theme.font(.captionPlus))
                 Text(paste.headline)
-                    .font(.system(size: 10.5, design: .monospaced))
+                    .font(Theme.font(.labelPlus, design: .monospaced))
                     .foregroundStyle(Theme.textSecondary)
                     .lineLimit(1)
                     .truncationMode(.tail)
                 Text(LongText.lineLabel(paste.lineCount))
-                    .font(.system(size: 10.5))
+                    .font(Theme.font(.labelPlus))
                     .foregroundStyle(Theme.textTertiary)
             }
-            .padding(.horizontal, 10)
-            .frame(width: 170, height: 56, alignment: .leading)
-            .background(Theme.hover, in: RoundedRectangle(cornerRadius: 9))
-            .contentShape(RoundedRectangle(cornerRadius: 9))
+            .padding(.horizontal, Theme.space(.s10))
+            .frame(width: 170, height: Theme.size(.s56), alignment: .leading)
+            .background(Theme.hover, in: RoundedRectangle(cornerRadius: Theme.radius(.r9)))
+            .contentShape(RoundedRectangle(cornerRadius: Theme.radius(.r9)))
         }
         .buttonStyle(.plain)
         .help("Clique para mostrar o texto inteiro no campo")
@@ -240,12 +236,12 @@ struct ChatComposer: View {
 
     private func removeButton(help: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Image(systemName: "xmark.circle.fill")
-                .font(.system(size: 14))
+            Theme.image(.clearSearch)
+                .font(Theme.font(.large))
                 .foregroundStyle(Theme.text, Theme.canvas.opacity(0.85))
         }
         .buttonStyle(.plain)
-        .padding(3)
+        .padding(Theme.space(.s3))
         .help(help)
         .accessibilityLabel(help)
     }

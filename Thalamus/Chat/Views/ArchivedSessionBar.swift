@@ -4,28 +4,24 @@ struct ArchivedSessionBar: View {
     let branch: String
 
     var body: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "archivebox")
-                .font(.system(size: 14))
+        HStack(spacing: Theme.space(.s10)) {
+            Theme.image(.archive)
+                .font(Theme.font(.large))
                 .foregroundStyle(Theme.textTertiary)
             Text("Sessão arquivada. A branch \(name) foi removida; o histórico continua legível, mas não aceita novas mensagens.")
-                .font(.system(size: 13))
+                .font(Theme.font(.body))
                 .foregroundStyle(Theme.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(EdgeInsets(top: 12, leading: 14, bottom: 12, trailing: 14))
-        .background(Theme.card, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Theme.border))
+        .padding(EdgeInsets(top: Theme.space(.s12), leading: Theme.space(.s14), bottom: Theme.space(.s12), trailing: Theme.space(.s14)))
+        .background(Theme.card, in: RoundedRectangle(cornerRadius: Theme.radius(.r14), style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: Theme.radius(.r14), style: .continuous).strokeBorder(Theme.border))
         .accessibilityElement(children: .combine)
-        .padding(.horizontal, 32)
-        .padding(.top, 6)
-        .padding(.bottom, 20)
-        .frame(maxWidth: 784)
-        .frame(maxWidth: .infinity)
+        .composerColumn()
     }
 
     private var name: Text {
-        Text(branch).font(.system(size: 12, design: .monospaced)).foregroundStyle(Theme.text)
+        Text(branch).font(Theme.font(.small, design: .monospaced)).foregroundStyle(Theme.text)
     }
 }

@@ -13,27 +13,27 @@ struct FolderHeader: View {
     @State private var hovering = false
 
     var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: sessions.total > 0 ? "folder.fill" : "folder")
-                .font(.system(size: 13))
+        HStack(spacing: Theme.space(.s8)) {
+            Theme.image(sessions.total > 0 ? .folderWithSessions : .folder)
+                .font(Theme.font(.body))
                 .foregroundStyle(sessions.total > 0 ? Theme.accent : Theme.textTertiary)
-                .frame(width: 16)
+                .frame(width: Theme.size(.s16))
             Text(name)
-                .font(.system(size: 13, weight: .medium))
+                .font(Theme.font(.body, weight: .medium))
                 .lineLimit(1)
                 .truncationMode(.middle)
-            Spacer(minLength: 4)
+            Spacer(minLength: Theme.space(.s4))
             if let detail {
                 Text(detail)
-                    .font(.system(size: 11, design: .monospaced))
+                    .font(Theme.font(.caption, design: .monospaced))
                     .foregroundStyle(Theme.textTertiary)
                     .lineLimit(1)
                     .truncationMode(.head)
             }
             SessionTallyLabel(sessions: sessions)
         }
-        .padding(.horizontal, 10)
-        .frame(height: 32)
+        .padding(.horizontal, Theme.space(.s10))
+        .frame(height: Theme.size(.s32))
         .sidebarHeaderRow(hovering: $hovering, isSelected: isSelected, open: open)
         .thalamusContextMenu([
             ThalamusMenuSection(id: "new", items: [

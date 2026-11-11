@@ -15,25 +15,24 @@ struct PullRequestBar: View {
     private var tone: PullRequestTone { PullRequestStatus.tone(pullRequest) }
 
     var body: some View {
-        let shape = RoundedRectangle(cornerRadius: 12, style: .continuous)
-        HStack(spacing: 10) {
+        HStack(spacing: Theme.space(.s10)) {
             Button { NSWorkspace.shared.open(pullRequest.url) } label: {
-                HStack(spacing: 10) {
-                    HStack(spacing: 6) {
-                        Image(systemName: tone.symbol)
-                            .font(.system(size: 12, weight: .semibold))
+                HStack(spacing: Theme.space(.s10)) {
+                    HStack(spacing: Theme.space(.s6)) {
+                        Theme.image(tone.symbol)
+                            .font(Theme.font(.small, weight: .semibold))
                             .foregroundStyle(tone.color)
                         Text(PullRequestStatus.number(pullRequest))
-                            .font(.system(size: 12.5, weight: .semibold))
+                            .font(Theme.font(.smallPlus, weight: .semibold))
                             .monospacedDigit()
                     }
                     Text(repo.name)
-                        .font(.system(size: 12.5))
+                        .font(Theme.font(.smallPlus))
                         .foregroundStyle(Theme.textTertiary)
                         .lineLimit(1)
                         .fixedSize()
                     Text(pullRequest.title)
-                        .font(.system(size: 12.5))
+                        .font(Theme.font(.smallPlus))
                         .foregroundStyle(Theme.textSecondary)
                         .lineLimit(1)
                         .truncationMode(.tail)
@@ -48,12 +47,7 @@ struct PullRequestBar: View {
             BarDismissButton(action: dismiss)
                 .help("Dispensar até o PR mudar")
         }
-        .padding(.leading, 12)
-        .padding(.trailing, 6)
-        .frame(height: 36)
-        .foregroundStyle(Theme.text)
-        .background(fill, in: shape)
-        .overlay(shape.strokeBorder(stroke, lineWidth: 1).allowsHitTesting(false))
+        .barSurface(fill: fill, stroke: stroke)
         .scaleEffect(pulse ? 1.015 : 1)
         .animation(.easeInOut(duration: 0.25), value: tone)
         .onChange(of: tone) { _, new in
@@ -77,9 +71,9 @@ struct PullRequestBar: View {
         } else {
             diffPill
             Text(PullRequestStatus.label(pullRequest))
-                .font(.system(size: 11.5, weight: .medium))
+                .font(Theme.font(.captionPlus, weight: .medium))
                 .foregroundStyle(tone.color)
-                .padding(.horizontal, 4)
+                .padding(.horizontal, Theme.space(.s4))
                 .fixedSize()
         }
     }
@@ -88,55 +82,55 @@ struct PullRequestBar: View {
     private var reviewPill: some View {
         if pullRequest.mergeable == .conflicting {
             pill("Conflito com \(pullRequest.base.isEmpty ? "a base" : pullRequest.base)",
-                 symbol: "exclamationmark.triangle", color: Theme.alertText, fill: Theme.alertFill)
+                 symbol: .warning, color: Theme.alertText, fill: Theme.alertFill)
         } else if pullRequest.review == .changesRequested {
-            pill("Mudanças pedidas", symbol: "arrow.uturn.backward",
+            pill("Mudanças pedidas", symbol: .changesRequested,
                  color: Theme.alertText, fill: Theme.alertFill)
         } else if pullRequest.review == .approved {
-            pill("Aprovado", symbol: "checkmark", color: Theme.added, fill: Theme.addedFill)
+            pill("Aprovado", symbol: .done, color: Theme.added, fill: Theme.addedFill)
         }
     }
 
-    private func pill(_ text: String, symbol: String, color: Color, fill: Color) -> some View {
-        HStack(spacing: 5) {
-            Image(systemName: symbol).font(.system(size: 9, weight: .bold))
+    private func pill(_ text: String, symbol: Icon, color: Color, fill: Color) -> some View {
+        HStack(spacing: Theme.space(.s5)) {
+            Theme.image(symbol).font(Theme.font(.mini, weight: .bold))
             Text(text)
         }
-        .font(.system(size: 11.5, weight: .medium))
+        .font(Theme.font(.captionPlus, weight: .medium))
         .foregroundStyle(color)
-        .padding(.horizontal, 8)
-        .frame(height: 24)
-        .background(fill, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+        .padding(.horizontal, Theme.space(.s8))
+        .frame(height: Theme.size(.s24))
+        .background(fill, in: RoundedRectangle(cornerRadius: Theme.radius(.r7), style: .continuous))
         .fixedSize()
     }
 
     private var diffPill: some View {
-        HStack(spacing: 5) {
+        HStack(spacing: Theme.space(.s5)) {
             Text("+\(pullRequest.additions)").foregroundStyle(Theme.added)
             Text("−\(pullRequest.deletions)").foregroundStyle(Theme.removed)
         }
-        .font(.system(size: 11.5, design: .monospaced))
-        .padding(.horizontal, 8)
-        .frame(height: 24)
-        .background(Theme.field, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+        .font(Theme.font(.captionPlus, design: .monospaced))
+        .padding(.horizontal, Theme.space(.s8))
+        .frame(height: Theme.size(.s24))
+        .background(Theme.field, in: RoundedRectangle(cornerRadius: Theme.radius(.r7), style: .continuous))
         .fixedSize()
     }
 
     private var checksChip: some View {
         let summary = PullRequestStatus.checks(pullRequest)
         return Button { showingChecks.toggle() } label: {
-            HStack(spacing: 7) {
+            HStack(spacing: Theme.space(.s7)) {
                 ChecksRing(summary: summary)
-                    .frame(width: 16, height: 16)
+                    .frame(width: Theme.size(.s16), height: Theme.size(.s16))
                 Text(summary.count)
-                    .font(.system(size: 12))
+                    .font(Theme.font(.small))
                     .monospacedDigit()
                     .foregroundStyle(summary == .passing(total: passingTotal) ? Theme.textTertiary
                                                                               : summary.color)
                     .lineLimit(1)
                     .fixedSize()
             }
-            .chipLabel(horizontalPadding: 8)
+            .chipLabel(horizontalPadding: .s8)
             .hoverFill(hoveringChecks, selected: showingChecks)
         }
         .buttonStyle(.plain)
@@ -147,7 +141,6 @@ struct PullRequestBar: View {
         .popover(isPresented: $showingChecks, arrowEdge: .top) {
             ChecksPanel(pullRequest: pullRequest, checkedAt: checkedAt, refresh: refresh)
                 .presentationBackground(Theme.raised)
-                .environment(\.colorScheme, .dark)
         }
     }
 
@@ -172,5 +165,23 @@ struct PullRequestBar: View {
         case .draft, .closed: Theme.borderCard
         case .open, .attention: Theme.borderControl
         }
+    }
+}
+
+extension View {
+    func barSurface(fill: Color, stroke: Color) -> some View {
+        let shape = RoundedRectangle(cornerRadius: Theme.radius(.r12), style: .continuous)
+        return padding(.leading, Theme.space(.s12))
+            .padding(.trailing, Theme.space(.s6))
+            .frame(height: Theme.size(.s36))
+            .foregroundStyle(Theme.text)
+            .background(fill, in: shape)
+            .overlay(shape.strokeBorder(stroke, lineWidth: Theme.line(.thin)).allowsHitTesting(false))
+    }
+
+    func barButtonLabel() -> some View {
+        font(Theme.font(.small))
+            .padding(.horizontal, Theme.space(.s10))
+            .frame(height: Theme.size(.s26))
     }
 }

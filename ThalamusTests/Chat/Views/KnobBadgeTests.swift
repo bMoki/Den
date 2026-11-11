@@ -74,7 +74,7 @@ private func modeKnob(current: String?) -> HarnessKnob {
     let mode = KnobBadge.sections(for: modeKnob(current: nil)) { _ in }
     let auto = try #require(mode.flatMap(\.items).first { $0.id == "auto" })
     if case .symbol(let name, _) = auto.icon {
-        #expect(name == "forward.fill")
+        #expect(name == .modeAuto)
     } else {
         Issue.record("o modo automático deveria trazer o ícone de modeLooks")
     }

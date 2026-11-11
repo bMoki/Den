@@ -12,11 +12,11 @@ struct SidebarOrderMenu: View {
     }
 
     var body: some View {
-        ThalamusMenuChip(sections: sections, radius: 6) {
-            Image(systemName: "arrow.up.arrow.down")
-                .font(.system(size: 10, weight: .semibold))
+        ThalamusMenuChip(sections: sections, radius: .r6) {
+            Theme.image(.sortOrder)
+                .font(Theme.font(.label, weight: .semibold))
                 .foregroundStyle(Theme.textTertiary)
-                .iconLabel(size: 22)
+                .iconLabel(size: .s22)
         }
         .help("Ordenar branches")
         .accessibilityLabel("Ordenar branches")

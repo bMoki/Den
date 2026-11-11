@@ -18,13 +18,13 @@ struct FilesPanel: View {
             } else if tree.isMissing, tree.root == directory.standardizedFileURL {
                 gone(detail: nil)
             } else {
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: Theme.space(.s2)) {
                     header
                     rows
                     footer
                 }
-                .padding(.horizontal, 8)
-                .padding(.bottom, 8)
+                .padding(.horizontal, Theme.space(.s8))
+                .padding(.bottom, Theme.space(.s8))
             }
         }
         .task(id: "\(directory.path)|\(removedBranch ?? "")") {
@@ -40,21 +40,21 @@ struct FilesPanel: View {
     }
 
     private var header: some View {
-        HStack(spacing: 2) {
+        HStack(spacing: Theme.space(.s2)) {
             Text(directory.lastPathComponent)
-                .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                .font(Theme.font(.small, weight: .semibold, design: .monospaced))
                 .foregroundStyle(Theme.textSecondary)
                 .lineLimit(1)
                 .truncationMode(.middle)
-            Spacer(minLength: 4)
-            headerButton("doc.badge.plus", title: "Novo arquivo") { ask(.newFile, at: tree.selectedNode) }
-            headerButton("folder.badge.plus", title: "Nova pasta") { ask(.newFolder, at: tree.selectedNode) }
-            headerButton("arrow.down.right.and.arrow.up.left", title: "Recolher tudo", perform: tree.collapseAll)
+            Spacer(minLength: Theme.space(.s4))
+            headerButton(.newFile, title: "Novo arquivo") { ask(.newFile, at: tree.selectedNode) }
+            headerButton(.newFolder, title: "Nova pasta") { ask(.newFolder, at: tree.selectedNode) }
+            headerButton(.compact, title: "Recolher tudo", perform: tree.collapseAll)
         }
-        .padding(.leading, 6)
-        .padding(.trailing, 4)
-        .frame(height: 30)
-        .background(dropOnRoot ? Theme.accentFill : .clear, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+        .padding(.leading, Theme.space(.s6))
+        .padding(.trailing, Theme.space(.s4))
+        .frame(height: Theme.size(.s30))
+        .background(dropOnRoot ? Theme.accentFill : .clear, in: RoundedRectangle(cornerRadius: Theme.radius(.r6), style: .continuous))
         .dropDestination(for: String.self) { paths, _ in
             drop(paths, into: tree.root ?? directory)
         } isTargeted: { dropOnRoot = $0 }
@@ -99,45 +99,45 @@ struct FilesPanel: View {
     private var footer: some View {
         if let problem = tree.problem {
             Text(problem)
-                .font(.system(size: 11.5))
+                .font(Theme.font(.captionPlus))
                 .foregroundStyle(Theme.alertText)
-                .padding(.horizontal, 6)
+                .padding(.horizontal, Theme.space(.s6))
                 .onTapGesture { tree.problem = nil }
         } else {
             Text(mention == nil ? "Clique com o botão direito num arquivo para criar, renomear, mover ou excluir."
                 : "Clique com o botão direito num arquivo para criar, renomear, mover, excluir ou mencioná-lo na Sessão.")
-                .font(.system(size: 11.5))
+                .font(Theme.font(.captionPlus))
                 .foregroundStyle(Theme.textFaint)
-                .padding(.horizontal, 6)
+                .padding(.horizontal, Theme.space(.s6))
         }
     }
 
     private func gone(detail: String?) -> some View {
-        VStack(spacing: 8) {
-            Image(systemName: "folder")
-                .font(.system(size: 22))
+        VStack(spacing: Theme.space(.s8)) {
+            Theme.image(.folder)
+                .font(Theme.font(.title))
                 .foregroundStyle(Theme.textFaint)
             Text("A pasta desta Sessão não existe mais")
-                .font(.system(size: 13, weight: .medium))
+                .font(Theme.font(.body, weight: .medium))
                 .foregroundStyle(Theme.textSecondary)
             if let detail {
                 Text(detail)
-                    .font(.system(size: 12))
+                    .font(Theme.font(.small))
                     .foregroundStyle(Theme.textTertiary)
             }
         }
         .multilineTextAlignment(.center)
-        .padding(30)
+        .padding(Theme.space(.s30))
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .accessibilityElement(children: .combine)
     }
 
-    private func headerButton(_ symbol: String, title: String, perform: @escaping () -> Void) -> some View {
+    private func headerButton(_ symbol: Icon, title: String, perform: @escaping () -> Void) -> some View {
         Button(action: perform) {
-            Image(systemName: symbol)
-                .font(.system(size: 12, weight: .medium))
+            Theme.image(symbol)
+                .font(Theme.font(.small, weight: .medium))
                 .foregroundStyle(Theme.textTertiary)
-                .iconLabel(size: 26)
+                .iconLabel(size: .s26)
         }
         .buttonStyle(.thalamusGhost)
         .help(title)
@@ -147,33 +147,33 @@ struct FilesPanel: View {
     private func menu(for node: FileNode) -> [ThalamusMenuSection] {
         let mentioning = mention.map { mention in
             ThalamusMenuSection(id: "mention", items: [
-                ThalamusMenuItem(id: "mention", title: "Mencionar na Sessão", icon: icon("at")) {
+                ThalamusMenuItem(id: "mention", title: "Mencionar na Sessão", icon: icon(.mention)) {
                     mention(tree.relativePath(of: node), node.isDirectory)
                 },
             ])
         }
         return [mentioning].compactMap { $0 } + [
             ThalamusMenuSection(id: "edit", items: [
-                ThalamusMenuItem(id: "new-file", title: "Novo arquivo", icon: icon("doc.badge.plus")) { ask(.newFile, at: node) },
-                ThalamusMenuItem(id: "new-folder", title: "Nova pasta", icon: icon("folder.badge.plus")) { ask(.newFolder, at: node) },
-                ThalamusMenuItem(id: "rename", title: "Renomear", icon: icon("pencil"), shortcut: FileTreeShortcut.rename.hint) {
+                ThalamusMenuItem(id: "new-file", title: "Novo arquivo", icon: icon(.newFile)) { ask(.newFile, at: node) },
+                ThalamusMenuItem(id: "new-folder", title: "Nova pasta", icon: icon(.newFolder)) { ask(.newFolder, at: node) },
+                ThalamusMenuItem(id: "rename", title: "Renomear", icon: icon(.edit), shortcut: FileTreeShortcut.rename.hint) {
                     rename(node)
                 },
-                ThalamusMenuItem(id: "move", title: "Mover para…", icon: icon("arrow.right.doc.on.clipboard")) { move(node) },
+                ThalamusMenuItem(id: "move", title: "Mover para…", icon: icon(.move)) { move(node) },
             ]),
             ThalamusMenuSection(id: "place", items: [
-                ThalamusMenuItem(id: "reveal", title: "Revelar no Finder", icon: icon("magnifyingglass")) { tree.revealInFinder(node) },
-                ThalamusMenuItem(id: "copy-path", title: "Copiar caminho", icon: icon("doc.on.doc"),
+                ThalamusMenuItem(id: "reveal", title: "Revelar no Finder", icon: icon(.search)) { tree.revealInFinder(node) },
+                ThalamusMenuItem(id: "copy-path", title: "Copiar caminho", icon: icon(.copy),
                             shortcut: FileTreeShortcut.copyPath.hint) { tree.copyPath(node) },
             ]),
             ThalamusMenuSection(id: "trash", items: [
-                ThalamusMenuItem(id: "trash", title: "Mover para a lixeira", icon: .symbol("trash", Theme.removed),
+                ThalamusMenuItem(id: "trash", title: "Mover para a lixeira", icon: .symbol(.trash, Theme.removed),
                             isDestructive: true, shortcut: FileTreeShortcut.trash.hint) { attempt { try tree.trash(node) } },
             ]),
         ]
     }
 
-    private func icon(_ symbol: String) -> ThalamusMenuIcon {
+    private func icon(_ symbol: Icon) -> ThalamusMenuIcon {
         .symbol(symbol, Theme.textTertiary)
     }
 
@@ -240,34 +240,34 @@ private struct FileTreeRow: View {
 
     var body: some View {
         Button(action: select) {
-            HStack(spacing: 6) {
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 9, weight: .semibold))
+            HStack(spacing: Theme.space(.s6)) {
+                Theme.image(.next)
+                    .font(Theme.font(.mini, weight: .semibold))
                     .foregroundStyle(Theme.textTertiary)
                     .rotationEffect(.degrees(row.isExpanded ? 90 : 0))
-                    .frame(width: 12)
+                    .frame(width: Theme.size(.s12))
                     .opacity(row.node.isDirectory ? 1 : 0)
-                Image(systemName: symbol)
-                    .font(.system(size: 12))
+                Theme.image(symbol)
+                    .font(Theme.font(.small))
                     .foregroundStyle(row.isIgnored ? Theme.textFaint : row.node.isDirectory ? Theme.accent : Theme.textTertiary)
-                    .frame(width: 14)
+                    .frame(width: Theme.size(.s14))
                 Text(row.node.name)
-                    .font(.system(size: 12.5))
+                    .font(Theme.font(.smallPlus))
                     .foregroundStyle(nameColor)
                     .lineLimit(1)
                     .truncationMode(.middle)
-                Spacer(minLength: 4)
+                Spacer(minLength: Theme.space(.s4))
                 if let state = row.state {
                     Text(row.node.isDirectory ? "●" : FileTreeMark.letter(state))
-                        .font(.system(size: 10.5, weight: .semibold, design: .monospaced))
+                        .font(Theme.font(.labelPlus, weight: .semibold, design: .monospaced))
                         .foregroundStyle(state.color)
                 }
             }
             .padding(.leading, CGFloat(row.depth) * 14 + 4)
-            .padding(.trailing, 8)
-            .frame(height: 26)
+            .padding(.trailing, Theme.space(.s8))
+            .frame(height: Theme.size(.s26))
             .background(isSelected || targeted ? Theme.accentFill : hovering ? Theme.hover : .clear,
-                        in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                        in: RoundedRectangle(cornerRadius: Theme.radius(.r6), style: .continuous))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -281,9 +281,9 @@ private struct FileTreeRow: View {
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }
 
-    private var symbol: String {
-        if row.node.isDirectory { return "folder" }
-        return FileTreeMark.isImage(row.node.name) ? "photo" : "doc"
+    private var symbol: Icon {
+        if row.node.isDirectory { return .folder }
+        return FileTreeMark.isImage(row.node.name) ? .image : .file
     }
 
     private var nameColor: Color {

@@ -9,8 +9,8 @@ struct QuestionCard: View {
     @State private var selections: [String: Set<String>] = [:]
     @State private var footerHeight: CGFloat = 0
 
-    private static let padding: CGFloat = 14
-    private static let spacing: CGFloat = 14
+    private static var padding: CGFloat { Theme.space(.s14) }
+    private static var spacing: CGFloat { Theme.space(.s14) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: Self.spacing) {
@@ -24,9 +24,7 @@ struct QuestionCard: View {
                 }
         }
         .padding(Self.padding)
-        .background(Theme.card, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-            .strokeBorder(Theme.borderControl, lineWidth: 1))
+        .card(border: Theme.borderControl)
     }
 
     private var questionsMaxHeight: CGFloat {
@@ -36,19 +34,19 @@ struct QuestionCard: View {
     private var questions: some View {
         VStack(alignment: .leading, spacing: Self.spacing) {
             ForEach(prompt.questions, id: \.text) { question in
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: Theme.space(.s8)) {
                     if !question.header.isEmpty {
                         Text(question.header)
-                            .font(.system(size: 11, weight: .medium))
+                            .font(Theme.font(.caption, weight: .medium))
                             .foregroundStyle(Theme.accentSoft)
-                            .padding(.horizontal, 8).padding(.vertical, 3)
+                            .padding(.horizontal, Theme.space(.s8)).padding(.vertical, Theme.space(.s3))
                             .background(Theme.accentFill, in: Capsule())
                     }
                     Text(question.text)
-                        .font(.system(size: 13.5, weight: .medium))
+                        .font(Theme.font(.bodyPlus, weight: .medium))
                         .fixedSize(horizontal: false, vertical: true)
 
-                    VStack(spacing: 4) {
+                    VStack(spacing: Theme.space(.s4)) {
                         ForEach(question.options, id: \.label) { option in
                             OptionRow(option: option,
                                       selected: selections[question.text]?.contains(option.label)
@@ -65,7 +63,7 @@ struct QuestionCard: View {
     }
 
     private var footer: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: Theme.space(.s8)) {
             Button(action: dismiss) {
                 Text("Dispensar").pillLabel()
             }
@@ -74,7 +72,7 @@ struct QuestionCard: View {
             Spacer()
             if prompt.questions.count > 1 {
                 Text("\(answeredCount) de \(prompt.questions.count) respondidas")
-                    .font(.system(size: 12))
+                    .font(Theme.font(.small))
                     .foregroundStyle(Theme.textMuted)
                     .monospacedDigit()
             }
@@ -99,32 +97,32 @@ struct QuestionCard: View {
 
         var body: some View {
             Button(action: action) {
-                HStack(alignment: .firstTextBaseline, spacing: 10) {
-                    Image(systemName: selected
-                          ? (multiple ? "checkmark.square.fill" : "largecircle.fill.circle")
-                          : (multiple ? "square" : "circle"))
-                        .font(.system(size: 13))
+                HStack(alignment: .firstTextBaseline, spacing: Theme.space(.s10)) {
+                    Theme.image(selected
+                                ? (multiple ? .checkboxOn : .radioOn)
+                                : (multiple ? .checkboxOff : .radioOff))
+                        .font(Theme.font(.body))
                         .foregroundStyle(selected ? Theme.accent : Theme.textTertiary)
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: Theme.space(.s2)) {
                         Text(option.label)
-                            .font(.system(size: 13, weight: .medium))
+                            .font(Theme.font(.body, weight: .medium))
                         if !option.detail.isEmpty {
                             Text(option.detail)
-                                .font(.system(size: 12))
+                                .font(Theme.font(.small))
                                 .foregroundStyle(Theme.textMuted)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                     }
                     Spacer(minLength: 0)
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 9)
+                .padding(.horizontal, Theme.space(.s12))
+                .padding(.vertical, Theme.space(.s9))
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(selected ? Theme.accentFill : hovering ? Theme.hover : Theme.raised,
-                            in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous)
+                            in: RoundedRectangle(cornerRadius: Theme.radius(.r9), style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: Theme.radius(.r9), style: .continuous)
                     .strokeBorder(selected ? Theme.accent.opacity(0.6) : Theme.borderStrong,
-                                  lineWidth: 1))
+                                  lineWidth: Theme.line(.thin)))
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
