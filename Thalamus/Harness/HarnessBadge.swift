@@ -16,7 +16,7 @@ struct HarnessBadge: View {
 
                 Text(harness.map { Self.name(for: $0).prefix(1) } ?? "?")
                     .font(.system(size: size * 0.6, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Theme.onBadge)
                     .frame(width: size, height: size)
                     .background(.secondary)
             }

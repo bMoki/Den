@@ -22,16 +22,16 @@ extension EditorTheme {
         background: NSColor(Theme.canvas),
         lineHighlight: NSColor(Theme.accent.opacity(0.06)),
         selection: NSColor(Theme.accent.opacity(0.28)),
-        keywords: attribute(SyntaxHighlighter.keywordColor),
-        commands: attribute(Theme.accentSoft),
-        types: attribute(SyntaxHighlighter.typeColor),
-        attributes: attribute(SyntaxHighlighter.attributeColor),
+        keywords: attribute(Theme.palette.syntax.keyword),
+        commands: attribute(Theme.palette.syntax.command),
+        types: attribute(Theme.palette.syntax.type),
+        attributes: attribute(Theme.palette.syntax.attribute),
         variables: attribute(Theme.text),
-        values: attribute(SyntaxHighlighter.numberColor),
-        numbers: attribute(SyntaxHighlighter.numberColor),
-        strings: attribute(SyntaxHighlighter.stringColor),
-        characters: attribute(SyntaxHighlighter.stringColor),
-        comments: EditorTheme.Attribute(color: NSColor(SyntaxHighlighter.commentColor), italic: true))
+        values: attribute(Theme.palette.syntax.number),
+        numbers: attribute(Theme.palette.syntax.number),
+        strings: attribute(Theme.palette.syntax.string),
+        characters: attribute(Theme.palette.syntax.string),
+        comments: EditorTheme.Attribute(color: NSColor(Theme.palette.syntax.comment), italic: true))
 
     private static func attribute(_ color: Color) -> Attribute {
         Attribute(color: NSColor(color))

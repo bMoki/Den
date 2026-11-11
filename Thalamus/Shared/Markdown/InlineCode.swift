@@ -3,7 +3,7 @@ import SwiftUI
 struct InlineCode: TextAttribute {
     static let padding: CGFloat = 3
 
-    static let color = Color(.inlineCode)
+    static var color: Color { Theme.inlineCode }
 
     struct Segment {
         var content: AttributedString

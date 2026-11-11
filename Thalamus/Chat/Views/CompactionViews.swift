@@ -9,11 +9,11 @@ struct CompactionProgressCard: View {
         HStack(alignment: .top, spacing: 11) {
             ZStack {
                 Circle()
-                    .fill(Color.accentColor.opacity(0.16))
+                    .fill(Theme.accent.opacity(0.16))
                     .frame(width: 30, height: 30)
                 Image(systemName: "arrow.down.right.and.arrow.up.left")
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(Color.accentColor)
+                    .foregroundStyle(Theme.accent)
             }
 
             VStack(alignment: .leading, spacing: 7) {
@@ -61,9 +61,9 @@ struct CompactionProgressCard: View {
                 .overlay(alignment: .leading) {
                     Capsule()
                         .fill(LinearGradient(
-                            colors: [Color.accentColor.opacity(0),
-                                     Color.accentColor.opacity(0.85),
-                                     Color.accentColor.opacity(0)],
+                            colors: [Theme.accent.opacity(0),
+                                     Theme.accent.opacity(0.85),
+                                     Theme.accent.opacity(0)],
                             startPoint: .leading, endPoint: .trailing))
                         .frame(width: highlight)
                         .offset(x: -highlight + (full + highlight) * phase)

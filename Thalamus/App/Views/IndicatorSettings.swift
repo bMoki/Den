@@ -107,7 +107,7 @@ private struct IndicatorChooser: View {
                 if !trimmed.isEmpty, !typedExists {
                     Text("Símbolo não encontrado")
                         .font(.system(size: 11))
-                        .foregroundStyle(.red)
+                        .foregroundStyle(Theme.palette.checks.failed)
                 }
             }
         }
@@ -150,7 +150,7 @@ private struct IndicatorChooser: View {
                     Button { choose(icon) } label: {
                         IndicatorGlyph(icon: icon, color: .primary, size: 15)
                             .frame(width: 30, height: 30)
-                            .background(icon == current ? Color.accentColor.opacity(0.25) : .clear,
+                            .background(icon == current ? Theme.accent.opacity(0.25) : .clear,
                                         in: RoundedRectangle(cornerRadius: 6, style: .continuous))
                             .contentShape(Rectangle())
                     }

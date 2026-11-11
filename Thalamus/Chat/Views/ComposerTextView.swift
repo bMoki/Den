@@ -40,7 +40,7 @@ struct ComposerTextView: NSViewRepresentable {
         let textView = PromptTextView(usingTextLayoutManager: false)
         textView.delegate = context.coordinator
         textView.font = Self.font
-        textView.textColor = .labelColor
+        textView.textColor = NSColor(Theme.input)
         textView.drawsBackground = false
         textView.isRichText = false
         textView.allowsUndo = true

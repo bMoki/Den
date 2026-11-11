@@ -132,5 +132,13 @@ custom_rules:
     regex: '^\s*(@\w+\s+)*import\s+((typealias|struct|class|enum|protocol|let|var|func)\s+)?HarnessCore\b'
     message: "Thalamus/Shared must not depend on HarnessCore."
     severity: error
+  color_outside_palette:
+    name: "Colors come from the Palette"
+    included: ".*/Thalamus/.*\\.swift"
+    excluded: ".*/(Packages|ThalamusTests|ThalamusUITests|ThalamusTestSupport)/.*|.*/Thalamus/Shared/Theme/Palette\\.swift"
+    regex: '(\bColor\(((hex|red|white|nsColor|\.\w+)\b|(?="))|\bCGColor\(|\.init\((red|white|hex|srgbRed)\b|\bNSColor\.(?!clear\b)\w+|[=(\[,:?]\s*\.(label|secondaryLabel|tertiaryLabel|text|controlAccent)Color\b|\bNSColor\((red|white|srgbRed|calibratedRed|deviceRed|calibratedWhite)\b|\bColor\.(accentColor|red|orange|yellow|green|mint|teal|cyan|blue|indigo|purple|pink|brown|white|gray|black)\b|[=(\[,:?]\s*\.(red|orange|yellow|green|mint|teal|cyan|blue|indigo|purple|pink|brown|white|gray|black)\b)'
+    match_kinds: [identifier, keyword, number, typeidentifier]
+    message: "Ask the Palette for the color (Theme or Theme.palette); hierarchical styles like .secondary are fine."
+    severity: error
 
 reporter: xcode

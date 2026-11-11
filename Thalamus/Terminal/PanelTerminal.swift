@@ -31,12 +31,19 @@ final class PanelTerminal: Identifiable {
         view.nativeBackgroundColor = NSColor(Theme.terminal)
         view.nativeForegroundColor = NSColor(Theme.textSecondary)
         view.caretColor = NSColor(Theme.textSecondary)
+        view.installColors(Theme.palette.terminalANSI.map(Self.terminalColor))
         view.font = .monospacedSystemFont(ofSize: 12, weight: .regular)
         view.startProcess(executable: launch.executable,
                           args: launch.arguments,
                           environment: launch.environment,
                           execName: launch.execName,
                           currentDirectory: launch.directory.path)
+    }
+
+    nonisolated private static func terminalColor(_ color: SwiftUI.Color) -> SwiftTerm.Color {
+        let rgb = NSColor(color).usingColorSpace(.sRGB) ?? NSColor(Theme.terminal)
+        func channel(_ value: CGFloat) -> UInt16 { UInt16((value * 255).rounded()) }
+        return SwiftTerm.Color(red8: channel(rgb.redComponent), green8: channel(rgb.greenComponent), blue8: channel(rgb.blueComponent))
     }
 
     var title: String {

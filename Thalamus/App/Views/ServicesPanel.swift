@@ -221,7 +221,7 @@ struct ServicesPanel: View {
             Spacer(minLength: 8)
             Text(state.label)
                 .font(.system(size: 11.5))
-                .foregroundStyle(state == .parado ? Theme.textTertiary : ServiceDot.color(state))
+                .foregroundStyle(ServiceDot.color(state))
                 .frame(width: 62, alignment: .leading)
             actions()
         }

@@ -57,11 +57,11 @@ private struct GitHubSettings: View {
         switch monitor.cli {
         case .ready(_, let version):
             Label("gh \(version) · logado em github.com", systemImage: "checkmark")
-                .foregroundStyle(.green)
+                .foregroundStyle(Theme.palette.checks.passed)
         case .missing:
-            Label("Não encontrado", systemImage: "xmark").foregroundStyle(.red)
+            Label("Não encontrado", systemImage: "xmark").foregroundStyle(Theme.palette.checks.failed)
         case .notLoggedIn(let host):
-            Label("Sem login em \(host)", systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
+            Label("Sem login em \(host)", systemImage: "exclamationmark.triangle").foregroundStyle(Theme.palette.checks.warning)
         case .unknown:
             Text("Verificando…").foregroundStyle(.secondary)
         }

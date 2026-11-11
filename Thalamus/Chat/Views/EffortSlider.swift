@@ -144,7 +144,7 @@ struct EffortSlider: View {
                         .fill(Theme.text)
                         .overlay(Circle().strokeBorder(Theme.accent, lineWidth: dragging ? 3 : 0))
                         .frame(width: thumb, height: thumb)
-                        .shadow(color: .black.opacity(0.5), radius: 4, y: 1)
+                        .shadow(color: Theme.shadow.opacity(0.5), radius: 4, y: 1)
                         .position(x: x(shown), y: center)
                 }
             }

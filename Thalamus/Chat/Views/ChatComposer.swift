@@ -39,7 +39,7 @@ struct ChatComposer: View {
         .background(Theme.raised, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
             .strokeBorder(Theme.borderControl, lineWidth: 1))
-        .shadow(color: .black.opacity(0.35), radius: 20, y: 4)
+        .shadow(color: Theme.shadow.opacity(0.35), radius: 20, y: 4)
         .overlay(alignment: .topLeading) { ComposerStatusChip(chat: chat, keys: keys) }
         .padding(.horizontal, 32)
         .padding(.top, 6)

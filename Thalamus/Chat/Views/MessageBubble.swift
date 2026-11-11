@@ -84,9 +84,11 @@ struct MessageBubble: View {
         VStack(alignment: .leading, spacing: 8) {
             plainText(isOpen ? visibleText : LongText.preview(text))
                 .lineLimit(isOpen ? nil : LongText.previewLines)
+                // swiftlint:disable color_outside_palette
                 .mask(LinearGradient(colors: isOpen ? [.black, .black]
                                                     : [.black, .black, .black.opacity(0.2)],
                                      startPoint: .top, endPoint: .bottom))
+                // swiftlint:enable color_outside_palette
             Button(action: onToggle) {
                 HStack(spacing: 5) {
                     Image(systemName: "chevron.down")

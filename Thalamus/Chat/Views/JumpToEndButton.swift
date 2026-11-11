@@ -14,7 +14,7 @@ struct JumpToEndButton: View {
                         .frame(width: 34, height: 34)
                         .background(Theme.raised, in: Circle())
                         .overlay(Circle().strokeBorder(Theme.borderControl, lineWidth: 1))
-                        .shadow(color: .black.opacity(0.35), radius: 10, y: 3)
+                        .shadow(color: Theme.shadow.opacity(0.35), radius: 10, y: 3)
                 }
                 .buttonStyle(.plain)
                 .padding(.bottom, 14)

@@ -1,56 +1,54 @@
 import SwiftUI
 
-extension Color {
-    nonisolated init(hex: UInt32, opacity: Double = 1) {
-        self.init(.sRGB,
-                  red: Double((hex >> 16) & 0xFF) / 255,
-                  green: Double((hex >> 8) & 0xFF) / 255,
-                  blue: Double(hex & 0xFF) / 255,
-                  opacity: opacity)
-    }
-}
+nonisolated enum Theme {
+    static var palette: Palette { .current }
 
-enum Theme {
-    static let canvas = Color(hex: 0x0F1115)
-    static let sidebar = Color(hex: 0x14171D)
-    static let panel = Color(hex: 0x121419)
-    static let raised = Color(hex: 0x1A1E26)
-    static let field = Color(hex: 0x1D212A)
-    static let card = Color(hex: 0x161920)
-    static let bubble = Color(hex: 0x232836)
-    static let hover = Color(hex: 0x222631)
-    static let hoverRaised = Color(hex: 0x282D39)
-    static let terminal = Color(hex: 0x0A0C0F)
+    static var canvas: Color { palette.surfaces.canvas }
+    static var sidebar: Color { palette.surfaces.sidebar }
+    static var panel: Color { palette.surfaces.panel }
+    static var raised: Color { palette.surfaces.raised }
+    static var field: Color { palette.surfaces.field }
+    static var card: Color { palette.surfaces.card }
+    static var bubble: Color { palette.surfaces.bubble }
+    static var hover: Color { palette.surfaces.hover }
+    static var hoverRaised: Color { palette.surfaces.hoverRaised }
+    static var tip: Color { palette.surfaces.tip }
+    static var terminal: Color { palette.surfaces.terminal }
+    static var shadow: Color { palette.surfaces.shadow }
+    static var scrim: Color { palette.surfaces.scrim }
 
-    static let border = Color(hex: 0x242833)
-    static let borderCard = Color(hex: 0x272C38)
-    static let borderStrong = Color(hex: 0x2F3542)
-    static let borderControl = Color(hex: 0x363C4B)
+    static var border: Color { palette.borders.border }
+    static var borderCard: Color { palette.borders.card }
+    static var borderStrong: Color { palette.borders.strong }
+    static var borderControl: Color { palette.borders.control }
 
-    static let text = Color(hex: 0xE6E9F0)
-    static let textSecondary = Color(hex: 0xB8BFCE)
-    static let textMuted = Color(hex: 0x9AA2B4)
-    static let textTertiary = Color(hex: 0x7F879A)
-    static let textFaint = Color(hex: 0x555C6C)
+    static var text: Color { palette.texts.text }
+    static var textSecondary: Color { palette.texts.secondary }
+    static var textMuted: Color { palette.texts.muted }
+    static var textTertiary: Color { palette.texts.tertiary }
+    static var textFaint: Color { palette.texts.faint }
+    static var input: Color { palette.texts.input }
+    static var inlineCode: Color { palette.texts.inlineCode }
+    static var onBadge: Color { palette.texts.onBadge }
 
-    static let accent = Color(hex: 0x8B93FF)
-    static let accentSoft = Color(hex: 0xA8AEFF)
-    static let accentFill = Color(hex: 0x1D2035)
-    static let action = Color(hex: 0x6E78F7)
-    static let onAction = Color(hex: 0xFFFFFF)
+    static var accent: Color { palette.accents.accent }
+    static var accentSoft: Color { palette.accents.soft }
+    static var accentFill: Color { palette.accents.fill }
+    static var action: Color { palette.accents.action }
+    static var onAction: Color { palette.accents.onAction }
 
-    static let added = Color(hex: 0x7FCB92)
-    static let addedFill = Color(hex: 0x16291C)
-    static let removed = Color(hex: 0xF08C7E)
-    static let removedFill = Color(hex: 0x351C18)
-    static let modified = Color(hex: 0xE0B45F)
-    static let renamed = Color(hex: 0xC3AEF0)
-    static let hunk = Color(hex: 0x93AEE8)
-    static let hunkFill = Color(hex: 0x1B2233)
+    static var added: Color { palette.changes.added }
+    static var addedFill: Color { palette.changes.addedFill }
+    static var removed: Color { palette.changes.removed }
+    static var removedFill: Color { palette.changes.removedFill }
+    static var modified: Color { palette.changes.modified }
+    static var renamed: Color { palette.changes.renamed }
+    static var hunk: Color { palette.changes.hunk }
+    static var hunkFill: Color { palette.changes.hunkFill }
 
-    static let alertFill = Color(hex: 0x1F1B12)
-    static let alertBorder = Color(hex: 0x4D3F1F)
-    static let alertText = Color(hex: 0xEBC46A)
+    static var alertFill: Color { palette.alerts.fill }
+    static var alertBorder: Color { palette.alerts.border }
+    static var alertText: Color { palette.alerts.text }
 
     static let headerHeight: CGFloat = 52
     static let trafficLightsInset: CGFloat = 78

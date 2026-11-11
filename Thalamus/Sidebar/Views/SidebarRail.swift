@@ -74,10 +74,10 @@ struct PaneHoverCard: View {
         .padding(.vertical, 10)
         .frame(minWidth: 120, alignment: .leading)
         .foregroundStyle(Theme.text)
-        .background(Color(hex: 0x1E222B), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .background(Theme.tip, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
             .strokeBorder(Theme.borderControl, lineWidth: 1))
-        .shadow(color: .black.opacity(0.45), radius: 12, y: 4)
+        .shadow(color: Theme.shadow.opacity(0.45), radius: 12, y: 4)
         .environment(\.colorScheme, .dark)
         .padding(Self.margin)
     }

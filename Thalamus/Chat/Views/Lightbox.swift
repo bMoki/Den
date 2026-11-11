@@ -6,7 +6,7 @@ struct Lightbox: View {
     var body: some View {
         if let zoomed, let image = ImageCache.decodedImage(zoomed.data) {
             ZStack {
-                Color.black.opacity(0.7)
+                Theme.scrim.opacity(0.7)
                     .ignoresSafeArea()
                     .transition(.opacity)
                 Image(nsImage: image)

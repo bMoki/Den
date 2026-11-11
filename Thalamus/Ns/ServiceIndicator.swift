@@ -195,7 +195,7 @@ struct ServiceIndicator: View {
     }
 
     static func color(_ state: ServiceState) -> Color {
-        state == .parado ? Theme.textFaint : ServiceDot.color(state)
+        state == .parado ? Theme.palette.serviceStates.stoppedMark : ServiceDot.color(state)
     }
 }
 

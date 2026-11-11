@@ -70,9 +70,9 @@ struct ContextRing: View {
 extension ContextLevel {
     var color: Color {
         switch self {
-        case .calm: Color(hex: 0x93AEE8)
-        case .warning: Color(hex: 0xE0B45F)
-        case .critical: Color(hex: 0xF08C7E)
+        case .calm: Theme.palette.contextLevels.calm
+        case .warning: Theme.palette.contextLevels.warning
+        case .critical: Theme.palette.contextLevels.critical
         }
     }
 }

@@ -22,8 +22,8 @@ enum SlashGroup: String, Identifiable {
 
     var tint: Color {
         switch self {
-        case .skills: .purple
-        case .mcp: .teal
+        case .skills: Theme.palette.slashCommands.skills
+        case .mcp: Theme.palette.slashCommands.mcp
         }
     }
 }
@@ -67,11 +67,12 @@ struct SlashCommand: Identifiable {
 
     var tint: Color {
         switch kind {
-        case .compact: .blue
+        case .compact: Theme.palette.slashCommands.compact
         case .group(let group, _): group.tint
-        case .skill: .purple
-        case .mcpPrompt: .teal
-        case .mcpServer(let status): status == .connected ? .green : .orange
+        case .skill: Theme.palette.slashCommands.skills
+        case .mcpPrompt: Theme.palette.slashCommands.mcp
+        case .mcpServer(let status):
+            status == .connected ? Theme.palette.slashCommands.mcpConnected : Theme.palette.slashCommands.mcpUnavailable
         }
     }
 }

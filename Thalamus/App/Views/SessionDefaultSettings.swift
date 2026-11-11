@@ -98,6 +98,6 @@ private struct SessionDefaultRow: View {
     static func unavailableNote(_ value: String) -> some View {
         Text("O harness não oferece mais \(value): as Sessões novas usam o padrão do harness.")
             .font(.system(size: 11))
-            .foregroundStyle(.orange)
+            .foregroundStyle(Theme.palette.checks.warning)
     }
 }

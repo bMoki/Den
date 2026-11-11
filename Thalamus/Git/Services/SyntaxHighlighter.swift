@@ -52,14 +52,7 @@ nonisolated enum SyntaxHighlighter {
         }
     }
 
-    // MARK: - Colors
-
-    static let keywordColor = Color(hex: 0xB4A8FF)
-    static let stringColor = Color(hex: 0xB5CE8A)
-    static let numberColor = Color(hex: 0xF2B482)
-    static let typeColor = Color(hex: 0x7FD1D9)
-    static let commentColor = Color(hex: 0x6B7385)
-    static let attributeColor = Color(hex: 0xE0B45F)
+    private static var syntax: Palette.Syntax { Palette.current.syntax }
 
     static func highlight(_ line: String, language: Language) -> AttributedString {
         let chars = Array(line)
@@ -84,7 +77,7 @@ nonisolated enum SyntaxHighlighter {
             let c = chars[i]
 
             if isCommentStart(chars, at: i, language: language) {
-                append(String(chars[i...]), commentColor)
+                append(String(chars[i...]), syntax.comment)
                 break
             }
 
@@ -98,9 +91,9 @@ nonisolated enum SyntaxHighlighter {
                 j = min(j, chars.count)
                 let text = String(chars[i..<j])
                 if language == .json, nextNonSpace(chars, from: j) == ":" {
-                    append(text, typeColor)
+                    append(text, syntax.type)
                 } else {
-                    append(text, stringColor)
+                    append(text, syntax.string)
                 }
                 i = j
                 continue
@@ -113,7 +106,7 @@ nonisolated enum SyntaxHighlighter {
                         || chars[j] == "x" || chars[j] == "b" || chars[j] == "o" {
                     j += 1
                 }
-                append(String(chars[i..<j]), numberColor)
+                append(String(chars[i..<j]), syntax.number)
                 i = j
                 continue
             }
@@ -123,7 +116,7 @@ nonisolated enum SyntaxHighlighter {
                 while j < chars.count, isIdentifierChar(chars[j]) { j += 1 }
                 if j > i + 1 {
                     append(String(chars[i..<j]),
-                           c == "@" ? attributeColor : keywordColor)
+                           c == "@" ? syntax.attribute : syntax.keyword)
                     i = j
                     continue
                 }
@@ -134,9 +127,9 @@ nonisolated enum SyntaxHighlighter {
                 while j < chars.count, isIdentifierChar(chars[j]) { j += 1 }
                 let word = String(chars[i..<j])
                 if keywords(for: language).contains(word) {
-                    append(word, keywordColor)
+                    append(word, syntax.keyword)
                 } else if language != .json, c.isUppercase {
-                    append(word, typeColor)
+                    append(word, syntax.type)
                 } else {
                     plain += word
                 }

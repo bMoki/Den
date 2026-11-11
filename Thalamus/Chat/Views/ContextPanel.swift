@@ -296,15 +296,15 @@ extension ContextCategory {
 
     var color: Color {
         switch self {
-        case .messages: Color(hex: 0x93AEE8)
-        case .mcpTools, .toolActivity: Color(hex: 0xE8906F)
-        case .systemTools, .systemAndTools: Color(hex: 0x7FCB92)
-        case .skills: Color(hex: 0xE0B45F)
-        case .customAgents: Color(hex: 0xC3AEF0)
-        case .memoryFiles: Color(hex: 0x8FC7C0)
-        case .autocompactBuffer: Color(hex: 0x5E5A52)
+        case .messages: Theme.palette.contextCategories.messages
+        case .mcpTools, .toolActivity: Theme.palette.contextCategories.tools
+        case .systemTools, .systemAndTools: Theme.palette.contextCategories.system
+        case .skills: Theme.palette.contextCategories.skills
+        case .customAgents: Theme.palette.contextCategories.agents
+        case .memoryFiles: Theme.palette.contextCategories.memory
+        case .autocompactBuffer: Theme.palette.contextCategories.autocompactBuffer
         case .freeSpace: .clear
-        case .systemPrompt, .other: Color(hex: 0xA8A398)
+        case .systemPrompt, .other: Theme.palette.contextCategories.systemPrompt
         }
     }
 }

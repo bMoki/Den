@@ -3,11 +3,11 @@ import SwiftUI
 extension GitFileState {
     var color: Color {
         switch self {
-        case .modified: Theme.modified
-        case .added, .untracked: Theme.added
-        case .deleted: Theme.removed
-        case .renamed: Theme.renamed
-        case .conflicted: Theme.accent
+        case .modified: Theme.palette.fileStates.modified
+        case .added, .untracked: Theme.palette.fileStates.added
+        case .deleted: Theme.palette.fileStates.deleted
+        case .renamed: Theme.palette.fileStates.renamed
+        case .conflicted: Theme.palette.fileStates.conflicted
         }
     }
 
