@@ -123,24 +123,24 @@ struct EffortSlider: View {
             let thumb = dragging ? Self.thumb + Theme.space(.s2) : Self.thumb
 
             ZStack(alignment: .leading) {
-                Capsule()
+                Theme.capsule
                     .fill(Theme.borderControl)
                     .frame(height: Theme.size(.s6))
                 if let shown {
-                    Capsule()
+                    Theme.capsule
                         .fill(Theme.accent)
                         .frame(width: x(shown), height: Theme.size(.s6))
                 }
                 ForEach(0..<stops, id: \.self) { index in
-                    Circle()
+                    Theme.circle
                         .fill(index <= (shown ?? -1) ? Theme.onAction.opacity(0.5) : Theme.textFaint)
                         .frame(width: Theme.size(.s5), height: Theme.size(.s5))
                         .position(x: x(index), y: center)
                 }
                 if let shown {
-                    Circle()
+                    Theme.circle
                         .fill(Theme.text)
-                        .overlay(Circle().strokeBorder(Theme.accent, lineWidth: dragging ? Theme.line(.thick) : 0))
+                        .overlay(Theme.circle.strokeBorder(Theme.accent, lineWidth: dragging ? Theme.line(.thick) : 0))
                         .frame(width: thumb, height: thumb)
                         .elevation(.knob)
                         .position(x: x(shown), y: center)

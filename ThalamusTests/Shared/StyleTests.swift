@@ -53,3 +53,39 @@ private func iconTable() throws -> Set<String> {
 @Test func padraoShowsTheSessionStatesAsTheAnimatedDot() {
     #expect(Style.padrao.sessionStates == .animatedDot)
 }
+
+@Test func ttyIsAStyleChoice() {
+    #expect(Style.all.map(\.id) == ["padrao", "tty"])
+}
+
+@Test func ttyHasAGlyphForEveryIconInTheTable() throws {
+    #expect(Set(Style.ttyGlyphs.keys) == (try iconTable()))
+    #expect(Icon.allCases.allSatisfy { Style.tty.icon($0) != .glyph(Style.ttyMissingGlyph) })
+}
+
+@Test func ttyEmbedsAFontThatHasEveryGlyphItDraws() {
+    let font = Style.tty.nsFont(.body)
+    #expect(font.fontName == "JetBrainsMonoNLNFM-Regular")
+    let drawn = Array(Style.ttyGlyphs.values) + Array(GlyphSpinner.codes) + "─│┌┐└┘├┤░▒▓█▾▸▲■●×!›‹❯•⏎".unicodeScalars.map(\.value)
+    let missing = drawn.filter { code in
+        var units = Array(String(Character(Unicode.Scalar(code) ?? "?")).utf16)
+        var glyphs = [CGGlyph](repeating: 0, count: units.count)
+        return !CTFontGetGlyphsForCharacters(font, &units, &glyphs, units.count)
+    }
+    #expect(missing.isEmpty)
+}
+
+@Test func ttyDrawsBoxesWithoutCornersOrShadowsInOneSize() {
+    let tty = Style.tty
+    #expect(Style.TextSize.allCases.allSatisfy { tty.nsFont($0).pointSize == Style.ttyPoints })
+    #expect(Style.Radius.allCases.allSatisfy { tty.radius($0) == 0 })
+    #expect(Style.Elevation.allCases.allSatisfy { tty.shadow($0).opacity == 0 })
+    #expect(Style.Space.allCases.allSatisfy { tty.space($0).truncatingRemainder(dividingBy: 4) == 0 })
+    #expect(tty.boxes == .lines && tty.marks == .characters && tty.sessionStates == .glyphWord)
+}
+
+@Test func ttyShowsAHandTypedSymbolAsTheMissingIndicator() {
+    #expect(Style.tty.art(symbolNamed: "tortoise") == Style.tty.icon(.noIndicator))
+    #expect(Style.tty.art(symbolNamed: "server.rack") == Style.tty.icon(.services))
+    #expect(Style.padrao.art(symbolNamed: "tortoise") == .symbol("tortoise"))
+}

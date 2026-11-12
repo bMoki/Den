@@ -68,10 +68,9 @@ struct InspectorToggle: View {
         Button(action: action) {
             Theme.image(.toggleInspector)
                 .font(Theme.font(.large))
-                .foregroundStyle(isOpen ? Theme.text : Theme.textSecondary)
                 .iconLabel(size: .s32)
         }
-        .buttonStyle(ThalamusButtonStyle(kind: .secondary))
+        .buttonStyle(ThalamusButtonStyle(kind: .secondary, tint: isOpen ? Theme.text : Theme.textSecondary))
         .tip(isOpen ? "Ocultar painel" : "Mostrar painel", shortcut: "⌥⌘0")
         .accessibilityLabel(isOpen ? "Ocultar painel" : "Mostrar painel")
     }

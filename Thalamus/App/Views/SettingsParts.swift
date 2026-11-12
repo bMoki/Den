@@ -18,7 +18,7 @@ struct SettingsSection<Content: View>: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.space(.s7)) {
-            if let title {
+            if let title, Theme.style.boxes == .surfaces {
                 Text(title)
                     .font(Theme.font(.small, weight: .semibold))
                     .foregroundStyle(Theme.textSecondary)
@@ -37,7 +37,7 @@ struct SettingsSection<Content: View>: View {
                     }
                 }
             }
-            .card()
+            .titledCard(title, border: Theme.borderCard)
         }
     }
 }
@@ -119,8 +119,38 @@ struct SettingsChoice<Value: Hashable>: View {
     var title: (Value) -> String
 
     var body: some View {
+        switch Theme.style.marks {
+        case .graphic: segments
+        case .characters:
+            if let index = options.firstIndex(of: selection) { arrows(at: index) }
+        }
+    }
+
+    private func arrows(at index: Int) -> some View {
+        HStack(spacing: Theme.space(.s4)) {
+            arrow("‹", to: index - 1)
+            Text(title(selection)).foregroundStyle(Theme.accent)
+            arrow("›", to: index + 1)
+        }
+        .font(Theme.font(.body))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(options.map(title).joined(separator: ", "))
+        .accessibilityValue(title(selection))
+        .accessibilityAdjustableAction { direction in
+            selection = options[(index + (direction == .increment ? 1 : options.count - 1)) % options.count]
+        }
+    }
+
+    private func arrow(_ mark: String, to index: Int) -> some View {
+        Button { selection = options[(index + options.count) % options.count] } label: {
+            Text(mark).foregroundStyle(Theme.textTertiary).contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var segments: some View {
         let shape = RoundedRectangle(cornerRadius: Theme.radius(.r7), style: .continuous)
-        HStack(spacing: Theme.space(.s2)) {
+        return HStack(spacing: Theme.space(.s2)) {
             ForEach(options, id: \.self) { option in
                 let isSelected = option == selection
                 Button { selection = option } label: {

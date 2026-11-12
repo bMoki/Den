@@ -17,7 +17,9 @@ struct FileNameSheet: View {
         _name = State(initialValue: request.initialName)
     }
 
-    var body: some View {
+    var body: some View { sheet.dialogBox() }
+
+    private var sheet: some View {
         VStack(alignment: .leading, spacing: 0) {
             DialogHeading(title: Text(request.title),
                           subtitle: Text("Em \(Text(place).font(Theme.font(.smallPlus, design: .monospaced)))."))

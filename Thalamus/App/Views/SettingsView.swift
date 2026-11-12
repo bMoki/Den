@@ -74,6 +74,26 @@ private struct SettingsTabButton: View {
 
     var body: some View {
         Button(action: select) {
+            switch Theme.style.marks {
+            case .graphic: stacked
+            case .characters: bracketed
+            }
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering = $0 }
+        .accessibilityLabel(tab.title)
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+    }
+
+    private var bracketed: some View {
+        Text(isSelected ? "[\(tab.title.lowercased())]" : " \(tab.title.lowercased()) ")
+            .font(Theme.font(.body))
+            .foregroundStyle(isSelected ? Theme.accent : hovering ? Theme.text : Theme.textTertiary)
+            .padding(.vertical, Theme.space(.s4))
+            .contentShape(Rectangle())
+    }
+
+    private var stacked: some View {
             VStack(spacing: Theme.space(.s3)) {
                 Theme.image(tab.icon)
                     .font(Theme.font(.title3))
@@ -86,11 +106,6 @@ private struct SettingsTabButton: View {
             .frame(minWidth: Theme.size(.s68), minHeight: Theme.size(.s48))
             .hoverFill(hovering, selected: isSelected)
             .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .onHover { hovering = $0 }
-        .accessibilityLabel(tab.title)
-        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }
 }
 

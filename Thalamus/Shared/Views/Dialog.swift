@@ -6,13 +6,16 @@ struct DialogHeading: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.space(.s4)) {
-            title.font(Theme.font(.headline, weight: .semibold))
+            if Theme.style.boxes == .surfaces {
+                title.font(Theme.font(.headline, weight: .semibold))
+            }
             subtitle
                 .font(Theme.font(.smallPlus))
                 .foregroundStyle(Theme.textTertiary)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(EdgeInsets(top: Theme.space(.s18), leading: Theme.space(.s20), bottom: Theme.space(.s4), trailing: Theme.space(.s20)))
+        .preference(key: DialogTitleKey.self, value: title)
     }
 }
 
@@ -88,18 +91,11 @@ struct DialogCheckbox: View {
     var body: some View {
         Button { isOn.toggle() } label: {
             HStack(spacing: Theme.space(.s9)) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: Theme.radius(.r4), style: .continuous)
-                        .fill(isOn ? Theme.action : .clear)
-                    RoundedRectangle(cornerRadius: Theme.radius(.r4), style: .continuous)
-                        .strokeBorder(isOn ? Theme.action : Theme.borderControl, lineWidth: Theme.line(.medium))
-                    if isOn {
-                        Theme.image(.done)
-                            .font(Theme.font(.mini, weight: .bold))
-                            .foregroundStyle(Theme.onAction)
-                    }
+                if Theme.style.marks == .characters {
+                    Text(Style.checkbox(isOn)).foregroundStyle(isOn ? Theme.accent : Theme.textTertiary)
+                } else {
+                    box
                 }
-                .frame(width: Theme.size(.s16), height: Theme.size(.s16))
                 Text(title)
                     .font(Theme.font(.smallPlus, design: .monospaced))
                 Spacer(minLength: 0)
@@ -121,6 +117,21 @@ struct DialogCheckbox: View {
         .accessibilityLabel(title)
         .accessibilityValue(isOn ? "marcado" : "desmarcado")
         .accessibilityAddTraits(.isToggle)
+    }
+
+    private var box: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: Theme.radius(.r4), style: .continuous)
+                .fill(isOn ? Theme.action : .clear)
+            RoundedRectangle(cornerRadius: Theme.radius(.r4), style: .continuous)
+                .strokeBorder(isOn ? Theme.action : Theme.borderControl, lineWidth: Theme.line(.medium))
+            if isOn {
+                Theme.image(.done)
+                    .font(Theme.font(.mini, weight: .bold))
+                    .foregroundStyle(Theme.onAction)
+            }
+        }
+        .frame(width: Theme.size(.s16), height: Theme.size(.s16))
     }
 }
 
@@ -196,6 +207,37 @@ struct ConfirmationDialog: View {
     }
 
     var body: some View {
+        switch Theme.style.marks {
+        case .graphic: surface
+        case .characters: lines
+        }
+    }
+
+    private var lines: some View {
+        let options = choices.map(Optional.some) + [nil]
+        return VStack(alignment: .leading, spacing: Theme.space(.s8)) {
+            Text(message)
+                .foregroundStyle(Theme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+            ForEach(Array(options.enumerated()), id: \.offset) { index, choice in
+                ConfirmationLine(number: index + 1, title: choice?.title ?? "Cancelar",
+                                 isDestructive: choice?.isDestructive ?? false,
+                                 isDefault: choice != nil && index == Self.defaultIndex(of: choices)) {
+                    finish(choice)
+                }
+                .keyboardShortcut(choice == nil ? KeyboardShortcut.cancelAction
+                                  : index == Self.defaultIndex(of: choices) ? KeyboardShortcut.defaultAction : nil)
+            }
+        }
+        .font(Theme.font(.body))
+        .padding(Theme.space(.s12))
+        .frame(width: Self.width + Theme.space(.s96))
+        .titledCard(titleWhenOpened, border: Theme.borderStrong, accent: Theme.text)
+        .background(FramelessWindow())
+        .presentationBackground(.clear)
+    }
+
+    private var surface: some View {
         VStack(alignment: .leading, spacing: Theme.space(.s16)) {
             VStack(alignment: .leading, spacing: Theme.space(.s6)) {
                 Text(titleWhenOpened)
@@ -249,5 +291,95 @@ struct ConfirmationDialog: View {
             .font(Theme.font(.body, weight: .medium))
             .frame(maxWidth: .infinity)
             .frame(height: Theme.size(.s28))
+    }
+}
+
+private struct ConfirmationLine: View {
+    let number: Int
+    let title: String
+    let isDestructive: Bool
+    let isDefault: Bool
+    var action: () -> Void
+
+    @State private var hovering = false
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: Theme.space(.s8)) {
+                Text(hovering || isDefault ? "❯" : " ").foregroundStyle(Theme.accent)
+                Text("\(number).").foregroundStyle(Theme.textTertiary)
+                Text(title).foregroundStyle(isDestructive ? Theme.removed : Theme.text)
+                Spacer(minLength: 0)
+            }
+            .background(hovering ? Theme.hover : .clear)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering = $0 }
+        .accessibilityLabel(title)
+    }
+}
+
+extension View {
+    func dialogBox() -> some View {
+        modifier(DialogBoxFrame())
+    }
+}
+
+private struct DialogBoxFrame: ViewModifier {
+    func body(content: Content) -> some View {
+        switch Theme.style.boxes {
+        case .surfaces:
+            content
+        case .lines:
+            content
+                .mask { Rectangle().padding(Theme.space(.s4)).padding(.top, LineBox.titleRoom) }
+                .overlayPreferenceValue(DialogTitleKey.self) { title in
+                    if let title {
+                        LineBox(title: title, fill: Theme.canvas, tint: Theme.borderStrong, titleColor: Theme.text)
+                            .padding(Theme.space(.s4))
+                            .padding(.top, LineBox.titleRoom)
+                            .allowsHitTesting(false)
+                    }
+                }
+                .background(FramelessWindow())
+                .presentationBackground(.clear)
+        }
+    }
+}
+
+private struct FramelessWindow: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSView { Clearing() }
+    func updateNSView(_ nsView: NSView, context: Context) {}
+
+    private final class Clearing: NSView {
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            clear()
+            DispatchQueue.main.async { [weak self] in self?.clear() }
+        }
+
+        override func layout() {
+            super.layout()
+            clear()
+        }
+
+        private func clear() {
+            guard let window else { return }
+            window.isOpaque = false
+            window.backgroundColor = .clear
+            window.hasShadow = false
+            for effect in window.contentView?.superview?.subviews ?? [] where effect is NSVisualEffectView {
+                effect.isHidden = true
+            }
+        }
+    }
+}
+
+struct DialogTitleKey: SwiftUI.PreferenceKey {
+    static let defaultValue: Text? = nil
+
+    static func reduce(value: inout Text?, nextValue: () -> Text?) {
+        value = value ?? nextValue()
     }
 }

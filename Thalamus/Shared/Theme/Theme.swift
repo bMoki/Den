@@ -24,18 +24,22 @@ nonisolated enum Theme {
     static func nsImage(_ icon: Icon) -> NSImage? { style.nsImage(icon) }
 
     static var canvas: Color { palette.surfaces.canvas }
-    static var sidebar: Color { palette.surfaces.sidebar }
-    static var panel: Color { palette.surfaces.panel }
-    static var raised: Color { palette.surfaces.raised }
-    static var field: Color { palette.surfaces.field }
-    static var card: Color { palette.surfaces.card }
-    static var bubble: Color { palette.surfaces.bubble }
+    static var sidebar: Color { flat(palette.surfaces.sidebar) }
+    static var panel: Color { flat(palette.surfaces.panel) }
+    static var raised: Color { flat(palette.surfaces.raised) }
+    static var field: Color { flat(palette.surfaces.field) }
+    static var card: Color { flat(palette.surfaces.card) }
+    static var bubble: Color { flat(palette.surfaces.bubble) }
     static var hover: Color { palette.surfaces.hover }
-    static var hoverRaised: Color { palette.surfaces.hoverRaised }
+    static var hoverRaised: Color { style.boxes == .lines ? palette.surfaces.hover : palette.surfaces.hoverRaised }
     static var tip: Color { palette.surfaces.tip }
-    static var terminal: Color { palette.surfaces.terminal }
+    static var terminal: Color { flat(palette.surfaces.terminal) }
     static var shadow: Color { palette.surfaces.shadow }
     static var scrim: Color { palette.surfaces.scrim }
+
+    private static func flat(_ surface: Color) -> Color {
+        style.boxes == .lines ? palette.surfaces.canvas : surface
+    }
 
     static var border: Color { palette.borders.border }
     static var borderCard: Color { palette.borders.card }
@@ -66,7 +70,7 @@ nonisolated enum Theme {
     static var hunk: Color { palette.changes.hunk }
     static var hunkFill: Color { palette.changes.hunkFill }
 
-    static var alertFill: Color { palette.alerts.fill }
+    static var alertFill: Color { flat(palette.alerts.fill) }
     static var alertBorder: Color { palette.alerts.border }
     static var alertText: Color { palette.alerts.text }
 
@@ -79,23 +83,43 @@ struct ThalamusButtonStyle: ButtonStyle {
 
     var kind: Kind
     var radius: Style.Radius = .r8
+    var tint: Color?
 
     func makeBody(configuration: Configuration) -> some View {
-        StyledLabel(configuration: configuration, kind: kind, radius: radius)
+        StyledLabel(configuration: configuration, kind: kind, radius: radius, tint: tint)
     }
 
     private struct StyledLabel: View {
         let configuration: Configuration
         let kind: Kind
         let radius: Style.Radius
+        let tint: Color?
 
         @State private var hovering = false
         @Environment(\.isEnabled) private var isEnabled
 
         var body: some View {
-            let shape = RoundedRectangle(cornerRadius: Theme.radius(radius), style: .continuous)
+            switch Theme.style.marks {
+            case .graphic: surface
+            case .characters: bracketed
+            }
+        }
+
+        private var bracketed: some View {
             configuration.label
-                .foregroundStyle(foreground)
+                .bracketed(kind != .ghost)
+                .padding(.horizontal, kind == .ghost ? Theme.space(.s4) : 0)
+                .foregroundStyle(tint ?? (kind == .primary ? Theme.accent : foreground))
+                .background(isEnabled && (hovering || configuration.isPressed) ? Theme.hover : .clear)
+                .contentShape(Rectangle())
+                .opacity(isEnabled ? 1 : 0.45)
+                .onHover { hovering = $0 }
+        }
+
+        private var surface: some View {
+            let shape = RoundedRectangle(cornerRadius: Theme.radius(radius), style: .continuous)
+            return configuration.label
+                .foregroundStyle(tint ?? foreground)
                 .background(background, in: shape)
                 .overlay {
                     switch kind {
@@ -150,7 +174,7 @@ struct PillLabel: ViewModifier {
     func body(content: Content) -> some View {
         content
             .font(Theme.font(.body, weight: .medium))
-            .padding(.horizontal, Theme.space(.s14))
+            .padding(.horizontal, Theme.style.marks == .characters ? 0 : Theme.space(.s14))
             .frame(height: Theme.size(.s32))
     }
 }
@@ -161,7 +185,7 @@ struct ChipLabel: ViewModifier {
     func body(content: Content) -> some View {
         content
             .font(Theme.font(.smallPlus))
-            .padding(.horizontal, Theme.space(horizontalPadding))
+            .padding(.horizontal, Theme.style.marks == .characters ? 0 : Theme.space(horizontalPadding))
             .frame(height: Theme.size(.s30))
             .contentShape(Rectangle())
     }
@@ -172,7 +196,7 @@ struct IconLabel: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .frame(width: Theme.size(size), height: Theme.size(size))
+            .frame(width: Theme.style.marks == .characters ? nil : Theme.size(size), height: Theme.size(size))
             .contentShape(Rectangle())
     }
 }
@@ -218,6 +242,16 @@ struct ChipSurface: ViewModifier {
     var open = false
 
     func body(content: Content) -> some View {
+        switch Theme.style.marks {
+        case .graphic: surface(content)
+        case .characters:
+            content
+                .bracketed(bordered)
+                .background(hovering || open ? Theme.hover : .clear)
+        }
+    }
+
+    private func surface(_ content: Content) -> some View {
         let shape = RoundedRectangle(cornerRadius: Theme.radius(radius), style: .continuous)
         let active = hovering || open
         return content
@@ -279,10 +313,12 @@ struct Swatch: View {
 struct Chevron: View {
     var size: Style.TextSize = .mini
 
+    @Environment(\.isBracketed) private var isBracketed
+
     var body: some View {
         Theme.image(.expanded)
             .font(Theme.font(size, weight: .semibold))
-            .foregroundStyle(Theme.textTertiary)
+            .foregroundStyle(isBracketed ? AnyShapeStyle(.foreground) : AnyShapeStyle(Theme.textTertiary))
     }
 }
 
@@ -290,4 +326,58 @@ extension Label where Title == Text, Icon == Image {
     init(_ title: some StringProtocol, icon: Thalamus.Icon) {
         self.init { Text(title) } icon: { Theme.image(icon) }
     }
+}
+
+struct RoundShape: InsettableShape {
+    enum Kind { case capsule, circle }
+
+    let kind: Kind
+    let squared: Bool
+    var inset: CGFloat = 0
+
+    func path(in rect: CGRect) -> Path {
+        let box = rect.insetBy(dx: inset, dy: inset)
+        if squared { return Path(box) }
+        switch kind {
+        case .capsule: return Capsule().path(in: box)
+        case .circle: return Circle().path(in: box)
+        }
+    }
+
+    func inset(by amount: CGFloat) -> RoundShape {
+        RoundShape(kind: kind, squared: squared, inset: inset + amount)
+    }
+}
+
+extension Theme {
+    static var capsule: RoundShape { RoundShape(kind: .capsule, squared: style.boxes == .lines) }
+    static var circle: RoundShape { RoundShape(kind: .circle, squared: style.boxes == .lines) }
+}
+
+private struct Bracketed: ViewModifier {
+    let isFramed: Bool
+
+    func body(content: Content) -> some View {
+        switch Theme.style.marks {
+        case .graphic:
+            content
+        case .characters where !isFramed:
+            content
+        case .characters:
+            HStack(spacing: 0) {
+                Text("[").accessibilityHidden(true)
+                content.environment(\.isBracketed, true)
+                Text("]").accessibilityHidden(true)
+            }
+            .font(Theme.font(.body))
+        }
+    }
+}
+
+extension EnvironmentValues {
+    @Entry var isBracketed = false
+}
+
+extension View {
+    func bracketed(_ isFramed: Bool = true) -> some View { modifier(Bracketed(isFramed: isFramed)) }
 }

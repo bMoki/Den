@@ -24,7 +24,7 @@ struct QuestionCard: View {
                 }
         }
         .padding(Self.padding)
-        .card(border: Theme.borderControl)
+        .titledCard("pergunta do agente · aguardando decisão", accent: SessionState.awaitingDecision.color)
     }
 
     private var questionsMaxHeight: CGFloat {
@@ -39,16 +39,17 @@ struct QuestionCard: View {
                         Text(question.header)
                             .font(Theme.font(.caption, weight: .medium))
                             .foregroundStyle(Theme.accentSoft)
-                            .padding(.horizontal, Theme.space(.s8)).padding(.vertical, Theme.space(.s3))
-                            .background(Theme.accentFill, in: Capsule())
+                            .padding(.horizontal, Theme.style.marks == .characters ? 0 : Theme.space(.s8))
+                            .padding(.vertical, Theme.space(.s3))
+                            .background(Theme.style.marks == .characters ? .clear : Theme.accentFill, in: Theme.capsule)
                     }
                     Text(question.text)
                         .font(Theme.font(.bodyPlus, weight: .medium))
                         .fixedSize(horizontal: false, vertical: true)
 
                     VStack(spacing: Theme.space(.s4)) {
-                        ForEach(question.options, id: \.label) { option in
-                            OptionRow(option: option,
+                        ForEach(Array(question.options.enumerated()), id: \.element.label) { index, option in
+                            OptionRow(option: option, number: index + 1,
                                       selected: selections[question.text]?.contains(option.label)
                                         ?? false,
                                       multiple: question.multiSelect) {
@@ -89,6 +90,7 @@ struct QuestionCard: View {
 
     private struct OptionRow: View {
         let option: QuestionPrompt.Option
+        let number: Int
         let selected: Bool
         let multiple: Bool
         var action: () -> Void
@@ -96,6 +98,43 @@ struct QuestionCard: View {
         @State private var hovering = false
 
         var body: some View {
+            switch Theme.style.marks {
+            case .graphic: card
+            case .characters: line
+            }
+        }
+
+        private var line: some View {
+            Button(action: action) {
+                HStack(alignment: .firstTextBaseline, spacing: Theme.space(.s8)) {
+                    Text(hovering || selected ? "❯" : " ").foregroundStyle(Theme.accent)
+                    Text("\(number).").foregroundStyle(selected ? Theme.accent : Theme.textTertiary)
+                    if multiple {
+                        Text(Style.checkbox(selected)).foregroundStyle(selected ? Theme.accent : Theme.textTertiary)
+                    }
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(option.label)
+                        if !option.detail.isEmpty {
+                            Text(option.detail)
+                                .foregroundStyle(Theme.textMuted)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    Spacer(minLength: 0)
+                }
+                .font(Theme.font(.body))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(hovering || selected ? Theme.hover : .clear)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .onHover { hovering = $0 }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(option.detail.isEmpty ? option.label : "\(option.label). \(option.detail)")
+            .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
+        }
+
+        private var card: some View {
             Button(action: action) {
                 HStack(alignment: .firstTextBaseline, spacing: Theme.space(.s10)) {
                     Theme.image(selected

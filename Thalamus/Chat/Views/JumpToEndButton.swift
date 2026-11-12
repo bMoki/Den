@@ -9,11 +9,12 @@ struct JumpToEndButton: View {
             if isVisible {
                 Button(action: action) {
                     Theme.image(.jumpToEnd)
+                        .bracketed()
                         .font(Theme.font(.body, weight: .semibold))
                         .foregroundStyle(Theme.text)
                         .frame(width: Theme.size(.s34), height: Theme.size(.s34))
-                        .background(Theme.raised, in: Circle())
-                        .overlay(Circle().strokeBorder(Theme.borderControl, lineWidth: Theme.line(.thin)))
+                        .background(Theme.raised, in: Theme.circle)
+                        .overlay(Theme.circle.strokeBorder(Theme.borderControl, lineWidth: Theme.line(.thin)))
                         .elevation(.floatingButton)
                 }
                 .buttonStyle(.plain)

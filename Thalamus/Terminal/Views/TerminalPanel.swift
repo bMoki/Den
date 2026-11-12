@@ -19,6 +19,7 @@ struct TerminalPanel: View {
                     .padding(.leading, Theme.space(.s8))
                     .background(Theme.terminal)
             }
+            .area(current.title.lowercased(), fill: Theme.terminal)
             .frame(height: height)
             .background(Theme.terminal)
         }
@@ -86,10 +87,9 @@ struct TerminalToggle: View {
         Button(action: toggle) {
             Theme.image(.toggleTerminals)
                 .font(Theme.font(.large))
-                .foregroundStyle(isShown ? Theme.text : Theme.textSecondary)
                 .iconLabel(size: .s32)
         }
-        .buttonStyle(ThalamusButtonStyle(kind: .secondary))
+        .buttonStyle(ThalamusButtonStyle(kind: .secondary, tint: isShown ? Theme.text : Theme.textSecondary))
         .disabled(isArchived)
         .tip(help, shortcut: "⌃`")
         .accessibilityLabel(isShown ? "Ocultar Terminais livres" : "Mostrar Terminais livres")

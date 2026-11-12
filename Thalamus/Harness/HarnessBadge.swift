@@ -15,6 +15,7 @@ struct HarnessBadge: View {
                 Theme.image(icon)
                     .resizable()
                     .interpolation(.high)
+                    .scaledToFit()
             } else {
 
                 Text(harness.map { Self.name(for: $0).prefix(1) } ?? "?")
@@ -36,7 +37,11 @@ struct HarnessBadge: View {
         let radius = Theme.radius(fitting: side)
         let image = NSImage(size: NSSize(width: side, height: side), flipped: false) { rect in
             NSBezierPath(roundedRect: rect, xRadius: radius, yRadius: radius).addClip()
-            source.draw(in: rect, from: .zero, operation: .sourceOver, fraction: 1)
+            let scale = min(rect.width / source.size.width, rect.height / source.size.height)
+            let fitted = NSSize(width: source.size.width * scale, height: source.size.height * scale)
+            source.draw(in: NSRect(x: rect.midX - fitted.width / 2, y: rect.midY - fitted.height / 2,
+                                   width: fitted.width, height: fitted.height),
+                        from: .zero, operation: .sourceOver, fraction: 1)
             return true
         }
         return Image(nsImage: image)

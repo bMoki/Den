@@ -6,6 +6,13 @@ struct TypingIndicator: View {
     private static let step: Double = 0.28
 
     var body: some View {
+        switch Theme.style.marks {
+        case .graphic: dots
+        case .characters: GlyphSpinner(color: Theme.accent).accessibilityLabel("Pensando")
+        }
+    }
+
+    private var dots: some View {
         HStack(spacing: Theme.space(.s5)) {
             ForEach(0..<3, id: \.self) { index in
                 Circle()

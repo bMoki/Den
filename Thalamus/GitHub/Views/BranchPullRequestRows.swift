@@ -96,7 +96,7 @@ private struct PullRequestRow: View {
             .fixedSize()
             .padding(.horizontal, Theme.space(.s7))
             .frame(height: Theme.size(.s19))
-            .background(tone.fill, in: Capsule())
+            .background(tone.fill, in: Theme.capsule)
     }
 }
 

@@ -103,12 +103,12 @@ private struct EditorTab: View {
             Button(action: close) {
                 ZStack {
                     if document.isDirty, !hovering {
-                        Circle().fill(Theme.textSecondary).frame(width: Theme.size(.s7), height: Theme.size(.s7))
+                        Theme.circle.fill(Theme.textSecondary).frame(width: Theme.size(.s7), height: Theme.size(.s7))
                     } else {
                         Theme.image(.close).font(Theme.font(.mini, weight: .semibold))
                     }
                 }
-                .frame(width: Theme.size(.s16), height: Theme.size(.s16))
+                .frame(width: Theme.style.marks == .characters ? nil : Theme.size(.s16), height: Theme.size(.s16))
                 .contentShape(Rectangle())
             }
             .buttonStyle(.thalamusGhost(radius: .r4))

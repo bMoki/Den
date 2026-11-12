@@ -20,6 +20,12 @@ struct MessageBubble: View {
         case .assistant:
             content
                 .frame(maxWidth: .infinity, alignment: .leading)
+        case .user where Theme.style.boxes == .lines:
+            HStack(alignment: .firstTextBaseline, spacing: Theme.space(.s8)) {
+                Text("›").font(Theme.font(.body)).foregroundStyle(Theme.accent).accessibilityHidden(true)
+                content
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         case .user:
             HStack(alignment: .bottom, spacing: Theme.space(.s8)) {
                 timestamp
@@ -29,8 +35,8 @@ struct MessageBubble: View {
                     .padding(.horizontal, Theme.space(.s16))
                     .padding(.vertical, Theme.space(.s11))
                     .background(Theme.bubble, in: UnevenRoundedRectangle(
-                        topLeadingRadius: 16, bottomLeadingRadius: 16,
-                        bottomTrailingRadius: 4, topTrailingRadius: 16, style: .continuous))
+                        topLeadingRadius: Theme.radius(.r16), bottomLeadingRadius: Theme.radius(.r16),
+                        bottomTrailingRadius: Theme.radius(.r4), topTrailingRadius: Theme.radius(.r16), style: .continuous))
             }
             .onHover { hovering = $0 }
         }

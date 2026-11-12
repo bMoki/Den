@@ -35,19 +35,22 @@ struct ChatView: View {
     var body: some View {
         InspectorSplit(isShown: pane != .closed) {
             VStack(spacing: 0) {
-                ChatHeader(chat: chat, openPage: openPage)
-                EditorTabStrip(tabs: editors, row: row, files: files, home: .session)
-                if let document = editors.selection(in: row) {
-                    EditorView(document: document, folder: ns.rowRoot(of: chat.workingDirectory)) { editors.close(document, in: row) }
-                } else {
-                    transcript
-                    if let removedBranch {
-                        ArchivedSessionBar(branch: removedBranch)
+                VStack(spacing: 0) {
+                    ChatHeader(chat: chat, openPage: openPage)
+                    EditorTabStrip(tabs: editors, row: row, files: files, home: .session)
+                    if let document = editors.selection(in: row) {
+                        EditorView(document: document, folder: ns.rowRoot(of: chat.workingDirectory)) { editors.close(document, in: row) }
                     } else {
-                        ChatComposer(chat: chat, slash: slash, mentions: mentions,
-                                     keys: keys) { nearBottom = true }
+                        transcript
+                        if let removedBranch {
+                            ArchivedSessionBar(branch: removedBranch)
+                        } else {
+                            ChatComposer(chat: chat, slash: slash, mentions: mentions,
+                                         keys: keys) { nearBottom = true }
+                        }
                     }
                 }
+                .area(editors.selection(in: row).map { "editor · \($0.name)" } ?? "sessão", fill: Theme.canvas)
                 TerminalPanel(row: row, root: ns.rowRoot(of: chat.workingDirectory))
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)

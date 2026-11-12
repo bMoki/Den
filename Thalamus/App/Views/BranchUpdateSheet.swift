@@ -8,7 +8,9 @@ struct BranchUpdateSheet: View {
         Text(report.branch).font(Theme.font(.smallPlus, design: .monospaced))
     }
 
-    var body: some View {
+    var body: some View { sheet.dialogBox() }
+
+    private var sheet: some View {
         VStack(alignment: .leading, spacing: 0) {
             DialogHeading(title: Text(BranchActionTitle.update),
                           subtitle: Text("Trouxe a branch principal de cada Repo para \(branch)."))

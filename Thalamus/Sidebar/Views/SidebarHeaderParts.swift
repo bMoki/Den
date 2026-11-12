@@ -42,7 +42,7 @@ struct SessionTallyLabel: View {
     var body: some View {
         if let prevailing = sessions.prevailing {
             HStack(spacing: Theme.space(.s5)) {
-                SessionStateMark(state: prevailing.state)
+                SessionStateMark(state: prevailing.state, showsWord: false)
                 SessionCountLabel(count: prevailing.count)
             }
             .describedAs(prevailing.label)
@@ -90,9 +90,10 @@ struct SidebarSectionTitle<Trailing: View>: View {
 
     private var label: some View {
         HStack(spacing: Theme.space(.s4)) {
-            Text(title)
+            Text(Theme.style.marks == .characters ? "─ \(title.lowercased()) ─" : title)
                 .font(Theme.font(.small, weight: .medium))
                 .foregroundStyle(Theme.textTertiary)
+                .accessibilityLabel(title)
                 .lineLimit(1)
                 .truncationMode(.tail)
             Spacer(minLength: 0)

@@ -8,7 +8,9 @@ struct TakeSnapshotSheet: View {
 
     @State private var name = ""
 
-    var body: some View {
+    var body: some View { sheet.dialogBox() }
+
+    private var sheet: some View {
         VStack(alignment: .leading, spacing: 0) {
             DialogHeading(title: Text("Tirar snapshot"),
                           subtitle: Text("Guarda o estado atual do banco de \(Text(branch).font(Theme.font(.smallPlus, design: .monospaced)))."))
@@ -79,7 +81,9 @@ struct RestoreSnapshotSheet: View {
         _selected = State(initialValue: selected)
     }
 
-    var body: some View {
+    var body: some View { sheet.dialogBox() }
+
+    private var sheet: some View {
         VStack(alignment: .leading, spacing: 0) {
             DialogHeading(title: Text("Restaurar banco"),
                           subtitle: Text("Escolha um Snapshot. Pode ser de outra branch."))
@@ -190,7 +194,7 @@ private struct SnapshotChoice: View {
     var body: some View {
         Button(action: choose) {
             HStack(spacing: Theme.space(.s9)) {
-                Circle()
+                Theme.circle
                     .strokeBorder(isSelected ? Theme.action : Theme.borderControl, lineWidth: Theme.line(isSelected ? .heavy : .medium))
                     .frame(width: Theme.size(.s14), height: Theme.size(.s14))
                 Text(snapshot.name)

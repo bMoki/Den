@@ -6,6 +6,13 @@ struct SpinningRing: View {
     @State private var turning = false
 
     var body: some View {
+        switch Theme.style.marks {
+        case .graphic: ring
+        case .characters: GlyphSpinner(color: color)
+        }
+    }
+
+    private var ring: some View {
         Circle()
             .trim(from: 0, to: 0.7)
             .stroke(color, style: StrokeStyle(lineWidth: Theme.line(.spinner), lineCap: .round))

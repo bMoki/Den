@@ -29,6 +29,9 @@ Decidimos que o Estilo TTY usa uma fonte embarcada no Thalamus, a **JetBrains Mo
 - Os Terminais livres e os Consoles no TTY também, para que os ícones que as ferramentas imprimem apareçam.
 - Cada ícone da interface tem uma linha na tabela de `docs/specs/estilo-tty-icones.md`; um ícone novo só entra com a sua.
 - O Estilo Padrão continua com as fontes do sistema e os SF Symbols.
+- A variante embarcada é a **NL** (sem ligaduras), `JetBrainsMonoNLNerdFontMono`, para que `->`, `!=` e `==` apareçam como foram digitados no código e no Terminal.
+
+**Correção na hora de embarcar (ticket 60):** ao conferir o arquivo, a JetBrains Mono Nerd Font Mono 3.4.0 não tem o braille nem `↻` e `↵`, ao contrário do que esta ADR supunha. O spinner de Pensando passa a usar os seis quadros de spinner do próprio Nerd Fonts (`extra-progress_spinner_1` a `_6`, `U+EE06` a `U+EE0B`), no mesmo arquivo e na mesma célula. O Return aparece como `⏎`, e Atualizar usa o ícone da tabela. O braille que uma ferramenta imprimir num Terminal livre sai de outra fonte do macOS, como em qualquer terminal sem braille.
 
 ## Alternativas consideradas
 

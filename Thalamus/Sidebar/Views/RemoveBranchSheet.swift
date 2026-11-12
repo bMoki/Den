@@ -9,7 +9,9 @@ struct RemoveBranchSheet: View {
 
     @State private var purge = false
 
-    var body: some View {
+    var body: some View { sheet.dialogBox() }
+
+    private var sheet: some View {
         VStack(alignment: .leading, spacing: 0) {
             DialogHeading(title: Text("Remover \(Text(removal.branch).font(Theme.font(.large, weight: .semibold, design: .monospaced)))?"),
                           subtitle: Text("Apaga as worktrees de todos os Repos. As Sessões desta branch ficam arquivadas."))

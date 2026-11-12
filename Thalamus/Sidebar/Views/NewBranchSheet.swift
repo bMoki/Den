@@ -9,7 +9,9 @@ struct NewBranchSheet: View {
     @FocusState private var nameFocused: Bool
     @FocusState private var nicknameFocused: Bool
 
-    var body: some View {
+    var body: some View { sheet.dialogBox() }
+
+    private var sheet: some View {
         VStack(alignment: .leading, spacing: 0) {
             if creation.phase == .form { form } else { progress }
         }
@@ -222,7 +224,7 @@ private struct StepRow: View {
     private var icon: some View {
         switch step.state {
         case .waiting:
-            Circle().strokeBorder(Theme.textFaint, style: StrokeStyle(lineWidth: Theme.line(.medium), dash: [2.5, 2.5]))
+            Theme.circle.strokeBorder(Theme.textFaint, style: StrokeStyle(lineWidth: Theme.line(.medium), dash: [2.5, 2.5]))
         case .running:
             ProgressView().controlSize(.mini)
         case .done:
@@ -237,7 +239,7 @@ private struct StepRow: View {
             .font(Theme.font(.mini, weight: .bold))
             .foregroundStyle(color)
             .frame(width: Theme.size(.s18), height: Theme.size(.s18))
-            .background(fill, in: Circle())
+            .background(fill, in: Theme.circle)
     }
 }
 

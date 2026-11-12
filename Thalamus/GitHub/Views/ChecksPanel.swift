@@ -8,9 +8,9 @@ struct ChecksRing: View {
 
     var body: some View {
         ZStack {
-            Circle()
+            Theme.circle
                 .stroke(Theme.borderControl, lineWidth: Theme.line(.ring))
-            Circle()
+            Theme.circle
                 .trim(from: 0, to: arc)
                 .stroke(summary.color, style: StrokeStyle(lineWidth: Theme.line(.ring), lineCap: .round))
                 .rotationEffect(.degrees(isRunning && turning ? 270 : -90))
@@ -92,7 +92,7 @@ struct ChecksPanel: View {
             }
             .frame(height: Theme.size(.s8))
             .background(Theme.borderStrong)
-            .clipShape(Capsule())
+            .clipShape(Theme.capsule)
             FittedScroll(maxHeight: Self.maxListHeight) {
                 VStack(alignment: .leading, spacing: Theme.space(.s2)) {
                     ForEach(Array(checks.enumerated()), id: \.offset) { _, check in

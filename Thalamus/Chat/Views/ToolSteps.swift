@@ -47,18 +47,19 @@ struct ToolSteps: View {
                 .padding(.vertical, Theme.space(.s12))
             }
         }
-        .card()
+        .card(border: Theme.style.boxes == .lines ? .clear : Theme.borderCard)
     }
 
     private func header(isOpen: Bool) -> some View {
         HStack(spacing: Theme.space(.s10)) {
             ZStack {
-                Circle()
-                    .fill(isLive ? Theme.action : Theme.hoverRaised)
+                Theme.circle
+                    .fill(Theme.style.marks == .characters ? .clear : isLive ? Theme.action : Theme.hoverRaised)
                     .frame(width: Theme.size(.s22), height: Theme.size(.s22))
                 Theme.image(tools.isEmpty ? .thinking : .tool)
                     .font(Theme.font(.label, weight: .semibold))
-                    .foregroundStyle(isLive ? Theme.onAction : Theme.textSecondary)
+                    .foregroundStyle(isLive ? (Theme.style.marks == .characters ? Theme.accent : Theme.onAction)
+                                            : Theme.textSecondary)
             }
             HStack(spacing: 0) {
                 Text(lines.count == 1 ? "1 passo" : "\(lines.count) passos")
@@ -89,8 +90,8 @@ struct ToolSteps: View {
         .frame(height: Theme.size(.s42))
         .background(hovering ? Theme.hover.opacity(0.6) : .clear,
                     in: UnevenRoundedRectangle(
-                        topLeadingRadius: 12, bottomLeadingRadius: isOpen ? 0 : 12,
-                        bottomTrailingRadius: isOpen ? 0 : 12, topTrailingRadius: 12,
+                        topLeadingRadius: Theme.radius(.r12), bottomLeadingRadius: isOpen ? 0 : Theme.radius(.r12),
+                        bottomTrailingRadius: isOpen ? 0 : Theme.radius(.r12), topTrailingRadius: Theme.radius(.r12),
                         style: .continuous))
         .contentShape(Rectangle())
     }
@@ -100,7 +101,7 @@ struct LiveDot: View {
     @State private var pulsing = false
 
     var body: some View {
-        Circle()
+        Theme.circle
             .fill(Theme.accent)
             .frame(width: Theme.size(.s7), height: Theme.size(.s7))
             .opacity(pulsing ? 0.35 : 1)

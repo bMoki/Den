@@ -115,7 +115,7 @@ private struct ContextBar: View {
         }
         .frame(height: Theme.size(.s8))
         .background(Theme.borderStrong)
-        .clipShape(Capsule())
+        .clipShape(Theme.capsule)
     }
 }
 

@@ -144,7 +144,7 @@ custom_rules:
     name: "Fonts, shapes and spacing come from the Style"
     included: ".*/Thalamus/.*\\.swift"
     excluded: ".*/(Packages|ThalamusTests|ThalamusUITests|ThalamusTestSupport)/.*|.*/Thalamus/Shared/Theme/Style\\.swift"
-    regex: '(\.system\(size:|\.(systemFont|boldSystemFont|monospacedSystemFont|monospacedDigitSystemFont)\(ofSize|\bFont\.custom\(|\b(cornerRadius|lineWidth|[sS]pacing|minLength):\s*([^,()]*\?\s*)?-?(0\.\d*[1-9]|[1-9])|(?<![A-Za-z])radius:\s*[0-9]|\.shadow\(|\b(padding|lineSpacing)\(((\.\w+|\[[^\]]*\]),\s*)?-?(0\.\d*[1-9]|[1-9])|\bEdgeInsets\([^)]*:\s*-?(0\.\d*[1-9]|[1-9]))'
+    regex: '(\.system\(size:|\.(systemFont|boldSystemFont|monospacedSystemFont|monospacedDigitSystemFont)\(ofSize|\bFont\.custom\(|\b(cornerRadius|lineWidth|[sS]pacing|minLength):\s*([^,()]*\?\s*)?-?(0\.\d*[1-9]|[1-9])|(?<![A-Za-z])radius:\s*[0-9]|\b[a-z]+Radius:\s*([^,()]*\?\s*)?[0-9]*[1-9]|\.shadow\(|\b(padding|lineSpacing)\(((\.\w+|\[[^\]]*\]),\s*)?-?(0\.\d*[1-9]|[1-9])|\bEdgeInsets\([^)]*:\s*-?(0\.\d*[1-9]|[1-9]))'
     match_kinds: [identifier, keyword, number, typeidentifier]
     message: "Ask the Style for fonts, radii, lines, spacing and shadows (Theme.font, Theme.radius, Theme.line, Theme.space, .elevation)."
     severity: error

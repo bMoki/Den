@@ -12,8 +12,8 @@ ele vem: `cod-` Codicons, `oct-` Octicons, `md-` Material Design Icons, `fa-`
 Font Awesome, `dev-` e `seti-` Devicons. O código é o ponto Unicode na fonte.
 No Estilo Padrão, os ícones continuam os da coluna "Hoje".
 
-Fora desta tabela ficam os caracteres que já são texto no TTY: `›`, `×`, `+`,
-`[x]`, o spinner em braille e as caixas de linha.
+Fora desta tabela ficam os caracteres que já são texto no TTY: `›`, `‹`, `❯`,
+`×`, `!`, `●`, `+`, `[ ]`, `[x]`, os colchetes dos botões, o spinner de pensando (`extra-progress_spinner_1` a `_6`, `U+EE06` a `U+EE0B`) e as caixas de linha.
 
 ## Navegação e painéis
 
@@ -47,7 +47,7 @@ Fora desta tabela ficam os caracteres que já são texto no TTY: `›`, `×`, `+
 | `arrow.clockwise` | Reiniciar Serviço, atualizar | `cod-refresh` | `U+EB37` |
 | `arrow.down.to.line` | Atualizar com a branch principal | `md-arrow_collapse_down` | `U+F0792` |
 | `play.fill` | Iniciar | `cod-play` | `U+EB2C` |
-| `stop.fill` | Parar, interromper o agente | `cod-debug_stop` | `U+EAD7` |
+| `stop.fill` | Parar, interromper o agente | `■` (o `cod-debug_stop` é vazado nesta fonte) | `U+25A0` |
 | `terminal` | Abrir Console, Terminal livre | `cod-terminal` | `U+EA85` |
 | `trash` | Mover para a lixeira | `cod-trash` | `U+EA81` |
 | `doc.on.doc` | Copiar bloco de código | `cod-copy` | `U+EBCC` |

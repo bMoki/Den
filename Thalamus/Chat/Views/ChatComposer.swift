@@ -22,9 +22,14 @@ struct ChatComposer: View {
                 pendingAttachmentRow
             }
 
-            ComposerField(chat: chat, focusRequested: $focusRequested,
-                          placeholder: Self.placeholder, submit: submit,
-                          stickToBottom: stickToBottom)
+            HStack(alignment: .top, spacing: Theme.space(.s8)) {
+                if Theme.style.marks == .characters {
+                    Text("›").font(Theme.font(.body)).foregroundStyle(Theme.accent)
+                }
+                ComposerField(chat: chat, focusRequested: $focusRequested,
+                              placeholder: Self.placeholder, submit: submit,
+                              stickToBottom: stickToBottom)
+            }
                 .padding(.horizontal, Theme.space(.s8))
                 .padding(.top, Theme.space(.s6))
                 .padding(.bottom, Theme.space(.s4))
@@ -38,8 +43,9 @@ struct ChatComposer: View {
         .padding(Theme.space(.s8))
         .background(Theme.raised, in: RoundedRectangle(cornerRadius: Theme.radius(.r16), style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: Theme.radius(.r16), style: .continuous)
-            .strokeBorder(Theme.borderControl, lineWidth: Theme.line(.thin)))
+            .strokeBorder(Theme.style.boxes == .lines ? .clear : Theme.borderControl, lineWidth: Theme.line(.thin)))
         .elevation(.composer)
+        .area("composer", fill: Theme.canvas, tint: Theme.borderControl)
         .overlay(alignment: .topLeading) { ComposerStatusChip(chat: chat, keys: keys) }
         .composerColumn()
     }
@@ -87,7 +93,7 @@ struct ChatComposer: View {
             Theme.image(chat.isBusy ? .stop : .send)
                 .font(Theme.font(chat.isBusy ? .small : .headline, weight: .bold))
                 .contentTransition(.symbolEffect(.replace))
-                .frame(width: Theme.size(.s34), height: Theme.size(.s34))
+                .frame(width: Theme.style.marks == .characters ? nil : Theme.size(.s34), height: Theme.size(.s34))
         }
         .buttonStyle(ThalamusButtonStyle(kind: .primary, radius: .r10))
         .disabled(!chat.isBusy

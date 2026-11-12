@@ -32,6 +32,7 @@ struct RowPageView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .area(editors.selection(in: row).map { "editor · \($0.name)" } ?? "página", fill: Theme.canvas)
             .background(Theme.canvas)
         } inspector: {
             if let root {

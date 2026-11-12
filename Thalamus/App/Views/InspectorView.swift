@@ -27,7 +27,7 @@ struct InspectorView: View {
                                     .foregroundStyle(Theme.textSecondary)
                                     .padding(.horizontal, Theme.space(.s6))
                                     .padding(.vertical, Theme.space(.s1))
-                                    .background(Theme.hoverRaised, in: Capsule())
+                                    .background(Theme.hoverRaised, in: Theme.capsule)
                             }
                         }
                 }
@@ -56,6 +56,7 @@ struct InspectorView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        .area("inspector", fill: Theme.panel)
         .background(Theme.panel)
         .task(id: "\(shown == .changes)|\(directory.path)|\(Theme.palette.id)") {
             guard shown == .changes else { return }

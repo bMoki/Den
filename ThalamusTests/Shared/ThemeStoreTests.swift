@@ -48,7 +48,7 @@ private let testStyle: Style = {
     defer { scratch.remove() }
     let defaults = scratch.defaults
     defaults.set("brasa", forKey: ThemeStore.paletteKey)
-    defaults.set("tty", forKey: ThemeStore.styleKey)
+    defaults.set("nenhum", forKey: ThemeStore.styleKey)
     let store = ThemeStore()
     store.restore(from: defaults)
     #expect(store.palette.id == "indigo")

@@ -44,10 +44,22 @@ nonisolated struct Style: Sendable {
     enum IconArt: Equatable, Sendable {
         case symbol(String)
         case asset(String)
+        case glyph(UInt32)
     }
 
     enum SessionStateLook: Sendable {
         case animatedDot
+        case glyphWord
+    }
+
+    enum Boxes: Sendable {
+        case surfaces
+        case lines
+    }
+
+    enum Marks: Sendable {
+        case graphic
+        case characters
     }
 
     var id: String
@@ -66,10 +78,12 @@ nonisolated struct Style: Sendable {
     var shadow: @Sendable (Elevation) -> Shadow
     var icon: @Sendable (Icon) -> IconArt
     var sessionStates: SessionStateLook
+    var boxes: Boxes
+    var marks: Marks
 }
 
 nonisolated extension Style: Identifiable {
-    static let all = [padrao]
+    static let all = [padrao, tty]
 
     static let padrao = Style(
         id: "padrao", name: "Padrão",
@@ -96,7 +110,72 @@ nonisolated extension Style: Identifiable {
             }
         },
         icon: { $0.isAsset ? .asset($0.rawValue) : .symbol($0.rawValue) },
-        sessionStates: .animatedDot)
+        sessionStates: .animatedDot,
+        boxes: .surfaces,
+        marks: .graphic)
+
+    static let tty = Style(
+        id: "tty", name: "TTY",
+        font: { _, weight, _ in .custom(ttyFace(weight), fixedSize: ttyPoints) },
+        inlineCodeFont: { _, weight in .custom(ttyFace(weight), fixedSize: ttyPoints) },
+        boxFont: { _, weight in .custom(ttyFace(weight), fixedSize: ttyPoints) },
+        nsFont: { _ in ttyNSFont },
+        nsCodeFont: { _ in ttyNSFont },
+        codeLineHeight: 1.3,
+        radius: { _ in 0 },
+        boxRadius: { _ in 0 },
+        line: { $0 == .hairline ? Line.thin.rawValue : $0.rawValue },
+        space: { ($0.rawValue / ttyGrid).rounded() * ttyGrid },
+        size: { max(ttyGrid / 2, ($0.rawValue / (ttyGrid / 2)).rounded() * (ttyGrid / 2)) },
+        shadow: { _ in Shadow(opacity: 0, radius: 0) },
+        icon: { .glyph(ttyGlyphs[$0.rawValue] ?? ttyMissingGlyph) },
+        sessionStates: .glyphWord,
+        boxes: .lines,
+        marks: .characters)
+
+    static let ttyPoints: CGFloat = 13
+    private static let ttyGrid: CGFloat = 4
+    static let ttyMissingGlyph: UInt32 = 0x3F
+    private static let ttyRegular = "JetBrainsMonoNLNFM-Regular"
+    private static let ttyBold = "JetBrainsMonoNLNFM-Bold"
+
+    private static let ttyFontsRegistered: Bool = {
+        let urls = ["Regular", "Bold", "Italic"].compactMap {
+            Bundle.main.url(forResource: "JetBrainsMonoNLNerdFontMono-" + $0, withExtension: "ttf")
+        }
+        let registered = urls.map { CTFontManagerRegisterFontsForURL($0 as CFURL, .process, nil) }
+        return registered.count == 3 && !registered.contains(false) || NSFont(name: ttyRegular, size: ttyPoints) != nil
+    }()
+
+    private static func ttyFace(_ weight: Font.Weight?) -> String {
+        _ = ttyFontsRegistered
+        return [Font.Weight.semibold, .bold, .heavy, Font.Weight.black].contains(weight) ? ttyBold : ttyRegular
+    }
+
+    private static let ttyNSFont: NSFont = NSFont(name: ttyFace(nil), size: ttyPoints)
+        ?? .monospacedSystemFont(ofSize: ttyPoints, weight: .regular)
+
+    static func character(_ code: UInt32) -> String {
+        Unicode.Scalar(code).map { String(Character($0)) } ?? "?"
+    }
+
+    static func checkbox(_ isOn: Bool) -> String { isOn ? "[x]" : "[ ]" }
+
+    private static let glyphImages = NSCache<NSNumber, NSImage>()
+
+    static func glyphImage(_ code: UInt32) -> NSImage {
+        if let cached = glyphImages.object(forKey: NSNumber(value: code)) { return cached }
+        let text = NSAttributedString(string: character(code),
+                                      attributes: [.font: ttyNSFont])
+        let bounds = text.size()
+        let image = NSImage(size: CGSize(width: ceil(bounds.width), height: ceil(bounds.height)), flipped: false) { rect in
+            text.draw(at: rect.origin)
+            return true
+        }
+        image.isTemplate = true
+        glyphImages.setObject(image, forKey: NSNumber(value: code))
+        return image
+    }
 
     private static func padraoPoints(_ size: TextSize) -> CGFloat {
         switch size {
@@ -126,9 +205,14 @@ nonisolated extension Style: Identifiable {
     }
 
     func image(_ icon: Icon) -> Image {
-        switch self.icon(icon) {
+        image(of: self.icon(icon))
+    }
+
+    private func image(of art: IconArt) -> Image {
+        switch art {
         case .symbol(let name): Image(systemName: name)
         case .asset(let name): Image(name)
+        case .glyph(let code): Image(nsImage: Self.glyphImage(code))
         }
     }
 
@@ -136,11 +220,17 @@ nonisolated extension Style: Identifiable {
         switch self.icon(icon) {
         case .symbol(let name): NSImage(systemSymbolName: name, accessibilityDescription: nil)
         case .asset(let name): NSImage(named: name)
+        case .glyph(let code): Self.glyphImage(code)
         }
     }
 
     func image(symbolNamed name: String) -> Image {
-        Icon(rawValue: name).map(image) ?? Image(systemName: name)
+        image(of: art(symbolNamed: name))
+    }
+
+    func art(symbolNamed name: String) -> IconArt {
+        if let icon = Icon(rawValue: name) { return self.icon(icon) }
+        return marks == .characters ? icon(.noIndicator) : .symbol(name)
     }
 
     static func symbolExists(_ name: String) -> Bool {

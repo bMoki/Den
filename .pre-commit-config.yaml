@@ -7,8 +7,9 @@ default_stages: [pre-commit]
 
 # Recorded protocol fixtures are byte-for-byte what the CLIs printed, the
 # baselines are written by the tools themselves, and the specs and plans under
-# docs/superpowers are working notes the hooks leave as they are.
-exclude: ^Packages/HarnessKit/Tests/[^/]+/Fixtures/|(^|/)\.[a-z]+-baseline\.json$|^docs/superpowers/
+# docs/superpowers are working notes the hooks leave as they are. The TTY fonts
+# and their license are vendored as published, so they stay byte-for-byte too.
+exclude: ^Packages/HarnessKit/Tests/[^/]+/Fixtures/|(^|/)\.[a-z]+-baseline\.json$|^docs/superpowers/|^Thalamus/Shared/Theme/Fonts/
 
 repos:
   # Repository hygiene.

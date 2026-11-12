@@ -37,7 +37,7 @@ struct SessionWelcome: View {
         }
         .padding(.horizontal, Theme.space(.s10))
         .frame(height: Theme.size(.s28))
-        .background(Theme.raised, in: Capsule())
-        .overlay(Capsule().strokeBorder(Theme.border, lineWidth: Theme.line(.thin)))
+        .background(Theme.raised, in: Theme.capsule)
+        .overlay(Theme.capsule.strokeBorder(Theme.border, lineWidth: Theme.line(.thin)))
     }
 }

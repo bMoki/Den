@@ -50,7 +50,7 @@ struct PaneHoverCard: View {
             ForEach(Array(tip.lines.enumerated()), id: \.offset) { _, line in
                 HStack(spacing: Theme.space(.s5)) {
                     if let color = line.color {
-                        Circle().fill(color).frame(width: Theme.size(.s6), height: Theme.size(.s6))
+                        Theme.circle.fill(color).frame(width: Theme.size(.s6), height: Theme.size(.s6))
                     }
                     Text(line.text)
                         .font(Theme.font(.labelPlus))
@@ -60,7 +60,7 @@ struct PaneHoverCard: View {
             }
             if let state = tip.state {
                 HStack(spacing: Theme.space(.s5)) {
-                    Circle()
+                    Theme.circle
                         .fill(state.color)
                         .frame(width: Theme.size(.s6), height: Theme.size(.s6))
                     Text(state.name)

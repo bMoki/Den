@@ -39,7 +39,15 @@ struct ContextRing: View {
 
     private var level: ContextLevel { ContextLevel(fraction: chat.contextFraction ?? 0) }
 
+    @ViewBuilder
     private var ring: some View {
+        switch Theme.style.marks {
+        case .graphic: circle
+        case .characters: Text("●").font(Theme.font(.body)).foregroundStyle(level.color)
+        }
+    }
+
+    private var circle: some View {
         let fraction = chat.contextFraction ?? 0
         return ZStack {
             Circle()

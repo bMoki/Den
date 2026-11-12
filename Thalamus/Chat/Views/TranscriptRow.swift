@@ -83,7 +83,7 @@ struct TranscriptRow: View {
     private func userBubble(_ line: ChatLine) -> some View {
         VStack(alignment: .trailing, spacing: Theme.space(.s4)) {
             HStack(spacing: 0) {
-                Spacer(minLength: Theme.space(.s96))
+                Spacer(minLength: Theme.style.boxes == .lines ? 0 : Theme.space(.s96))
                 MessageBubble(text: line.text, moment: line.timestamp,
                               style: .user,
                               images: line.images, files: line.files, onZoom: onZoom,

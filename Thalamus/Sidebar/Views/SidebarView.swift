@@ -16,6 +16,7 @@ struct SidebarView: View {
             SidebarSearch(workspace: workspace)
             list
         }
+        .area("sessões", fill: Theme.sidebar, titleLeading: lightsInset)
         .background(Theme.sidebar)
         .sheet(isPresented: Binding(
             get: { ns.creation?.isPresented == true },

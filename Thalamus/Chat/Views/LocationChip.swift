@@ -18,10 +18,11 @@ struct LocationChip: View {
                 }
                 Chevron(size: .tiny)
             }
-            .foregroundStyle(Theme.textSecondary)
             .chipLabel()
+            .bracketed()
+            .foregroundStyle(Theme.textSecondary)
             .overlay(RoundedRectangle(cornerRadius: Theme.radius(.r8), style: .continuous)
-                .strokeBorder(Theme.borderStrong, lineWidth: Theme.line(.thin)))
+                .strokeBorder(Theme.style.marks == .characters ? .clear : Theme.borderStrong, lineWidth: Theme.line(.thin)))
         }
         .buttonStyle(.thalamusGhost)
         .fixedSize()

@@ -8,7 +8,7 @@ struct CompactionProgressCard: View {
     var body: some View {
         HStack(alignment: .top, spacing: Theme.space(.s11)) {
             ZStack {
-                Circle()
+                Theme.circle
                     .fill(Theme.accent.opacity(0.16))
                     .frame(width: Theme.size(.s30), height: Theme.size(.s30))
                 Theme.image(.compact)
@@ -52,10 +52,10 @@ struct CompactionProgressCard: View {
         GeometryReader { geometry in
             let full = geometry.size.width
             let highlight = max(56, full * 0.36)
-            Capsule()
+            Theme.capsule
                 .fill(Theme.hoverRaised)
                 .overlay(alignment: .leading) {
-                    Capsule()
+                    Theme.capsule
                         .fill(LinearGradient(
                             colors: [Theme.accent.opacity(0),
                                      Theme.accent.opacity(0.85),
@@ -64,7 +64,7 @@ struct CompactionProgressCard: View {
                         .frame(width: highlight)
                         .offset(x: -highlight + (full + highlight) * phase)
                 }
-                .clipShape(Capsule())
+                .clipShape(Theme.capsule)
         }
         .frame(height: Theme.size(.s5))
     }
@@ -93,8 +93,8 @@ struct CompactionMark: View {
             .foregroundStyle(Theme.textTertiary)
             .padding(.horizontal, Theme.space(.s12))
             .padding(.vertical, Theme.space(.s6))
-            .background(Theme.raised, in: Capsule())
-            .overlay(Capsule().strokeBorder(Theme.border, lineWidth: Theme.line(.thin)))
+            .background(Theme.raised, in: Theme.capsule)
+            .overlay(Theme.capsule.strokeBorder(Theme.border, lineWidth: Theme.line(.thin)))
             rule
         }
         .frame(maxWidth: .infinity)
