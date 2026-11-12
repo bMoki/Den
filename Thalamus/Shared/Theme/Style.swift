@@ -50,6 +50,8 @@ nonisolated struct Style: Sendable {
         case animatedDot
     }
 
+    var id: String
+    var name: String
     var font: @Sendable (TextSize, Font.Weight?, Font.Design?) -> Font
     var inlineCodeFont: @Sendable (TextSize, Font.Weight?) -> Font
     var boxFont: @Sendable (CGFloat, Font.Weight?) -> Font
@@ -66,10 +68,11 @@ nonisolated struct Style: Sendable {
     var sessionStates: SessionStateLook
 }
 
-nonisolated extension Style {
-    static let current = padrao
+nonisolated extension Style: Identifiable {
+    static let all = [padrao]
 
     static let padrao = Style(
+        id: "padrao", name: "Padrão",
         font: { .system(size: padraoPoints($0), weight: $1, design: $2) },
         inlineCodeFont: { .system(size: padraoPoints($0) - 1, weight: $1, design: .monospaced) },
         boxFont: { .system(size: $0 * 0.6, weight: $1) },

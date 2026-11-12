@@ -28,11 +28,13 @@ final class PanelTerminal: Identifiable {
         view = LocalProcessTerminalView(frame: CGRect(x: 0, y: 0, width: 640, height: 220))
         watcher = ExitWatcher(id: id, ended: ended)
         view.processDelegate = watcher
-        view.nativeBackgroundColor = NSColor(Theme.terminal)
-        view.nativeForegroundColor = NSColor(Theme.textSecondary)
-        view.caretColor = NSColor(Theme.textSecondary)
-        view.installColors(Theme.palette.terminalANSI.map(Self.terminalColor))
-        view.font = Theme.nsCodeFont(.small)
+        Theme.follow(view) { view in
+            view.nativeBackgroundColor = NSColor(Theme.terminal)
+            view.nativeForegroundColor = NSColor(Theme.textSecondary)
+            view.caretColor = NSColor(Theme.textSecondary)
+            view.installColors(Theme.palette.terminalANSI.map(Self.terminalColor))
+            view.font = Theme.nsCodeFont(.small)
+        }
         view.startProcess(executable: launch.executable,
                           args: launch.arguments,
                           environment: launch.environment,

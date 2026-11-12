@@ -1,8 +1,8 @@
 import SwiftUI
 
 nonisolated enum Theme {
-    static var palette: Palette { .current }
-    static var style: Style { .current }
+    static var palette: Palette { ThemeStore.shared.palette }
+    static var style: Style { ThemeStore.shared.style }
 
     static func font(_ size: Style.TextSize, weight: Font.Weight? = nil, design: Font.Design? = nil) -> Font {
         style.font(size, weight, design)

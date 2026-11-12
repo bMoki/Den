@@ -28,7 +28,7 @@ struct DialogFooter<Content: View>: View {
 }
 
 enum DialogBox {
-    static let shape = RoundedRectangle(cornerRadius: Theme.radius(.r8), style: .continuous)
+    static var shape: RoundedRectangle { RoundedRectangle(cornerRadius: Theme.radius(.r8), style: .continuous) }
 }
 
 struct DialogCancelButton: View {

@@ -134,6 +134,8 @@ nonisolated struct Palette: Sendable {
         var attribute: Color
     }
 
+    var id: String
+    var name: String
     var appearance: NSAppearance.Name
     var surfaces: Surfaces
     var borders: Borders
@@ -152,8 +154,8 @@ nonisolated struct Palette: Sendable {
     var terminalANSI: [Color]
 }
 
-nonisolated extension Palette {
-    static let current = indigo
+nonisolated extension Palette: Identifiable {
+    static let all = [indigo]
 
     static let indigo: Palette = {
         let accent = Color(hex: 0x8B93FF)
@@ -167,6 +169,7 @@ nonisolated extension Palette {
         let textTertiary = Color(hex: 0x7F879A)
         let textFaint = Color(hex: 0x555C6C)
         return Palette(
+            id: "indigo", name: "Índigo",
             appearance: .darkAqua,
             surfaces: Surfaces(canvas: Color(hex: 0x0F1115), sidebar: Color(hex: 0x14171D),
                                panel: Color(hex: 0x121419), raised: Color(hex: 0x1A1E26),

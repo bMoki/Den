@@ -16,7 +16,8 @@ struct ComposerTextView: NSViewRepresentable {
 
     static var font: NSFont { Theme.nsFont(.body) }
     static let maxLines = 6
-    static let lineHeight = NSLayoutManager().defaultLineHeight(for: font)
+    static var lineHeight: CGFloat { measurer.defaultLineHeight(for: font) }
+    private static let measurer = NSLayoutManager()
     static var ghostTrailing: CGFloat { Theme.space(.s30) }
     static let ghostMaxLines = 3
 
@@ -39,8 +40,11 @@ struct ComposerTextView: NSViewRepresentable {
     func makeNSView(context: Context) -> NSScrollView {
         let textView = PromptTextView(usingTextLayoutManager: false)
         textView.delegate = context.coordinator
-        textView.font = Self.font
-        textView.textColor = NSColor(Theme.input)
+        Theme.follow(textView) { textView in
+            textView.font = Self.font
+            textView.textColor = NSColor(Theme.input)
+            textView.selectedTextAttributes = [.backgroundColor: NSColor(Theme.accent.opacity(0.28))]
+        }
         textView.drawsBackground = false
         textView.isRichText = false
         textView.allowsUndo = true

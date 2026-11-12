@@ -18,17 +18,18 @@ enum FileTypeIcon {
 
     static func image(for name: String) -> NSImage {
         let ext = (name as NSString).pathExtension.lowercased()
-        if let cached = cache[ext] { return cached }
+        let key = Theme.style.id + "." + ext
+        if let cached = cache[key] { return cached }
 
         if let icon = icons[ext], let custom = Theme.nsImage(icon) {
-            cache[ext] = custom
+            cache[key] = custom
             return custom
         }
         let type: UTType? = overrides[ext].flatMap { UTType($0) }
             ?? UTType(filenameExtension: ext)
             ?? UTType(filenameExtension: ext, conformingTo: .sourceCode)
         let image = NSWorkspace.shared.icon(for: type ?? .plainText)
-        cache[ext] = image
+        cache[key] = image
         return image
     }
 }

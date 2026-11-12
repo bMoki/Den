@@ -187,6 +187,7 @@ Fora desta tabela ficam os caracteres que já são texto no TTY: `›`, `×`, `+
 | --- | --- | --- | --- |
 | `circle.grid.2x2` | Aba Indicadores | `md-dots_grid` | `U+F15FC` |
 | `bubble.left.and.text.bubble.right` | Aba Sessões | `cod-comment_discussion` | `U+EAC7` |
+| `paintpalette` | Aba Aparência | `md-palette` | `U+F03D8` |
 
 ## Tipos de arquivo
 

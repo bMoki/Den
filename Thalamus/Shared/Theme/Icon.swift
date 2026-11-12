@@ -115,6 +115,7 @@ nonisolated enum Icon: String, CaseIterable, Sendable {
 
     case indicatorsTab = "circle.grid.2x2"
     case sessionsTab = "bubble.left.and.text.bubble.right"
+    case appearanceTab = "paintpalette"
 
     case javaFile = "filetype-java"
     case javaScriptFile = "filetype-js"

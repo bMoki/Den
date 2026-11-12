@@ -52,7 +52,7 @@ nonisolated enum SyntaxHighlighter {
         }
     }
 
-    private static var syntax: Palette.Syntax { Palette.current.syntax }
+    private static var syntax: Palette.Syntax { Theme.palette.syntax }
 
     static func highlight(_ line: String, language: Language) -> AttributedString {
         let chars = Array(line)

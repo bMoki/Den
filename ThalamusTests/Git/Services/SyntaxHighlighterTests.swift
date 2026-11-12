@@ -5,7 +5,7 @@ import SwiftUI
 
 private func shade(_ color: Color?) -> String {
     guard let color else { return "plain" }
-    let syntax = Palette.current.syntax
+    let syntax = Theme.palette.syntax
     if color == syntax.keyword { return "keyword" }
     if color == syntax.string { return "string" }
     if color == syntax.number { return "number" }

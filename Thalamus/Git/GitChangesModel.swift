@@ -131,7 +131,7 @@ final class GitChangesModel {
         guard id == loadID, !Task.isCancelled else { return }
 
         let statuses = surveys.compactMap { $0 }
-        let newSignature = statuses
+        let newSignature = Theme.palette.id + "\n" + statuses
             .map { "\($0.root.path)@\($0.branch ?? "")\n\($0.status)\n" }
             .joined()
 

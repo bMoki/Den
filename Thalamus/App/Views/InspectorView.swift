@@ -57,7 +57,7 @@ struct InspectorView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .background(Theme.panel)
-        .task(id: "\(shown == .changes)|\(directory.path)") {
+        .task(id: "\(shown == .changes)|\(directory.path)|\(Theme.palette.id)") {
             guard shown == .changes else { return }
             await gitChanges.load(directory: directory)
             while !Task.isCancelled {

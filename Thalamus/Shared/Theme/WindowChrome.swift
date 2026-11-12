@@ -27,6 +27,7 @@ struct WindowChrome: NSViewRepresentable {
         private var observers: [NSObjectProtocol] = []
         private var titleObservation: NSKeyValueObservation?
         private var placing = false
+        private weak var themedWindow: NSWindow?
 
         static let lightsLeading: CGFloat = 20
 
@@ -40,7 +41,10 @@ struct WindowChrome: NSViewRepresentable {
             window.titlebarAppearsTransparent = true
             window.titleVisibility = .hidden
             window.styleMask.insert(.fullSizeContentView)
-            window.backgroundColor = NSColor(Theme.canvas)
+            if themedWindow !== window {
+                themedWindow = window
+                Theme.follow(window) { $0.backgroundColor = NSColor(Theme.canvas) }
+            }
 
             let relayout: [NSNotification.Name] = [
                 NSWindow.didResizeNotification,

@@ -23,6 +23,8 @@ struct SettingsView: View {
                 scrolling(IndicatorSettings(defaults: defaults))
             case .sessions:
                 scrolling(SessionDefaultSettings(defaults: defaults))
+            case .appearance:
+                AppearanceSettings(defaults: defaults)
             }
         }
         .frame(width: 520)
@@ -40,7 +42,7 @@ struct SettingsView: View {
 }
 
 enum SettingsTab: CaseIterable, Identifiable {
-    case gitHub, indicators, sessions
+    case gitHub, indicators, sessions, appearance
 
     var id: Self { self }
 
@@ -49,6 +51,7 @@ enum SettingsTab: CaseIterable, Identifiable {
         case .gitHub: "GitHub"
         case .indicators: "Indicadores"
         case .sessions: "Sessões"
+        case .appearance: "Aparência"
         }
     }
 
@@ -57,6 +60,7 @@ enum SettingsTab: CaseIterable, Identifiable {
         case .gitHub: .pullRequest
         case .indicators: .indicatorsTab
         case .sessions: .sessionsTab
+        case .appearance: .appearanceTab
         }
     }
 }
