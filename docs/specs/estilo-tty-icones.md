@@ -217,15 +217,19 @@ Fora desta tabela ficam os caracteres que já são texto no TTY: `›`, `‹`, `
 
 | Hoje | Onde | Nerd Fonts | Código |
 | --- | --- | --- | --- |
-| `HarnessClaudeCode` | Harness Claude Code | `md-asterisk` | `U+F06C4` |
+| `HarnessClaudeCode` | Harness Claude Code | logo sem fundo (asset) | `HarnessClaudeCodeMark` |
 | `HarnessOpenCode` | Harness OpenCode | `md-unfold_more_horizontal` | `U+F054F` |
 | `GitChanges` | Aba de mudanças do git | `oct-git_commit` | `U+F417` |
 
 ## Sem logo no Nerd Fonts
 
-Expo, Claude Code e OpenCode não têm logo no Nerd Fonts. Ficaram com um ícone que
-lembra a marca sem copiá-la: a seta para cima do Expo, o asterisco do Claude Code
-e os sinais de código do OpenCode. Chakra ficou com a letra C num círculo.
+Expo e OpenCode não têm logo no Nerd Fonts. Ficaram com um ícone que lembra a
+marca sem copiá-la: a seta para cima do Expo e os sinais de código do OpenCode.
+Chakra ficou com a letra C num círculo.
+
+O Claude Code também não tem logo no Nerd Fonts, mas no TTY ele não usa glifo:
+mostra o logo do Claude sem o fundo, laranja sobre o fundo da tela
+(`HarnessClaudeCodeMark`, recortado de `HarnessClaudeCode`).
 
 ## Licenças
 

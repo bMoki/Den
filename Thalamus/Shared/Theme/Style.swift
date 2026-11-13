@@ -128,7 +128,7 @@ nonisolated extension Style: Identifiable {
         space: { ($0.rawValue / ttyGrid).rounded() * ttyGrid },
         size: { max(ttyGrid / 2, ($0.rawValue / (ttyGrid / 2)).rounded() * (ttyGrid / 2)) },
         shadow: { _ in Shadow(opacity: 0, radius: 0) },
-        icon: { .glyph(ttyGlyphs[$0.rawValue] ?? ttyMissingGlyph) },
+        icon: { $0 == .claudeCode ? .asset(ttyClaudeMark) : .glyph(ttyGlyphs[$0.rawValue] ?? ttyMissingGlyph) },
         sessionStates: .glyphWord,
         boxes: .lines,
         marks: .characters)
@@ -136,6 +136,7 @@ nonisolated extension Style: Identifiable {
     static let ttyPoints: CGFloat = 13
     private static let ttyGrid: CGFloat = 4
     static let ttyMissingGlyph: UInt32 = 0x3F
+    static let ttyClaudeMark = "HarnessClaudeCodeMark"
     private static let ttyRegular = "JetBrainsMonoNLNFM-Regular"
     private static let ttyBold = "JetBrainsMonoNLNFM-Bold"
 

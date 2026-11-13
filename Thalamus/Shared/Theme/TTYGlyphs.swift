@@ -118,7 +118,6 @@ nonisolated extension Style {
         "logo-tailwind": 0xE8BA,
         "logo-typescript": 0xE8CA,
         "logo-vite": 0xE8D7,
-        "HarnessClaudeCode": 0xF06C4,
         "HarnessOpenCode": 0xF054F,
         "GitChanges": 0xF417,
     ]

@@ -59,8 +59,13 @@ private func iconTable() throws -> Set<String> {
 }
 
 @Test func ttyHasAGlyphForEveryIconInTheTable() throws {
-    #expect(Set(Style.ttyGlyphs.keys) == (try iconTable()))
+    #expect(Set(Style.ttyGlyphs.keys).union([Icon.claudeCode.rawValue]) == (try iconTable()))
     #expect(Icon.allCases.allSatisfy { Style.tty.icon($0) != .glyph(Style.ttyMissingGlyph) })
+}
+
+@Test func ttyShowsTheClaudeLogoWithoutItsBackground() {
+    #expect(Style.tty.icon(.claudeCode) == .asset(Style.ttyClaudeMark))
+    #expect(Style.tty.nsImage(.claudeCode) != nil)
 }
 
 @Test func ttyEmbedsAFontThatHasEveryGlyphItDraws() {
