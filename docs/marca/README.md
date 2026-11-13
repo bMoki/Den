@@ -116,5 +116,16 @@ o@@@@@@@@@@@@0. @@@@ .0@@@@@@@@@@@@o
        .O0@@@O:      :O@@@0O.
 ```
 
-Abaixo de 32 px os caracteres viram textura, então o TTY precisa de um
-desenho próprio para 16 e 32 px; ele ainda não foi feito.
+O `@` do ponto central é cada sequência de `@` que passa pelas colunas 17 e
+18 (contando do zero) e começa depois de um espaço: 4, 6, 8 e 6 caracteres
+nas linhas 7 a 10.
+
+Até 32 px os caracteres viram textura. A 16 e a 32 px, o TTY desenha o
+B2 ajustado à grade de 16 px (a geometria de `app-indigo-16.svg`) sem
+antialiasing: cada pixel é o fundo, a metade ou o ponto, um bitmap duro como
+uma fonte de terminal; a faixa "DEV" do Thalamus Dev também sai sem antialiasing
+nesses tamanhos.
+
+O Thalamus monta esses ícones em `Thalamus/Shared/Theme/DockIcon.swift`; o
+Padrão com Índigo sai igual ao `AppIcon`, e o Thalamus Dev leva a faixa "DEV"
+em todo Tema.

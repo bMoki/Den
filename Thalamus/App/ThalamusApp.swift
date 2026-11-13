@@ -56,7 +56,10 @@ struct ThalamusApp: App {
 
 final class ThalamusAppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillFinishLaunching(_ notification: Notification) {
-        Theme.follow(NSApp) { $0.appearance = NSAppearance(named: Theme.palette.appearance) }
+        Theme.follow(NSApp) { app in
+            app.appearance = NSAppearance(named: Theme.palette.appearance)
+            app.applicationIconImage = DockIcon.image(style: Theme.style, palette: Theme.palette, dev: isDebugBuild)
+        }
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {

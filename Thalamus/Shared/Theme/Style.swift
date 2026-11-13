@@ -62,6 +62,11 @@ nonisolated struct Style: Sendable {
         case characters
     }
 
+    enum AppIconDrawing: Sendable {
+        case shapes
+        case characters
+    }
+
     var id: String
     var name: String
     var font: @Sendable (TextSize, Font.Weight?, Font.Design?) -> Font
@@ -80,6 +85,7 @@ nonisolated struct Style: Sendable {
     var sessionStates: SessionStateLook
     var boxes: Boxes
     var marks: Marks
+    var appIcon: AppIconDrawing
 }
 
 nonisolated extension Style: Identifiable {
@@ -112,7 +118,8 @@ nonisolated extension Style: Identifiable {
         icon: { $0.isAsset ? .asset($0.rawValue) : .symbol($0.rawValue) },
         sessionStates: .animatedDot,
         boxes: .surfaces,
-        marks: .graphic)
+        marks: .graphic,
+        appIcon: .shapes)
 
     static let tty = Style(
         id: "tty", name: "TTY",
@@ -131,7 +138,8 @@ nonisolated extension Style: Identifiable {
         icon: { $0 == .claudeCode ? .asset(ttyClaudeMark) : .glyph(ttyGlyphs[$0.rawValue] ?? ttyMissingGlyph) },
         sessionStates: .glyphWord,
         boxes: .lines,
-        marks: .characters)
+        marks: .characters,
+        appIcon: .characters)
 
     static let ttyPoints: CGFloat = 13
     private static let ttyGrid: CGFloat = 4
@@ -151,6 +159,14 @@ nonisolated extension Style: Identifiable {
     private static func ttyFace(_ weight: Font.Weight?) -> String {
         _ = ttyFontsRegistered
         return [Font.Weight.semibold, .bold, .heavy, Font.Weight.black].contains(weight) ? ttyBold : ttyRegular
+    }
+
+    static func ttyBoldFont(ofSize size: CGFloat) -> NSFont {
+        NSFont(name: ttyFace(.bold), size: size) ?? .monospacedSystemFont(ofSize: size, weight: .bold)
+    }
+
+    static func bandFont(ofSize size: CGFloat) -> NSFont {
+        .systemFont(ofSize: size, weight: .heavy)
     }
 
     private static let ttyNSFont: NSFont = NSFont(name: ttyFace(nil), size: ttyPoints)

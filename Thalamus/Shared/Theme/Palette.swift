@@ -124,6 +124,14 @@ nonisolated struct Palette: Sendable {
         var mcpUnavailable: Color
     }
 
+    struct AppIcon {
+        var body: Color
+        var halves: Color
+        var dot: Color
+        var band: Color
+        var onBand: Color
+    }
+
     struct Syntax {
         var keyword: Color
         var command: Color
@@ -152,6 +160,7 @@ nonisolated struct Palette: Sendable {
     var slashCommands: SlashCommands
     var syntax: Syntax
     var terminalANSI: [Color]
+    var appIcon: AppIcon
 }
 
 nonisolated extension Palette: Identifiable {
@@ -212,6 +221,8 @@ nonisolated extension Palette: Identifiable {
             terminalANSI: [
                 0x000000, 0xC23621, 0x25BC24, 0xADAD27, 0x492EE1, 0xD338D3, 0x33BBC8, 0xCBCCCD,
                 0x818383, 0xFC391F, 0x31E722, 0xEAEC23, 0x5833FF, 0xF935F8, 0x14F0F0, 0xE9EBEB,
-            ].map { Color(hex: $0) })
+            ].map { Color(hex: $0) },
+            appIcon: AppIcon(body: Color(hex: 0x171A33), halves: accent, dot: Color(hex: 0xE6E9F0),
+                             band: Color(hex: 0xFF8C1A), onBand: .white))
     }()
 }
