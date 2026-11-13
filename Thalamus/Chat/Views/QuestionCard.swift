@@ -139,8 +139,7 @@ struct QuestionCard: View {
                 HStack(alignment: .firstTextBaseline, spacing: Theme.space(.s10)) {
                     Theme.image(selected
                                 ? (multiple ? .checkboxOn : .radioOn)
-                                : (multiple ? .checkboxOff : .radioOff))
-                        .font(Theme.font(.body))
+                                : (multiple ? .checkboxOff : .radioOff), size: .body)
                         .foregroundStyle(selected ? Theme.accent : Theme.textTertiary)
                     VStack(alignment: .leading, spacing: Theme.space(.s2)) {
                         Text(option.label)

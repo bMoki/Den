@@ -150,8 +150,7 @@ struct BranchHeader: View {
 
     private func action(_ symbol: Icon, title: String, perform: @escaping () -> Void) -> some View {
         Button(action: perform) {
-            Theme.image(symbol)
-                .font(Theme.font(.miniPlus))
+            Theme.image(symbol, size: .miniPlus)
                 .foregroundStyle(Theme.textMuted)
                 .iconLabel(size: .s22)
         }

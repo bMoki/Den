@@ -114,8 +114,7 @@ struct FilesPanel: View {
 
     private func gone(detail: String?) -> some View {
         VStack(spacing: Theme.space(.s8)) {
-            Theme.image(.folder)
-                .font(Theme.font(.title))
+            Theme.image(.folder, size: .title)
                 .foregroundStyle(Theme.textFaint)
             Text("A pasta desta Sessão não existe mais")
                 .font(Theme.font(.body, weight: .medium))
@@ -134,8 +133,7 @@ struct FilesPanel: View {
 
     private func headerButton(_ symbol: Icon, title: String, perform: @escaping () -> Void) -> some View {
         Button(action: perform) {
-            Theme.image(symbol)
-                .font(Theme.font(.small, weight: .medium))
+            Theme.image(symbol, size: .small, weight: .medium)
                 .foregroundStyle(Theme.textTertiary)
                 .iconLabel(size: .s26)
         }
@@ -241,14 +239,12 @@ private struct FileTreeRow: View {
     var body: some View {
         Button(action: select) {
             HStack(spacing: Theme.space(.s6)) {
-                Theme.image(.next)
-                    .font(Theme.font(.mini, weight: .semibold))
+                Theme.image(.next, size: .mini, weight: .semibold)
                     .foregroundStyle(Theme.textTertiary)
                     .rotationEffect(.degrees(row.isExpanded ? 90 : 0))
                     .frame(width: Theme.size(.s12))
                     .opacity(row.node.isDirectory ? 1 : 0)
-                Theme.image(symbol)
-                    .font(Theme.font(.small))
+                Theme.image(symbol, size: .small)
                     .foregroundStyle(row.isIgnored ? Theme.textFaint : row.node.isDirectory ? Theme.accent : Theme.textTertiary)
                     .frame(width: Theme.size(.s14))
                 Text(row.node.name)

@@ -115,7 +115,7 @@ private struct RepoUpdateRow: View {
         let style = style
         return HStack(spacing: Theme.space(.s5)) {
             if let symbol = style.symbol {
-                Theme.image(symbol).font(Theme.font(.mini, weight: .bold))
+                Theme.image(symbol, size: .mini, weight: .bold)
             }
             Text(style.title).font(Theme.font(.captionPlus, weight: .medium))
         }

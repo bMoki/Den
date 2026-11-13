@@ -19,8 +19,7 @@ struct PullRequestBar: View {
             Button { NSWorkspace.shared.open(pullRequest.url) } label: {
                 HStack(spacing: Theme.space(.s10)) {
                     HStack(spacing: Theme.space(.s6)) {
-                        Theme.image(tone.symbol)
-                            .font(Theme.font(.small, weight: .semibold))
+                        Theme.image(tone.symbol, size: .small, weight: .semibold)
                             .foregroundStyle(tone.color)
                         Text(PullRequestStatus.number(pullRequest))
                             .font(Theme.font(.smallPlus, weight: .semibold))
@@ -93,7 +92,7 @@ struct PullRequestBar: View {
 
     private func pill(_ text: String, symbol: Icon, color: Color, fill: Color) -> some View {
         HStack(spacing: Theme.space(.s5)) {
-            Theme.image(symbol).font(Theme.font(.mini, weight: .bold))
+            Theme.image(symbol, size: .mini, weight: .bold)
             Text(text)
         }
         .font(Theme.font(.captionPlus, weight: .medium))

@@ -65,7 +65,7 @@ struct EditorTabStrip: View {
     private func tab(title: String, symbol: Icon, isOn: Bool, select: @escaping () -> Void) -> some View {
         Button(action: select) {
             HStack(spacing: Theme.space(.s7)) {
-                Theme.image(symbol).font(Theme.font(.caption))
+                Theme.image(symbol, size: .caption)
                 Text(title).font(Theme.font(.smallPlus))
             }
             .editorTabLabel(isOn: isOn)
@@ -88,7 +88,7 @@ private struct EditorTab: View {
         HStack(spacing: Theme.space(.s7)) {
             Button(action: select) {
                 HStack(spacing: Theme.space(.s7)) {
-                    Theme.image(FileTreeMark.isImage(document.name) ? .image : .file).font(Theme.font(.caption))
+                    Theme.image(FileTreeMark.isImage(document.name) ? .image : .file, size: .caption)
                     Text(document.name).font(Theme.font(.smallPlus))
                     if let mark {
                         Text(FileTreeMark.letter(mark))
@@ -105,7 +105,7 @@ private struct EditorTab: View {
                     if document.isDirty, !hovering {
                         Theme.circle.fill(Theme.textSecondary).frame(width: Theme.size(.s7), height: Theme.size(.s7))
                     } else {
-                        Theme.image(.close).font(Theme.font(.mini, weight: .semibold))
+                        Theme.image(.close, size: .mini, weight: .semibold)
                     }
                 }
                 .frame(width: Theme.style.marks == .characters ? nil : Theme.size(.s16), height: Theme.size(.s16))

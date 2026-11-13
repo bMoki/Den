@@ -37,8 +37,7 @@ struct TerminalPanel: View {
             Button {
                 terminals.open(for: row, in: root)
             } label: {
-                Theme.image(.add)
-                    .font(Theme.font(.caption, weight: .medium))
+                Theme.image(.add, size: .caption, weight: .medium)
                     .foregroundStyle(Theme.textTertiary)
                     .iconLabel(size: .s22)
             }
@@ -55,8 +54,7 @@ struct TerminalPanel: View {
             Button {
                 terminals.isPanelOpen = false
             } label: {
-                Theme.image(.expanded)
-                    .font(Theme.font(.label, weight: .semibold))
+                Theme.image(.expanded, size: .label, weight: .semibold)
                     .foregroundStyle(Theme.textTertiary)
                     .iconLabel(size: .s22)
             }
@@ -85,8 +83,7 @@ struct TerminalToggle: View {
 
     var body: some View {
         Button(action: toggle) {
-            Theme.image(.toggleTerminals)
-                .font(Theme.font(.large))
+            Theme.image(.toggleTerminals, size: .large)
                 .iconLabel(size: .s32)
         }
         .buttonStyle(ThalamusButtonStyle(kind: .secondary, tint: isShown ? Theme.text : Theme.textSecondary))
@@ -128,14 +125,12 @@ private struct TerminalTab: View {
             if let console {
                 ServiceIndicator(.service(console.id), state: console.state)
             } else {
-                Theme.image(.terminal)
-                    .font(Theme.font(.caption))
+                Theme.image(.terminal, size: .caption)
             }
             Text(title)
                 .lineLimit(1)
             Button(action: close) {
-                Theme.image(.close)
-                    .font(Theme.font(.tinyPlus, weight: .bold))
+                Theme.image(.close, size: .tinyPlus, weight: .bold)
                     .frame(width: Theme.size(.s16), height: Theme.size(.s16))
                     .contentShape(Rectangle())
             }

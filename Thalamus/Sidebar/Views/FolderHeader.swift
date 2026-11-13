@@ -14,8 +14,7 @@ struct FolderHeader: View {
 
     var body: some View {
         HStack(spacing: Theme.space(.s8)) {
-            Theme.image(sessions.total > 0 ? .folderWithSessions : .folder)
-                .font(Theme.font(.body))
+            Theme.image(sessions.total > 0 ? .folderWithSessions : .folder, size: .body)
                 .foregroundStyle(sessions.total > 0 ? Theme.accent : Theme.textTertiary)
                 .frame(width: Theme.size(.s16))
             Text(name)

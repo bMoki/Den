@@ -9,8 +9,7 @@ struct GitHubSetupBar: View {
 
     var body: some View {
         HStack(spacing: Theme.space(.s10)) {
-            Theme.image(.terminal)
-                .font(Theme.font(.small, weight: .semibold))
+            Theme.image(.terminal, size: .small, weight: .semibold)
                 .foregroundStyle(Theme.textTertiary)
             Text(message)
                 .font(Theme.font(.smallPlus))
@@ -23,7 +22,7 @@ struct GitHubSetupBar: View {
                 NSPasteboard.general.setString(command, forType: .string)
             } label: {
                 HStack(spacing: Theme.space(.s6)) {
-                    Theme.image(.copy).font(Theme.font(.label))
+                    Theme.image(.copy, size: .label)
                     Text("Copiar")
                     Text(command)
                         .font(Theme.font(.captionPlus, design: .monospaced))

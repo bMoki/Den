@@ -72,8 +72,7 @@ struct SidebarView: View {
                         SidebarOrderMenu(layout: $workspace.layout)
                         Button(action: ns.newBranch) {
                             HStack(spacing: Theme.space(.s4)) {
-                                Theme.image(.add)
-                                    .font(Theme.font(.label, weight: .semibold))
+                                Theme.image(.add, size: .label, weight: .semibold)
                                 Text("Branch")
                                     .font(Theme.font(.small))
                             }
@@ -93,8 +92,7 @@ struct SidebarView: View {
 
                 section(.otherFolders, in: groups, top: ns.status == nil && groups.favorites.isEmpty ? 0 : 14) {
                     Button(action: workspace.openFolder) {
-                        Theme.image(.add)
-                            .font(Theme.font(.caption, weight: .semibold))
+                        Theme.image(.add, size: .caption, weight: .semibold)
                             .foregroundStyle(Theme.textTertiary)
                             .iconLabel(size: .s22)
                     }

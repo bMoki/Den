@@ -112,7 +112,7 @@ private struct IndicatorChooser: View {
             if typedExists {
                 IndicatorGlyph(icon: .symbol(trimmed), color: Theme.text, size: .s16)
             } else {
-                Theme.image(.noIndicator)
+                Theme.image(.noIndicator, size: .body)
                     .foregroundStyle(Theme.textTertiary)
             }
         }

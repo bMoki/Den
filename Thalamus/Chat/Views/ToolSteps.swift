@@ -56,8 +56,7 @@ struct ToolSteps: View {
                 Theme.circle
                     .fill(Theme.style.marks == .characters ? .clear : isLive ? Theme.action : Theme.hoverRaised)
                     .frame(width: Theme.size(.s22), height: Theme.size(.s22))
-                Theme.image(tools.isEmpty ? .thinking : .tool)
-                    .font(Theme.font(.label, weight: .semibold))
+                Theme.image(tools.isEmpty ? .thinking : .tool, size: .label, weight: .semibold)
                     .foregroundStyle(isLive ? (Theme.style.marks == .characters ? Theme.accent : Theme.onAction)
                                             : Theme.textSecondary)
             }
@@ -81,8 +80,7 @@ struct ToolSteps: View {
             if isLive {
                 LiveDot()
             }
-            Theme.image(.expanded)
-                .font(Theme.font(.label, weight: .semibold))
+            Theme.image(.expanded, size: .label, weight: .semibold)
                 .foregroundStyle(Theme.textTertiary)
                 .rotationEffect(.degrees(isOpen ? 180 : 0))
         }

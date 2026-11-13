@@ -30,8 +30,7 @@ struct SidebarHeader: View {
         HStack(spacing: Theme.space(.s8)) {
             Spacer(minLength: Theme.space(.s4))
             ThalamusMenuChip(sections: newSections) {
-                Theme.image(.newSession)
-                    .font(Theme.font(.large))
+                Theme.image(.newSession, size: .large)
                     .foregroundStyle(Theme.textMuted)
                     .iconLabel()
             }
@@ -60,8 +59,7 @@ struct SidebarSearch: View {
 
     var body: some View {
         HStack(spacing: Theme.space(.s8)) {
-            Theme.image(.search)
-                .font(Theme.font(.small, weight: .medium))
+            Theme.image(.search, size: .small, weight: .medium)
                 .foregroundStyle(Theme.textTertiary)
             TextField("Buscar sessões…", text: $workspace.search)
                 .textFieldStyle(.plain)
@@ -75,8 +73,7 @@ struct SidebarSearch: View {
                 Button {
                     workspace.search = ""
                 } label: {
-                    Theme.image(.clearSearch)
-                        .font(Theme.font(.small))
+                    Theme.image(.clearSearch, size: .small)
                         .foregroundStyle(Theme.textTertiary)
                 }
                 .buttonStyle(.plain)

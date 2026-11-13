@@ -86,8 +86,7 @@ struct GitChangesPanel: View {
             Button {
                 Task { await model.load(directory: directory, force: true) }
             } label: {
-                Theme.image(.restart)
-                    .font(Theme.font(.small, weight: .medium))
+                Theme.image(.restart, size: .small, weight: .medium)
                     .foregroundStyle(Theme.textTertiary)
                     .iconLabel(size: .s26)
             }
@@ -111,8 +110,7 @@ struct GitChangesPanel: View {
             placeholder { ProgressView().controlSize(.small) }
         } else if !model.hasRepo {
             placeholder {
-                Theme.image(.notARepository)
-                    .font(Theme.font(.largeTitle))
+                Theme.image(.notARepository, size: .largeTitle)
                     .foregroundStyle(Theme.textFaint)
                 Text("Sem repositório Git nesta pasta")
                     .font(Theme.font(.body))
@@ -120,8 +118,7 @@ struct GitChangesPanel: View {
             }
         } else if model.changeCount == 0 {
             placeholder {
-                Theme.image(.clean)
-                    .font(Theme.font(.largeTitle))
+                Theme.image(.clean, size: .largeTitle)
                     .foregroundStyle(Theme.added)
                 Text("Sem alterações")
                     .font(Theme.font(.body, weight: .medium))
@@ -232,12 +229,10 @@ struct GitChangesPanel: View {
             }
         } label: {
             HStack(spacing: Theme.space(.s7)) {
-                Theme.image(.next)
-                    .font(Theme.font(.mini, weight: .bold))
+                Theme.image(.next, size: .mini, weight: .bold)
                     .foregroundStyle(Theme.textTertiary)
                     .rotationEffect(.degrees(isCollapsed ? 0 : 90))
-                Theme.image(.branch)
-                    .font(Theme.font(.caption, weight: .semibold))
+                Theme.image(.branch, size: .caption, weight: .semibold)
                     .foregroundStyle(Theme.accent)
                 Text(repo.name)
                     .font(Theme.font(.smallPlus, weight: .semibold))
@@ -317,12 +312,10 @@ struct GitChangesPanel: View {
             } label: {
                 HStack(spacing: Theme.space(.s9)) {
                     badge(for: .untracked)
-                    Theme.image(.next)
-                        .font(Theme.font(.tiny, weight: .bold))
+                    Theme.image(.next, size: .tiny, weight: .bold)
                         .foregroundStyle(Theme.textTertiary)
                         .rotationEffect(.degrees(isOpen ? 90 : 0))
-                    Theme.image(isOpen ? .folderWithSessions : .folder)
-                        .font(Theme.font(.caption))
+                    Theme.image(isOpen ? .folderWithSessions : .folder, size: .caption)
                         .foregroundStyle(allDone ? Theme.textTertiary : Theme.accent)
                     pathText(display: sessionRelativePath(of: displayDir, in: repo) + "/")
                         .opacity(allDone ? 0.5 : 1)
@@ -348,8 +341,7 @@ struct GitChangesPanel: View {
 
     private func reviewButton(done: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Theme.image(done ? .taskDone : .radioOff)
-                .font(Theme.font(.body))
+            Theme.image(done ? .taskDone : .radioOff, size: .body)
                 .foregroundStyle(done ? Theme.added : Theme.textFaint)
                 .contentTransition(.symbolEffect(.replace))
                 .frame(width: Theme.size(.s22), height: Theme.size(.s22))
@@ -380,7 +372,7 @@ struct GitChangesPanel: View {
                 }
             } label: {
                 HStack(spacing: Theme.space(.s5)) {
-                    Theme.image(done ? .taskDone : .clean)
+                    Theme.image(done ? .taskDone : .clean, size: .small, weight: .medium)
                     Text(done ? "Revisado" : "Marcar revisado")
                 }
                 .font(Theme.font(.small, weight: .medium))

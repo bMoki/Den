@@ -46,8 +46,7 @@ struct SlashCommandList: View {
         ForEach(Array(commands.enumerated()), id: \.element.id) { index, command in
             let isSelected = index == selection
             HStack(spacing: Theme.space(.s7)) {
-                Theme.image(command.icon)
-                    .font(Theme.font(.caption))
+                Theme.image(command.icon, size: .caption)
                     .frame(width: Theme.size(.s16))
                     .foregroundStyle(isSelected ? AnyShapeStyle(Theme.accent)
                                                 : AnyShapeStyle(command.tint))
@@ -60,8 +59,7 @@ struct SlashCommandList: View {
                     .lineLimit(1)
                 Spacer(minLength: 0)
                 if command.group != nil {
-                    Theme.image(.next)
-                        .font(Theme.font(.mini, weight: .semibold))
+                    Theme.image(.next, size: .mini, weight: .semibold)
                         .foregroundStyle(Theme.textTertiary)
                 }
             }

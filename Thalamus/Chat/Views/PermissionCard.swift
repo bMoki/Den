@@ -9,8 +9,7 @@ struct PermissionCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.space(.s10)) {
             HStack(spacing: Theme.space(.s8)) {
-                Theme.image(.modeBypass)
-                    .font(Theme.font(.large, weight: .medium))
+                Theme.image(.modeBypass, size: .large, weight: .medium)
                 Text("\(harnessName) pede permissão para usar \(request.displayName ?? request.toolName)")
                     .font(Theme.font(.body, weight: .medium))
                     .fixedSize(horizontal: false, vertical: true)

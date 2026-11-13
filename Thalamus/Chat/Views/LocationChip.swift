@@ -8,8 +8,7 @@ struct LocationChip: View {
     var body: some View {
         Button(action: chooseSessionFolder) {
             HStack(spacing: Theme.space(.s6)) {
-                Theme.image(.folder)
-                    .font(Theme.font(.small))
+                Theme.image(.folder, size: .small)
                 if !compact {
                     Text(chat.workingDirectory.lastPathComponent)
                         .lineLimit(1)

@@ -40,8 +40,7 @@ struct ServicesPanel: View {
                                     .disabled(ns.activity[branch] != nil)
                                 ThalamusMenuChip(sections: databaseMenu, radius: .r6, arrowEdge: .leading,
                                                  opened: { Task { await ns.loadSnapshots() } }, label: {
-                                    Theme.image(.databaseSection)
-                                        .font(Theme.font(.caption, weight: .medium))
+                                    Theme.image(.databaseSection, size: .caption, weight: .medium)
                                         .foregroundStyle(Theme.textSecondary)
                                         .iconLabel(size: .s26)
                                 })
@@ -140,8 +139,7 @@ struct ServicesPanel: View {
         let running = status.services.filter { $0.state == .rodando }.count
         return VStack(alignment: .leading, spacing: Theme.space(.s10)) {
             HStack(spacing: Theme.space(.s8)) {
-                Theme.image(.branch)
-                    .font(Theme.font(.small, weight: .semibold))
+                Theme.image(.branch, size: .small, weight: .semibold)
                     .foregroundStyle(Theme.accent)
                 Text(branch)
                     .font(Theme.font(.body, weight: .semibold, design: .monospaced))
@@ -256,8 +254,7 @@ struct ServicesPanel: View {
 
     private func iconAction(_ symbol: Icon, title: String, perform: @escaping () async -> Void) -> some View {
         Button { Task { await perform() } } label: {
-            Theme.image(symbol)
-                .font(Theme.font(.caption, weight: .medium))
+            Theme.image(symbol, size: .caption, weight: .medium)
                 .foregroundStyle(Theme.textSecondary)
                 .iconLabel(size: .s26)
         }
@@ -268,8 +265,7 @@ struct ServicesPanel: View {
 
     private func errorLine(_ service: NsStatus.Service) -> some View {
         HStack(spacing: Theme.space(.s8)) {
-            Theme.image(.warning)
-                .font(Theme.font(.labelPlus))
+            Theme.image(.warning, size: .labelPlus)
             Text(service.error ?? "O processo terminou com erro")
                 .font(Theme.font(.caption, design: .monospaced))
                 .lineLimit(1)

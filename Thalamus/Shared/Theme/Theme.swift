@@ -21,6 +21,11 @@ nonisolated enum Theme {
     static func space(_ space: Style.Space) -> CGFloat { style.space(space) }
     static func size(_ size: Style.Size) -> CGFloat { style.size(size) }
     static func image(_ icon: Icon) -> Image { style.image(icon) }
+
+    static func image(_ icon: Icon, size: Style.TextSize, weight: Font.Weight? = nil) -> some View {
+        style.image(icon, size: size).font(font(size, weight: weight))
+    }
+
     static func nsImage(_ icon: Icon) -> NSImage? { style.nsImage(icon) }
 
     static var canvas: Color { palette.surfaces.canvas }
@@ -278,8 +283,7 @@ struct BackButton: View {
     var body: some View {
         Button(action: back) {
             HStack(spacing: Theme.space(.s5)) {
-                Theme.image(.back)
-                    .font(Theme.font(.mini, weight: .semibold))
+                Theme.image(.back, size: .mini, weight: .semibold)
                 Text(title)
                     .font(Theme.font(.label, weight: .semibold))
                 Spacer(minLength: 0)
@@ -316,8 +320,7 @@ struct Chevron: View {
     @Environment(\.isBracketed) private var isBracketed
 
     var body: some View {
-        Theme.image(.expanded)
-            .font(Theme.font(size, weight: .semibold))
+        Theme.image(.expanded, size: size, weight: .semibold)
             .foregroundStyle(isBracketed ? AnyShapeStyle(.foreground) : AnyShapeStyle(Theme.textTertiary))
     }
 }

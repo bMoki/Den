@@ -20,8 +20,7 @@ struct TranscriptRow: View {
 
         case .thinking:
             HStack(alignment: .top, spacing: Theme.space(.s8)) {
-                Theme.image(.thinking)
-                    .font(Theme.font(.caption))
+                Theme.image(.thinking, size: .caption)
                     .foregroundStyle(Theme.textTertiary)
                     .frame(width: Theme.size(.s14))
                     .padding(.top, Theme.space(.s2))
@@ -38,8 +37,7 @@ struct TranscriptRow: View {
 
         case .toolResult:
             HStack(alignment: .top, spacing: Theme.space(.s8)) {
-                Theme.image(.reply)
-                    .font(Theme.font(.label, weight: .medium))
+                Theme.image(.reply, size: .label, weight: .medium)
                     .foregroundStyle(Theme.textFaint)
                     .frame(width: Theme.size(.s14))
                     .padding(.top, Theme.space(.s2))
@@ -54,8 +52,7 @@ struct TranscriptRow: View {
 
         case .notice:
             HStack(alignment: .top, spacing: Theme.space(.s8)) {
-                Theme.image(.info)
-                    .font(Theme.font(.caption))
+                Theme.image(.info, size: .caption)
                     .frame(width: Theme.size(.s14))
                     .padding(.top, Theme.space(.s1))
                 Text(MessageBubble.clipped(line.text))
@@ -112,8 +109,7 @@ struct TranscriptRow: View {
 
     private func step(_ line: ChatLine) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: Theme.space(.s8)) {
-            Theme.image(Self.icon(for: line.verb))
-                .font(Theme.font(.caption, weight: .medium))
+            Theme.image(Self.icon(for: line.verb), size: .caption, weight: .medium)
                 .foregroundStyle(Theme.textMuted)
                 .frame(width: Theme.size(.s14))
             let verb = Text(Self.verb(for: line.verb)).foregroundStyle(Theme.textMuted)

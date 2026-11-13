@@ -112,8 +112,7 @@ struct ContentView: View {
         VStack(spacing: 0) {
             EmptyHeader()
             VStack(spacing: Theme.space(.s14)) {
-                Theme.image(.noSessions)
-                    .font(Theme.font(.display, weight: .light))
+                Theme.image(.noSessions, size: .display, weight: .light)
                     .foregroundStyle(Theme.accent)
                     .frame(width: Theme.size(.s68), height: Theme.size(.s68))
                     .background(Theme.raised, in: RoundedRectangle(cornerRadius: Theme.radius(.r16),
@@ -169,8 +168,7 @@ struct SidebarButton: View {
 
     var body: some View {
         Button(action: action) {
-            Theme.image(.toggleSidebar)
-                .font(Theme.font(.large))
+            Theme.image(.toggleSidebar, size: .large)
                 .foregroundStyle(Theme.textMuted)
                 .iconLabel()
         }

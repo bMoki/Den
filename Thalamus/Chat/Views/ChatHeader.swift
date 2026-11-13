@@ -66,8 +66,7 @@ struct InspectorToggle: View {
 
     var body: some View {
         Button(action: action) {
-            Theme.image(.toggleInspector)
-                .font(Theme.font(.large))
+            Theme.image(.toggleInspector, size: .large)
                 .iconLabel(size: .s32)
         }
         .buttonStyle(ThalamusButtonStyle(kind: .secondary, tint: isOpen ? Theme.text : Theme.textSecondary))
@@ -82,8 +81,7 @@ struct BranchPill: View {
 
     var body: some View {
         HStack(spacing: Theme.space(.s5)) {
-            Theme.image(.branch)
-                .font(Theme.font(.label, weight: .semibold))
+            Theme.image(.branch, size: .label, weight: .semibold)
             Text(branch)
                 .strikethrough(isRemoved)
                 .lineLimit(1)

@@ -10,8 +10,7 @@ struct NewSessionRow: View {
             Task { await workspace.newSession(in: directory) }
         } label: {
             HStack(spacing: Theme.space(.s8)) {
-                Theme.image(.add)
-                    .font(Theme.font(.body, weight: .semibold))
+                Theme.image(.add, size: .body, weight: .semibold)
                     .frame(width: Theme.size(.s18))
                 Text("Nova sessão")
                     .font(Theme.font(.body, weight: .medium))
@@ -39,8 +38,7 @@ struct SidebarEmptyList: View {
 
     var body: some View {
         VStack(spacing: Theme.space(.s6)) {
-            Theme.image(search.isEmpty ? .noSessions : .search)
-                .font(Theme.font(.title2))
+            Theme.image(search.isEmpty ? .noSessions : .search, size: .title2)
                 .foregroundStyle(Theme.textFaint)
             Text(search.isEmpty ? "Nenhuma conversa"
                                           : "Nada encontrado para \"\(search)\"")

@@ -11,8 +11,7 @@ struct CompactionProgressCard: View {
                 Theme.circle
                     .fill(Theme.accent.opacity(0.16))
                     .frame(width: Theme.size(.s30), height: Theme.size(.s30))
-                Theme.image(.compact)
-                    .font(Theme.font(.small, weight: .semibold))
+                Theme.image(.compact, size: .small, weight: .semibold)
                     .foregroundStyle(Theme.accent)
             }
 
@@ -82,8 +81,7 @@ struct CompactionMark: View {
         HStack(spacing: Theme.space(.s10)) {
             rule
             HStack(spacing: Theme.space(.s6)) {
-                Theme.image(.compact)
-                    .font(Theme.font(.mini, weight: .semibold))
+                Theme.image(.compact, size: .mini, weight: .semibold)
                 Text(text)
                     .font(Theme.font(.label, weight: .medium))
                     .monospacedDigit()
@@ -119,11 +117,9 @@ struct DigestRow: View {
         VStack(alignment: .leading, spacing: Theme.space(.s6)) {
             Button(action: toggle) {
                 HStack(spacing: Theme.space(.s6)) {
-                    Theme.image(.next)
-                        .font(Theme.font(.tiny, weight: .bold))
+                    Theme.image(.next, size: .tiny, weight: .bold)
                         .rotationEffect(.degrees(isOpen ? 90 : 0))
-                    Theme.image(mono ? .terminal : .summary)
-                        .font(Theme.font(.label))
+                    Theme.image(mono ? .terminal : .summary, size: .label)
                     Text(title)
                         .font(Theme.font(.smallPlus, weight: .medium))
                     Spacer(minLength: 0)

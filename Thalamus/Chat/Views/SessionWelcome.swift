@@ -19,7 +19,7 @@ struct SessionWelcome: View {
                      "cita arquivos")
                 hint(Text("/").font(Theme.font(.small, weight: .semibold, design: .monospaced)),
                      "abre comandos")
-                hint(Theme.image(.attach).font(Theme.font(.caption, weight: .medium)),
+                hint(Theme.image(.attach, size: .caption, weight: .medium),
                      "anexa imagens e PDFs")
             }
         }

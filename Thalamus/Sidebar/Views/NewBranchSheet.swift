@@ -35,8 +35,7 @@ struct NewBranchSheet: View {
                 nicknameField
                 field("Base") {
                     HStack(spacing: Theme.space(.s8)) {
-                        Theme.image(.branch)
-                            .font(Theme.font(.caption))
+                        Theme.image(.branch, size: .caption)
                         Text("master")
                             .font(Theme.font(.smallPlus, design: .monospaced))
                         Spacer(minLength: 0)
@@ -235,8 +234,7 @@ private struct StepRow: View {
     }
 
     private func symbol(_ name: Icon, _ color: Color, on fill: Color) -> some View {
-        Theme.image(name)
-            .font(Theme.font(.mini, weight: .bold))
+        Theme.image(name, size: .mini, weight: .bold)
             .foregroundStyle(color)
             .frame(width: Theme.size(.s18), height: Theme.size(.s18))
             .background(fill, in: Theme.circle)
@@ -278,8 +276,7 @@ private struct FailureBox<Action: View>: View {
 
     var body: some View {
         HStack(spacing: Theme.space(.s10)) {
-            Theme.image(.warning)
-                .font(Theme.font(.body))
+            Theme.image(.warning, size: .body)
                 .foregroundStyle(Theme.removed)
             VStack(alignment: .leading, spacing: Theme.space(.s2)) {
                 Text("\(Text(title).fontWeight(.semibold).foregroundStyle(Theme.removed))\(detail.map { " \($0)" } ?? "")")

@@ -104,8 +104,7 @@ private struct DependencyRow: View {
 
     private var icon: some View {
         let (symbol, title, color) = Self.style(of: row.repo.state)
-        return Theme.image(symbol)
-            .font(Theme.font(.caption, weight: .semibold))
+        return Theme.image(symbol, size: .caption, weight: .semibold)
             .foregroundStyle(color)
             .frame(width: Theme.size(.s18), height: Theme.size(.s18))
             .tip(title)

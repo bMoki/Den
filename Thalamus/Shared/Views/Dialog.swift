@@ -126,8 +126,7 @@ struct DialogCheckbox: View {
             RoundedRectangle(cornerRadius: Theme.radius(.r4), style: .continuous)
                 .strokeBorder(isOn ? Theme.action : Theme.borderControl, lineWidth: Theme.line(.medium))
             if isOn {
-                Theme.image(.done)
-                    .font(Theme.font(.mini, weight: .bold))
+                Theme.image(.done, size: .mini, weight: .bold)
                     .foregroundStyle(Theme.onAction)
             }
         }
@@ -143,8 +142,7 @@ struct DialogWarning<Actions: View>: View {
     var body: some View {
         HStack(spacing: Theme.space(.s10)) {
             HStack(alignment: .firstTextBaseline, spacing: Theme.space(.s9)) {
-                Theme.image(.warning)
-                    .font(Theme.font(.small))
+                Theme.image(.warning, size: .small)
                 Text("\(title) \(Text(detail).foregroundStyle(Theme.alertText.opacity(0.8)))")
                     .font(Theme.font(.smallPlus))
                     .fixedSize(horizontal: false, vertical: true)

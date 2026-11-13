@@ -10,11 +10,11 @@ struct ComposerStatusChip: View {
         if !waiting, interrupting || (!chat.isBusy && visibleStatus != nil) {
             HStack(spacing: Theme.space(.s7)) {
                 if interrupting {
-                    Theme.image(.escape)
+                    Theme.image(.escape, size: .captionPlus, weight: .medium)
                         .foregroundStyle(Theme.accentSoft)
                     Text("Esc de novo interrompe")
                 } else if let status = visibleStatus {
-                    Theme.image(.strongWarning)
+                    Theme.image(.strongWarning, size: .captionPlus, weight: .medium)
                         .foregroundStyle(Theme.modified)
                     Text(status)
                         .lineLimit(1)

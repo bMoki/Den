@@ -80,6 +80,21 @@ private func iconTable() throws -> Set<String> {
     #expect(missing.isEmpty)
 }
 
+@Test(arguments: [Style.TextSize.mini, .caption, .body, .headline, .largeTitle])
+func ttyDrawsEachIconAsLargeAsPadrao(size: Style.TextSize) {
+    let glyphs = Icon.allCases.compactMap { icon -> (Icon, UInt32)? in
+        guard case .glyph(let code) = Style.tty.icon(icon) else { return nil }
+        return (icon, code)
+    }
+    let off = glyphs.filter { icon, code in
+        guard let padrao = Style.padraoSymbol(icon, size: size) else { return true }
+        let tty = Style.glyphImage(code, like: icon, size: size)
+        let fillsTheFrame = Style.inkExtent(tty) >= min(tty.size.width, tty.size.height) - 1
+        return tty.size != padrao.size || abs(Style.inkExtent(tty) - Style.inkExtent(padrao)) > 1 && !fillsTheFrame
+    }
+    #expect(off.isEmpty, "\(off.map(\.0.rawValue))")
+}
+
 @Test func ttyDrawsBoxesWithoutCornersOrShadowsInOneSize() {
     let tty = Style.tty
     #expect(Style.TextSize.allCases.allSatisfy { tty.nsFont($0).pointSize == Style.ttyPoints })

@@ -108,8 +108,7 @@ struct ChecksPanel: View {
                 .foregroundStyle(Theme.textTertiary)
                 Spacer()
                 Button(action: refresh) {
-                    Theme.image(.restart)
-                        .font(Theme.font(.caption, weight: .semibold))
+                    Theme.image(.restart, size: .caption, weight: .semibold)
                         .foregroundStyle(Theme.textSecondary)
                         .iconLabel(size: .s24)
                 }
@@ -146,8 +145,7 @@ private struct CheckRow: View {
                 }
                 .font(Theme.font(.captionPlus, design: .monospaced))
                 .foregroundStyle(Theme.textSecondary)
-                Theme.image(.openInBrowser)
-                    .font(Theme.font(.mini, weight: .semibold))
+                Theme.image(.openInBrowser, size: .mini, weight: .semibold)
                     .foregroundStyle(Theme.textTertiary)
                     .opacity(check.url == nil ? 0 : 1)
             }

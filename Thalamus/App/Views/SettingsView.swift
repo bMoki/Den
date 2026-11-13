@@ -95,8 +95,7 @@ private struct SettingsTabButton: View {
 
     private var stacked: some View {
             VStack(spacing: Theme.space(.s3)) {
-                Theme.image(tab.icon)
-                    .font(Theme.font(.title3))
+                Theme.image(tab.icon, size: .title3)
                     .frame(height: Theme.size(.s22))
                 Text(tab.title)
                     .font(Theme.font(.caption))

@@ -158,8 +158,7 @@ private struct Disclosure<Label: View, Content: View>: View {
                 withAnimation(.easeOut(duration: 0.15)) { isOpen.toggle() }
             } label: {
                 HStack(spacing: Theme.space(.s6)) {
-                    Theme.image(.next)
-                        .font(Theme.font(.mini, weight: .bold))
+                    Theme.image(.next, size: .mini, weight: .bold)
                         .foregroundStyle(Theme.textTertiary)
                         .rotationEffect(.degrees(isOpen ? 90 : 0))
                         .frame(width: Theme.size(.s10))

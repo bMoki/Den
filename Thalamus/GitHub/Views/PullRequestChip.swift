@@ -6,8 +6,7 @@ struct PullRequestChip: View {
     var body: some View {
         let tone = PullRequestStatus.tone(pullRequest)
         HStack(spacing: Theme.space(.s3)) {
-            Theme.image(tone.symbol)
-                .font(Theme.font(.tinyPlus, weight: .bold))
+            Theme.image(tone.symbol, size: .tinyPlus, weight: .bold)
             Text(PullRequestStatus.number(pullRequest))
                 .font(Theme.font(.caption, weight: .medium, design: .monospaced))
         }

@@ -35,8 +35,7 @@ struct InspectorView: View {
                 Button {
                     withAnimation(.easeInOut(duration: 0.2)) { pane = .closed }
                 } label: {
-                    Theme.image(.close)
-                        .font(Theme.font(.small, weight: .semibold))
+                    Theme.image(.close, size: .small, weight: .semibold)
                         .foregroundStyle(Theme.textTertiary)
                         .iconLabel()
                 }
@@ -76,8 +75,7 @@ struct InspectorView: View {
             pane = target
         } label: {
             HStack(spacing: Theme.space(.s7)) {
-                Theme.image(symbol)
-                    .font(Theme.font(.small, weight: .medium))
+                Theme.image(symbol, size: .small, weight: .medium)
                 Text(title)
                     .font(Theme.font(.body, weight: .medium))
                 trailing()

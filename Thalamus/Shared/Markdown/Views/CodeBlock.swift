@@ -32,8 +32,7 @@ struct CodeBlock: View {
 
     private var copyButton: some View {
         Button(action: copy) {
-            Theme.image(copied ? .done : .copy)
-                .font(Theme.font(.caption))
+            Theme.image(copied ? .done : .copy, size: .caption)
                 .foregroundStyle(copied ? Theme.added : Theme.textSecondary)
                 .frame(width: Theme.size(.s26), height: Theme.size(.s26))
                 .background(Theme.raised, in: RoundedRectangle(cornerRadius: Theme.radius(.r7)))

@@ -8,9 +8,8 @@ struct JumpToEndButton: View {
         Group {
             if isVisible {
                 Button(action: action) {
-                    Theme.image(.jumpToEnd)
+                    Theme.image(.jumpToEnd, size: .body, weight: .semibold)
                         .bracketed()
-                        .font(Theme.font(.body, weight: .semibold))
                         .foregroundStyle(Theme.text)
                         .frame(width: Theme.size(.s34), height: Theme.size(.s34))
                         .background(Theme.raised, in: Theme.circle)

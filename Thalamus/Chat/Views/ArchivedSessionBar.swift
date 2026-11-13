@@ -5,8 +5,7 @@ struct ArchivedSessionBar: View {
 
     var body: some View {
         HStack(spacing: Theme.space(.s10)) {
-            Theme.image(.archive)
-                .font(Theme.font(.large))
+            Theme.image(.archive, size: .large)
                 .foregroundStyle(Theme.textTertiary)
             Text("Sessão arquivada. A branch \(name) foi removida; o histórico continua legível, mas não aceita novas mensagens.")
                 .font(Theme.font(.body))

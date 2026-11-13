@@ -126,7 +126,7 @@ struct EditorView: View {
     private func barButton(_ title: String, symbol: Icon, hint: String? = nil, isOn: Bool, perform: @escaping () -> Void) -> some View {
         Button(action: perform) {
             HStack(spacing: Theme.space(.s6)) {
-                Theme.image(symbol).font(Theme.font(.captionPlus, weight: .medium))
+                Theme.image(symbol, size: .captionPlus, weight: .medium)
                 Text(title)
                 if let hint {
                     Text(hint).font(Theme.font(.caption, design: .monospaced)).foregroundStyle(Theme.textTertiary)
@@ -235,8 +235,7 @@ struct EditorView: View {
 
     private func notice(_ text: String, symbol: Icon) -> some View {
         VStack(spacing: Theme.space(.s8)) {
-            Theme.image(symbol)
-                .font(Theme.font(.title))
+            Theme.image(symbol, size: .title)
                 .foregroundStyle(Theme.textFaint)
             Text(text)
                 .font(Theme.font(.body))

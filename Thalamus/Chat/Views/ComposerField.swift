@@ -47,8 +47,7 @@ struct ComposerField: View {
             .accessibilityIdentifier("suggested-reply")
             .overlay(alignment: .topTrailing) {
                 Button(action: acceptSuggestion) {
-                    Theme.image(.submit)
-                        .font(Theme.font(.label, weight: .semibold))
+                    Theme.image(.submit, size: .label, weight: .semibold)
                         .foregroundStyle(Theme.textSecondary)
                         .iconLabel(size: .s20)
                         .overlay(RoundedRectangle(cornerRadius: Theme.radius(.r5), style: .continuous)

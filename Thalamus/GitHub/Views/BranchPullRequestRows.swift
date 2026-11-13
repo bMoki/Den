@@ -62,8 +62,7 @@ private struct PullRequestRow: View {
             .tip("Abrir no GitHub")
             .accessibilityLabel("\(repo.name): PR \(PullRequestStatus.number(pullRequest)), \(status)")
             Button(action: toggleDismissal) {
-                Theme.image(isDismissed ? .show : .hide)
-                    .font(Theme.font(.labelPlus, weight: .medium))
+                Theme.image(isDismissed ? .show : .hide, size: .labelPlus, weight: .medium)
                     .foregroundStyle(isDismissed ? Theme.textMuted : Theme.textTertiary)
                     .iconLabel(size: .s24)
             }

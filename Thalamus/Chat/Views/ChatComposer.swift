@@ -70,8 +70,7 @@ struct ChatComposer: View {
                 }
             }
             Button(action: attachFiles) {
-                Theme.image(.attach)
-                    .font(Theme.font(.headline))
+                Theme.image(.attach, size: .headline)
                     .foregroundStyle(Theme.textSecondary)
                     .iconLabel(size: .s32)
             }
@@ -90,8 +89,7 @@ struct ChatComposer: View {
                 submit()
             }
         } label: {
-            Theme.image(chat.isBusy ? .stop : .send)
-                .font(Theme.font(chat.isBusy ? .small : .headline, weight: .bold))
+            Theme.image(chat.isBusy ? .stop : .send, size: chat.isBusy ? .small : .headline, weight: .bold)
                 .contentTransition(.symbolEffect(.replace))
                 .frame(width: Theme.style.marks == .characters ? nil : Theme.size(.s34), height: Theme.size(.s34))
         }
@@ -127,8 +125,7 @@ struct ChatComposer: View {
             VStack(alignment: .leading, spacing: Theme.space(.s1)) {
                 ForEach(Array(matches.enumerated()), id: \.element.id) { index, candidate in
                     HStack(spacing: Theme.space(.s8)) {
-                        Theme.image(candidate.isDirectory ? .folder : .read)
-                            .font(Theme.font(.caption))
+                        Theme.image(candidate.isDirectory ? .folder : .read, size: .caption)
                             .frame(width: Theme.size(.s14))
                             .foregroundStyle(index == selected ? Theme.accent : Theme.textTertiary)
                         Text(candidate.path)
@@ -179,8 +176,7 @@ struct ChatComposer: View {
                             }
                     } else {
                         HStack(spacing: Theme.space(.s7)) {
-                            Theme.image(.attachedFile)
-                                .font(Theme.font(.large))
+                            Theme.image(.attachedFile, size: .large)
                                 .foregroundStyle(Theme.accent)
                             Text(pending.name ?? "arquivo")
                                 .font(Theme.font(.small))
@@ -213,7 +209,7 @@ struct ChatComposer: View {
         } label: {
             VStack(alignment: .leading, spacing: Theme.space(.s2)) {
                 HStack(spacing: Theme.space(.s5)) {
-                    Theme.image(.attachment)
+                    Theme.image(.attachment, size: .captionPlus)
                         .foregroundStyle(Theme.accent)
                     Text("Texto colado")
                         .fontWeight(.medium)
@@ -242,8 +238,7 @@ struct ChatComposer: View {
 
     private func removeButton(help: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Theme.image(.clearSearch)
-                .font(Theme.font(.large))
+            Theme.image(.clearSearch, size: .large)
                 .foregroundStyle(Theme.text, Theme.canvas.opacity(0.85))
         }
         .buttonStyle(.plain)

@@ -178,20 +178,67 @@ nonisolated extension Style: Identifiable {
 
     static func checkbox(_ isOn: Bool) -> String { isOn ? "[x]" : "[ ]" }
 
-    private static let glyphImages = NSCache<NSNumber, NSImage>()
+    private static let glyphImages = NSCache<NSString, NSImage>()
 
-    static func glyphImage(_ code: UInt32) -> NSImage {
-        if let cached = glyphImages.object(forKey: NSNumber(value: code)) { return cached }
-        let text = NSAttributedString(string: character(code),
-                                      attributes: [.font: ttyNSFont])
-        let bounds = text.size()
-        let image = NSImage(size: CGSize(width: ceil(bounds.width), height: ceil(bounds.height)), flipped: false) { rect in
-            text.draw(at: rect.origin)
+    static func padraoSymbol(_ icon: Icon, size: TextSize) -> NSImage? {
+        guard case .symbol(let name) = padrao.icon(icon) else { return padraoSymbol(named: "square", size: size) }
+        return padraoSymbol(named: name, size: size)
+    }
+
+    private static func padraoSymbol(named name: String, size: TextSize) -> NSImage? {
+        NSImage(systemSymbolName: name, accessibilityDescription: nil)?
+            .withSymbolConfiguration(.init(pointSize: padraoPoints(size), weight: .regular))
+    }
+
+    static func glyphImage(_ code: UInt32, like icon: Icon, size: TextSize) -> NSImage {
+        let key = "\(code) \(icon.rawValue) \(size)" as NSString
+        if let cached = glyphImages.object(forKey: key) { return cached }
+        let reference = padraoSymbol(icon, size: size)
+        let frame = reference?.size ?? CGSize(width: padraoPoints(size), height: padraoPoints(size))
+        let target = reference.map(inkExtent) ?? padraoPoints(size)
+        let text = character(code)
+        let unit = NSFont(descriptor: ttyNSFont.fontDescriptor, size: 1) ?? ttyNSFont
+        var units = Array(text.utf16)
+        var glyphs = [CGGlyph](repeating: 0, count: units.count)
+        CTFontGetGlyphsForCharacters(unit, &units, &glyphs, units.count)
+        let unitInk = unit.boundingRect(forCGGlyph: glyphs[0])
+        let points = min(target / max(unitInk.width, unitInk.height, 0.01),
+                         frame.width / max(unitInk.width, 0.01), frame.height / max(unitInk.height, 0.01))
+        let font = NSFont(descriptor: ttyNSFont.fontDescriptor, size: points) ?? ttyNSFont
+        let ink = font.boundingRect(forCGGlyph: glyphs[0])
+        let line = CTLineCreateWithAttributedString(NSAttributedString(string: text, attributes: [.font: font]))
+        let image = NSImage(size: frame, flipped: false) { rect in
+            guard let context = NSGraphicsContext.current?.cgContext else { return false }
+            context.textPosition = CGPoint(x: rect.midX - ink.midX, y: rect.midY - ink.midY)
+            CTLineDraw(line, context)
             return true
         }
         image.isTemplate = true
-        glyphImages.setObject(image, forKey: NSNumber(value: code))
+        glyphImages.setObject(image, forKey: key)
         return image
+    }
+
+    static func inkExtent(_ image: NSImage) -> CGFloat {
+        let scale = 4
+        let width = Int(ceil(image.size.width)) * scale
+        let height = Int(ceil(image.size.height)) * scale
+        guard width > 0, height > 0, let space = CGColorSpace(name: CGColorSpace.sRGB),
+              let context = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8,
+                                      bytesPerRow: width * 4, space: space,
+                                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue),
+              let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return 0 }
+        context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
+        guard let pixels = context.data?.assumingMemoryBound(to: UInt8.self) else { return 0 }
+        var columns = Set<Int>()
+        var rows = Set<Int>()
+        for row in 0..<height {
+            for column in 0..<width where pixels[(row * width + column) * 4 + 3] > 96 {
+                columns.insert(column)
+                rows.insert(row)
+            }
+        }
+        let extent = max((columns.max() ?? -1) - (columns.min() ?? 0) + 1, (rows.max() ?? -1) - (rows.min() ?? 0) + 1)
+        return CGFloat(extent) / CGFloat(scale)
     }
 
     private static func padraoPoints(_ size: TextSize) -> CGFloat {
@@ -222,14 +269,19 @@ nonisolated extension Style: Identifiable {
     }
 
     func image(_ icon: Icon) -> Image {
-        image(of: self.icon(icon))
+        image(icon, size: .body)
+    }
+
+    func image(_ icon: Icon, size: TextSize) -> Image {
+        guard case .glyph(let code) = self.icon(icon) else { return image(of: self.icon(icon)) }
+        return Image(nsImage: Self.glyphImage(code, like: icon, size: size))
     }
 
     private func image(of art: IconArt) -> Image {
         switch art {
         case .symbol(let name): Image(systemName: name)
         case .asset(let name): Image(name)
-        case .glyph(let code): Image(nsImage: Self.glyphImage(code))
+        case .glyph(let code): Image(nsImage: Self.glyphImage(code, like: .noIndicator, size: .body))
         }
     }
 
@@ -237,12 +289,13 @@ nonisolated extension Style: Identifiable {
         switch self.icon(icon) {
         case .symbol(let name): NSImage(systemSymbolName: name, accessibilityDescription: nil)
         case .asset(let name): NSImage(named: name)
-        case .glyph(let code): Self.glyphImage(code)
+        case .glyph(let code): Self.glyphImage(code, like: icon, size: .body)
         }
     }
 
     func image(symbolNamed name: String) -> Image {
-        image(of: art(symbolNamed: name))
+        if let icon = Icon(rawValue: name) { return image(icon) }
+        return marks == .characters ? image(.noIndicator) : image(of: .symbol(name))
     }
 
     func art(symbolNamed name: String) -> IconArt {

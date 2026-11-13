@@ -164,8 +164,7 @@ private struct ThalamusMenuRow: View {
     private var icon: some View {
         switch item.icon {
         case .symbol(let name, let color):
-            Theme.image(name)
-                .font(Theme.font(.caption, weight: .medium))
+            Theme.image(name, size: .caption, weight: .medium)
                 .foregroundStyle(color)
         case .image(let image):
             image.resizable().frame(width: Theme.size(.s16), height: Theme.size(.s16))
@@ -177,12 +176,10 @@ private struct ThalamusMenuRow: View {
     @ViewBuilder
     private var trailing: some View {
         if !item.children.isEmpty {
-            Theme.image(.next)
-                .font(Theme.font(.mini, weight: .semibold))
+            Theme.image(.next, size: .mini, weight: .semibold)
                 .foregroundStyle(Theme.textTertiary)
         } else if item.isSelected {
-            Theme.image(.done)
-                .font(Theme.font(.label, weight: .semibold))
+            Theme.image(.done, size: .label, weight: .semibold)
                 .foregroundStyle(Theme.accent)
         } else if let shortcut = item.shortcut {
             Text(shortcut)

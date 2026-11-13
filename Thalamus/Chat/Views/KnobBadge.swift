@@ -55,8 +55,7 @@ struct KnobBadge: View {
         let look = knob.category == .mode ? Self.modeLooks[current ?? ""] : nil
         return HStack(spacing: Theme.space(.s6)) {
             if let look {
-                Theme.image(look.symbol)
-                    .font(Theme.font(.caption, weight: .medium))
+                Theme.image(look.symbol, size: .caption, weight: .medium)
                     .foregroundStyle(look.color)
             }
             if !compact || knob.category == .model || (look == nil && knob.category == .mode) {

@@ -1,8 +1,11 @@
 # Ícones do Estilo TTY
 
 No Estilo TTY, cada ícone do Thalamus é desenhado com um ícone do
-[Nerd Fonts](https://www.nerdfonts.com) (versão 3.4.0), que ocupa uma célula
-de caractere como uma letra. A fonte do TTY, **JetBrains Mono Nerd Font Mono**,
+[Nerd Fonts](https://www.nerdfonts.com) (versão 3.4.0), no tamanho do ícone do
+Padrão: cada tela pede o ícone num tamanho de texto, e o do TTY ocupa a mesma
+moldura do SF Symbol do Padrão nesse tamanho, com o desenho na mesma maior
+dimensão. Quando o desenho do Nerd Fonts tem outra proporção que a do SF Symbol,
+ele cabe na moldura e sai menor. A fonte do TTY, **JetBrains Mono Nerd Font Mono**,
 embarcada no Thalamus, traz o texto e esses ícones no mesmo arquivo. Esta tabela
 é a correspondência aprovada: todo ícone usado no Thalamus tem uma linha aqui,
 e um ícone novo só entra com a sua.

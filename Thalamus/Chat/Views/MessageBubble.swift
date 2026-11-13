@@ -48,8 +48,7 @@ struct MessageBubble: View {
         return VStack(alignment: .leading, spacing: Theme.space(.s8)) {
             ForEach(files, id: \.self) { name in
                 HStack(spacing: Theme.space(.s7)) {
-                    Theme.image(.attachedFile)
-                        .font(Theme.font(.small))
+                    Theme.image(.attachedFile, size: .small)
                         .foregroundStyle(Theme.accent)
                     Text(name)
                         .font(Theme.font(.smallPlus))
@@ -97,8 +96,7 @@ struct MessageBubble: View {
                 // swiftlint:enable color_outside_palette
             Button(action: onToggle) {
                 HStack(spacing: Theme.space(.s5)) {
-                    Theme.image(.expanded)
-                        .font(Theme.font(.mini, weight: .semibold))
+                    Theme.image(.expanded, size: .mini, weight: .semibold)
                         .rotationEffect(.degrees(isOpen ? 180 : 0))
                     Text(isOpen ? "Recolher"
                                 : "Mostrar tudo · \(LongText.lineLabel(LongText.lineCount(text)))")

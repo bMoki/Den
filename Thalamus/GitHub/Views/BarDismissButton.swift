@@ -5,8 +5,7 @@ struct BarDismissButton: View {
 
     var body: some View {
         Button(action: action) {
-            Theme.image(.close)
-                .font(Theme.font(.label, weight: .semibold))
+            Theme.image(.close, size: .label, weight: .semibold)
                 .foregroundStyle(Theme.textTertiary)
                 .iconLabel(size: .s24)
         }

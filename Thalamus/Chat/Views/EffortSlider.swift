@@ -19,8 +19,7 @@ struct EffortPicker: View {
     var body: some View {
         Button { isOpen.toggle() } label: {
             HStack(spacing: Theme.space(.s6)) {
-                Theme.image(.effort)
-                    .font(Theme.font(.small, weight: .medium))
+                Theme.image(.effort, size: .small, weight: .medium)
                     .foregroundStyle(isOpen ? Theme.accent : Theme.textTertiary)
                 if showsLabel {
                     Text(currentLabel)

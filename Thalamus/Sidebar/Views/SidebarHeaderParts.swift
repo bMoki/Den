@@ -4,8 +4,7 @@ struct DisclosureChevron: View {
     let isOpen: Bool
 
     var body: some View {
-        Theme.image(.next)
-            .font(Theme.font(.label, weight: .semibold))
+        Theme.image(.next, size: .label, weight: .semibold)
             .foregroundStyle(Theme.textTertiary)
             .rotationEffect(.degrees(isOpen ? 90 : 0))
             .frame(width: Theme.size(.s12))
@@ -166,8 +165,7 @@ struct ArchivedRow: View {
 
     var body: some View {
         HStack(spacing: Theme.space(.s8)) {
-            Theme.image(.archive)
-                .font(Theme.font(.small))
+            Theme.image(.archive, size: .small)
                 .foregroundStyle(Theme.textTertiary)
                 .frame(width: Theme.size(.s16))
             Text(SidebarRow.archivedTitle)

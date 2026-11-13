@@ -13,8 +13,7 @@ struct SidebarOrderMenu: View {
 
     var body: some View {
         ThalamusMenuChip(sections: sections, radius: .r6) {
-            Theme.image(.sortOrder)
-                .font(Theme.font(.label, weight: .semibold))
+            Theme.image(.sortOrder, size: .label, weight: .semibold)
                 .foregroundStyle(Theme.textTertiary)
                 .iconLabel(size: .s22)
         }
