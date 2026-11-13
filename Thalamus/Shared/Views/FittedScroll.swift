@@ -25,6 +25,7 @@ struct FittedScroll<Content: View>: View {
             VStack(spacing: 0) {
                 Rectangle()
                 if endIsHidden {
+                    // swiftlint:disable:next color_outside_palette
                     LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom)
                         .frame(height: Self.fadeHeight)
                 }

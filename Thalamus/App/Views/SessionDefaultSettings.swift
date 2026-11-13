@@ -11,18 +11,12 @@ struct SessionDefaultSettings: View {
     private var cache: SessionCache { SessionCache(defaults: defaults) }
 
     var body: some View {
-        Form {
-            Section {
-                Text("Vale para as Sessões novas. O que se escolhe dentro de uma Sessão fica só nela.")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
-            }
+        SettingsPage {
+            SettingsNote(text: "Vale para as Sessões novas. O que se escolhe dentro de uma Sessão fica só nela.")
             ForEach(registry.ids, id: \.self) { harness in
-                Section(registry.displayName(for: harness)) { controls(of: harness) }
+                SettingsSection(title: registry.displayName(for: harness)) { controls(of: harness) }
             }
         }
-        .formStyle(.grouped)
-        .frame(minHeight: 600)
         .onAppear(perform: load)
     }
 
@@ -30,17 +24,15 @@ struct SessionDefaultSettings: View {
     private func controls(of harness: HarnessID) -> some View {
         let knobs = offered[harness] ?? []
         if knobs.isEmpty {
-            Text("Abra uma Sessão do \(registry.displayName(for: harness)) para ver as opções.")
-                .font(.system(size: 11))
-                .foregroundStyle(.secondary)
+            SettingsNote(text: "Abra uma Sessão do \(registry.displayName(for: harness)) para ver as opções.")
         }
         ForEach(knobs) { knob in
             SessionDefaultRow(knob: knob, value: binding(knob.id, harness))
         }
         let vanished = (chosen[harness] ?? [:]).filter { id, _ in !knobs.contains { $0.id == id } }
         ForEach(vanished.sorted { $0.key < $1.key }, id: \.key) { id, value in
-            LabeledContent(id) {
-                Button("Usar o padrão do harness") { binding(id, harness).wrappedValue = nil }
+            SettingsRow(title: id) {
+                SettingsButton(title: "Usar o padrão do harness") { binding(id, harness).wrappedValue = nil }
             }
             SessionDefaultRow.unavailableNote(value)
         }
@@ -75,29 +67,42 @@ private struct SessionDefaultRow: View {
     }
 
     var body: some View {
-        Picker(knob.name, selection: $value) {
-            Text(Self.harnessDefault).tag(String?.none)
-            if let unavailable {
-                Text("\(unavailable) (indisponível)").tag(String?.some(unavailable))
+        SettingsRow(title: knob.name) {
+            SettingsMenu(sections: sections) {
+                Text(shownLabel)
             }
-            ForEach(knob.groupedOptions, id: \.group) { group in
-                if let title = group.group {
-                    Section(title) { options(group.options) }
-                } else {
-                    options(group.options)
-                }
-            }
+            .accessibilityLabel(knob.name)
+            .accessibilityValue(shownLabel)
         }
         if let unavailable { Self.unavailableNote(unavailable) }
     }
 
-    private func options(_ options: [HarnessKnob.Option]) -> some View {
-        ForEach(options, id: \.value) { Text($0.label).tag(String?.some($0.value)) }
+    private var unavailableTitle: String? { unavailable.map { "\($0) (indisponível)" } }
+
+    private var shownLabel: String {
+        guard let value else { return Self.harnessDefault }
+        if let unavailableTitle { return unavailableTitle }
+        return knob.label(for: value) ?? value
+    }
+
+    private var sections: [ThalamusMenuSection] {
+        var first = [item(Self.harnessDefault, nil)]
+        if let unavailable, let unavailableTitle { first.append(item(unavailableTitle, unavailable)) }
+        return [ThalamusMenuSection(id: "default", items: first)]
+            + knob.groupedOptions.enumerated().map { index, group in
+                ThalamusMenuSection(id: group.group ?? "options-\(index)", header: group.group,
+                                    items: group.options.map { item($0.label, $0.value) })
+            }
+    }
+
+    private func item(_ title: String, _ option: String?) -> ThalamusMenuItem {
+        ThalamusMenuItem(id: option ?? "harness-default", title: title, isSelected: value == option) {
+            value = option
+        }
     }
 
     static func unavailableNote(_ value: String) -> some View {
-        Text("O harness não oferece mais \(value): as Sessões novas usam o padrão do harness.")
-            .font(.system(size: 11))
-            .foregroundStyle(.orange)
+        SettingsNote(text: "O harness não oferece mais \(value): as Sessões novas usam o padrão do harness.",
+                     color: Theme.palette.checks.warning)
     }
 }

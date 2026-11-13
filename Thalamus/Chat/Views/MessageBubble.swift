@@ -20,17 +20,23 @@ struct MessageBubble: View {
         case .assistant:
             content
                 .frame(maxWidth: .infinity, alignment: .leading)
+        case .user where Theme.style.boxes == .lines:
+            HStack(alignment: .firstTextBaseline, spacing: Theme.space(.s8)) {
+                Text("›").font(Theme.font(.body)).foregroundStyle(Theme.accent).accessibilityHidden(true)
+                content
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         case .user:
-            HStack(alignment: .bottom, spacing: 8) {
+            HStack(alignment: .bottom, spacing: Theme.space(.s8)) {
                 timestamp
                     .opacity(hovering ? 1 : 0)
-                    .padding(.bottom, 2)
+                    .padding(.bottom, Theme.space(.s2))
                 content
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 11)
+                    .padding(.horizontal, Theme.space(.s16))
+                    .padding(.vertical, Theme.space(.s11))
                     .background(Theme.bubble, in: UnevenRoundedRectangle(
-                        topLeadingRadius: 16, bottomLeadingRadius: 16,
-                        bottomTrailingRadius: 4, topTrailingRadius: 16, style: .continuous))
+                        topLeadingRadius: Theme.radius(.r16), bottomLeadingRadius: Theme.radius(.r16),
+                        bottomTrailingRadius: Theme.radius(.r4), topTrailingRadius: Theme.radius(.r16), style: .continuous))
             }
             .onHover { hovering = $0 }
         }
@@ -39,31 +45,30 @@ struct MessageBubble: View {
     private var content: some View {
         let sizes = images.map { ImageCache.displaySize(for: $0) }
         let contentWidth = sizes.map(\.width).max()
-        return VStack(alignment: .leading, spacing: 8) {
+        return VStack(alignment: .leading, spacing: Theme.space(.s8)) {
             ForEach(files, id: \.self) { name in
-                HStack(spacing: 7) {
-                    Image(systemName: "doc.fill")
-                        .font(.system(size: 12))
+                HStack(spacing: Theme.space(.s7)) {
+                    Theme.image(.attachedFile, size: .small)
                         .foregroundStyle(Theme.accent)
                     Text(name)
-                        .font(.system(size: 12.5))
+                        .font(Theme.font(.smallPlus))
                         .lineLimit(1)
                         .truncationMode(.middle)
                 }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 7)
-                .background(Theme.hoverRaised, in: RoundedRectangle(cornerRadius: 8))
+                .padding(.horizontal, Theme.space(.s10))
+                .padding(.vertical, Theme.space(.s7))
+                .background(Theme.hoverRaised, in: RoundedRectangle(cornerRadius: Theme.radius(.r8)))
             }
             ForEach(Array(images.enumerated()), id: \.offset) { index, data in
                 if let image = ImageCache.decodedImage(data) {
                     Image(nsImage: image)
                         .resizable()
                         .frame(width: sizes[index].width, height: sizes[index].height)
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .clipShape(RoundedRectangle(cornerRadius: Theme.radius(.r10)))
                         .onTapGesture {
                             onZoom(data)
                         }
-                        .help("Clique para ampliar")
+                        .tip("Clique para ampliar")
                 }
             }
             Group {
@@ -81,26 +86,27 @@ struct MessageBubble: View {
     }
 
     private func collapsible(_ onToggle: @escaping () -> Void) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: Theme.space(.s8)) {
             plainText(isOpen ? visibleText : LongText.preview(text))
                 .lineLimit(isOpen ? nil : LongText.previewLines)
+                // swiftlint:disable color_outside_palette
                 .mask(LinearGradient(colors: isOpen ? [.black, .black]
                                                     : [.black, .black, .black.opacity(0.2)],
                                      startPoint: .top, endPoint: .bottom))
+                // swiftlint:enable color_outside_palette
             Button(action: onToggle) {
-                HStack(spacing: 5) {
-                    Image(systemName: "chevron.down")
-                        .font(.system(size: 9, weight: .semibold))
+                HStack(spacing: Theme.space(.s5)) {
+                    Theme.image(.expanded, size: .mini, weight: .semibold)
                         .rotationEffect(.degrees(isOpen ? 180 : 0))
                     Text(isOpen ? "Recolher"
                                 : "Mostrar tudo · \(LongText.lineLabel(LongText.lineCount(text)))")
                 }
-                .font(.system(size: 12, weight: .medium))
+                .font(Theme.font(.small, weight: .medium))
                 .foregroundStyle(Theme.accent)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .help(isOpen ? "Recolher mensagem" : "Mostrar a mensagem inteira")
+            .tip(isOpen ? "Recolher mensagem" : "Mostrar a mensagem inteira")
         }
     }
 
@@ -108,8 +114,8 @@ struct MessageBubble: View {
 
     private func plainText(_ string: String) -> some View {
         Text(string)
-            .font(.system(size: 14))
-            .lineSpacing(2)
+            .font(Theme.font(.large))
+            .lineSpacing(Theme.space(.s2))
             .foregroundStyle(Theme.text)
             .multilineTextAlignment(.leading)
             .textSelection(.enabled)
@@ -120,7 +126,7 @@ struct MessageBubble: View {
     private var timestamp: some View {
         if let moment {
             Text(moment, format: .dateTime.hour().minute())
-                .font(.system(size: 11))
+                .font(Theme.font(.caption))
                 .monospacedDigit()
                 .foregroundStyle(Theme.textTertiary)
         }

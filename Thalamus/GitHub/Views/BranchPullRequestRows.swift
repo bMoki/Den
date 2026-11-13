@@ -14,20 +14,20 @@ struct BranchPullRequestRows: View {
                         monitor.toggleDismissal(of: repo)
                     }
                 } else {
-                    HStack(spacing: 8) {
+                    HStack(spacing: Theme.space(.s8)) {
                         RepoName(name: repo.name)
                         Text("sem PR")
-                            .font(.system(size: 12.5))
+                            .font(Theme.font(.smallPlus))
                             .foregroundStyle(Theme.textFaint)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .padding(.horizontal, 12)
-                    .frame(height: 38)
+                    .padding(.horizontal, Theme.space(.s12))
+                    .frame(height: Theme.size(.s38))
                     .accessibilityElement(children: .combine)
                 }
             }
             .overlay(alignment: .top) {
-                if index > 0 { Rectangle().fill(Theme.border).frame(height: 1) }
+                if index > 0 { Rectangle().fill(Theme.border).frame(height: Theme.line(.thin)) }
             }
         }
     }
@@ -42,12 +42,12 @@ private struct PullRequestRow: View {
     @State private var hovering = false
 
     var body: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: Theme.space(.s4)) {
             Button { NSWorkspace.shared.open(pullRequest.url) } label: {
-                HStack(spacing: 8) {
+                HStack(spacing: Theme.space(.s8)) {
                     RepoName(name: repo.name)
                     Text("\(PullRequestStatus.number(pullRequest)) \(pullRequest.title)")
-                        .font(.system(size: 12.5))
+                        .font(Theme.font(.smallPlus))
                         .foregroundStyle(Theme.textTertiary)
                         .lineLimit(1)
                         .truncationMode(.tail)
@@ -59,22 +59,21 @@ private struct PullRequestRow: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .help("Abrir no GitHub")
+            .tip("Abrir no GitHub")
             .accessibilityLabel("\(repo.name): PR \(PullRequestStatus.number(pullRequest)), \(status)")
             Button(action: toggleDismissal) {
-                Image(systemName: isDismissed ? "eye" : "eye.slash")
-                    .font(.system(size: 10.5, weight: .medium))
+                Theme.image(isDismissed ? .show : .hide, size: .labelPlus, weight: .medium)
                     .foregroundStyle(isDismissed ? Theme.textMuted : Theme.textTertiary)
-                    .iconLabel(size: 24)
+                    .iconLabel(size: .s24)
             }
-            .buttonStyle(.thalamusGhost(radius: 6))
+            .buttonStyle(.thalamusGhost(radius: .r6))
             .opacity(hovering || isDismissed ? 1 : 0)
-            .help(dismissalTitle)
+            .tip(dismissalTitle)
             .accessibilityLabel("\(dismissalTitle): \(repo.name)")
         }
-        .padding(.leading, 12)
-        .padding(.trailing, 6)
-        .frame(height: 38)
+        .padding(.leading, Theme.space(.s12))
+        .padding(.trailing, Theme.space(.s6))
+        .frame(height: Theme.size(.s38))
         .onHover { hovering = $0 }
     }
 
@@ -90,13 +89,13 @@ private struct PullRequestRow: View {
     private var pill: some View {
         let tone = PullRequestStatus.tone(pullRequest)
         return Text(status)
-            .font(.system(size: 11, weight: .medium))
+            .font(Theme.font(.caption, weight: .medium))
             .foregroundStyle(tone.color)
             .lineLimit(1)
             .fixedSize()
-            .padding(.horizontal, 7)
-            .frame(height: 19)
-            .background(tone.fill, in: Capsule())
+            .padding(.horizontal, Theme.space(.s7))
+            .frame(height: Theme.size(.s19))
+            .background(tone.fill, in: Theme.capsule)
     }
 }
 
@@ -105,7 +104,7 @@ private struct RepoName: View {
 
     var body: some View {
         Text(name)
-            .font(.system(size: 12, design: .monospaced))
+            .font(Theme.font(.small, design: .monospaced))
             .foregroundStyle(Theme.textSecondary)
             .lineLimit(1)
             .truncationMode(.middle)

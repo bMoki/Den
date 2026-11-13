@@ -5,15 +5,14 @@ struct PullRequestChip: View {
 
     var body: some View {
         let tone = PullRequestStatus.tone(pullRequest)
-        HStack(spacing: 3) {
-            Image(systemName: tone.symbol)
-                .font(.system(size: 8.5, weight: .bold))
+        HStack(spacing: Theme.space(.s3)) {
+            Theme.image(tone.symbol, size: .tinyPlus, weight: .bold)
             Text(PullRequestStatus.number(pullRequest))
-                .font(.system(size: 11, weight: .medium, design: .monospaced))
+                .font(Theme.font(.caption, weight: .medium, design: .monospaced))
         }
         .foregroundStyle(tone.color)
-        .padding(.horizontal, 5)
-        .frame(height: 17)
-        .background(tone.fill, in: RoundedRectangle(cornerRadius: 5, style: .continuous))
+        .padding(.horizontal, Theme.space(.s5))
+        .frame(height: Theme.size(.s17))
+        .background(tone.fill, in: RoundedRectangle(cornerRadius: Theme.radius(.r5), style: .continuous))
     }
 }

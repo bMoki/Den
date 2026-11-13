@@ -15,10 +15,8 @@ struct ThalamusContextMenu: ViewModifier {
                                    y: min(max(point.y / size.height, 0), 1))
                 isOpen = true
             })
-            .popover(isPresented: $isOpen, attachmentAnchor: .point(anchor), arrowEdge: .top) {
+            .floating(isPresented: $isOpen, at: anchor) {
                 ThalamusMenuList(sections: sections) { isOpen = false }
-                    .presentationBackground(Theme.raised)
-                    .environment(\.colorScheme, .dark)
             }
     }
 }

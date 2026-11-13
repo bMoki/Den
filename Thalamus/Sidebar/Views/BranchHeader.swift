@@ -24,31 +24,31 @@ struct BranchHeader: View {
     @State private var isEditing = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 8) {
+        VStack(alignment: .leading, spacing: Theme.space(.s4)) {
+            HStack(spacing: Theme.space(.s8)) {
                 title
-                Spacer(minLength: 4)
+                Spacer(minLength: Theme.space(.s4))
                 if hovering || activity != nil {
                     actions
                 }
                 SessionTallyLabel(sessions: sessions)
             }
-            .frame(height: 20)
+            .frame(height: Theme.size(.s20))
             if let branch, !branch.services.isEmpty || !pullRequests.isEmpty {
-                HStack(spacing: 4) {
+                HStack(spacing: Theme.space(.s4)) {
                     if !branch.services.isEmpty {
                         ForEach(branch.services) { ServiceIndicator(.service($0.id), state: $0.state) }
                         ServiceIndicator(.database, state: branch.database)
-                            .padding(.leading, 2)
+                            .padding(.leading, Theme.space(.s2))
                     }
                     ForEach(pullRequests, id: \.url) { PullRequestChip(pullRequest: $0) }
-                        .padding(.leading, 4)
+                        .padding(.leading, Theme.space(.s4))
                     if let activity {
                         Text(activity.label)
-                            .font(.system(size: 11))
+                            .font(Theme.font(.caption))
                             .foregroundStyle(Theme.textTertiary)
                             .lineLimit(1)
-                            .padding(.leading, 4)
+                            .padding(.leading, Theme.space(.s4))
                     }
                 }
                 .accessibilityElement(children: .ignore)
@@ -56,15 +56,15 @@ struct BranchHeader: View {
             }
             if let problem, activity == nil {
                 Text(problem)
-                    .font(.system(size: 11))
+                    .font(Theme.font(.caption))
                     .foregroundStyle(Theme.removed)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .padding(.leading, 10)
-        .padding(.trailing, 6)
-        .padding(.vertical, 6)
+        .padding(.leading, Theme.space(.s10))
+        .padding(.trailing, Theme.space(.s6))
+        .padding(.vertical, Theme.space(.s6))
         .sidebarHeaderRow(hovering: $hovering, isSelected: isSelected, open: open)
         .thalamusContextMenu(menu)
         .accessibilityElement(children: .contain)
@@ -104,26 +104,26 @@ struct BranchHeader: View {
         if isEditing {
             InlineRenameField(initial: branch?.nickname ?? "", placeholder: name, limit: BranchNickname.maxLength,
                               commit: setNickname) { isEditing = false }
-                .font(.system(size: 12.5, weight: .medium))
-                .padding(.horizontal, 5)
-                .frame(height: 20)
-                .background(Theme.field, in: RoundedRectangle(cornerRadius: 4, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 4, style: .continuous).strokeBorder(Theme.accent))
+                .font(Theme.font(.smallPlus, weight: .medium))
+                .padding(.horizontal, Theme.space(.s5))
+                .frame(height: Theme.size(.s20))
+                .background(Theme.field, in: RoundedRectangle(cornerRadius: Theme.radius(.r4), style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: Theme.radius(.r4), style: .continuous).strokeBorder(Theme.accent))
         } else if let nickname = branch?.nickname {
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
+            HStack(alignment: .firstTextBaseline, spacing: Theme.space(.s6)) {
                 Text(nickname)
-                    .font(.system(size: 12.5, weight: .medium))
+                    .font(Theme.font(.smallPlus, weight: .medium))
                     .lineLimit(1)
                     .truncationMode(.tail)
                 Text(name)
-                    .font(.system(size: 11, design: .monospaced))
+                    .font(Theme.font(.caption, design: .monospaced))
                     .foregroundStyle(Theme.textTertiary)
                     .lineLimit(1)
                     .fixedSize()
             }
         } else {
             Text(name)
-                .font(.system(size: 12.5, weight: .medium, design: .monospaced))
+                .font(Theme.font(.smallPlus, weight: .medium, design: .monospaced))
                 .lineLimit(1)
                 .truncationMode(.middle)
         }
@@ -136,27 +136,26 @@ struct BranchHeader: View {
     }
 
     private var actions: some View {
-        HStack(spacing: 2) {
+        HStack(spacing: Theme.space(.s2)) {
             if activity != nil {
                 ProgressView()
                     .controlSize(.mini)
-                    .frame(width: 24, height: 20)
+                    .frame(width: Theme.size(.s24), height: Theme.size(.s20))
             } else {
-                action("play.fill", title: BranchActionTitle.start, perform: start)
-                action("stop.fill", title: BranchActionTitle.stop, perform: stop)
+                action(.start, title: BranchActionTitle.start, perform: start)
+                action(.stop, title: BranchActionTitle.stop, perform: stop)
             }
         }
     }
 
-    private func action(_ symbol: String, title: String, perform: @escaping () -> Void) -> some View {
+    private func action(_ symbol: Icon, title: String, perform: @escaping () -> Void) -> some View {
         Button(action: perform) {
-            Image(systemName: symbol)
-                .font(.system(size: 9.5))
+            Theme.image(symbol, size: .miniPlus)
                 .foregroundStyle(Theme.textMuted)
-                .iconLabel(size: 22)
+                .iconLabel(size: .s22)
         }
-        .buttonStyle(.thalamusGhost(radius: 6))
-        .help(title)
+        .buttonStyle(.thalamusGhost(radius: .r6))
+        .tip(title)
         .accessibilityLabel(title)
     }
 }

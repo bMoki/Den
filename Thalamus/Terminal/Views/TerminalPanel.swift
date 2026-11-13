@@ -16,9 +16,10 @@ struct TerminalPanel: View {
                 tabs(terminals.terminals(of: row), current: current)
                 TerminalHost(terminal: current)
                     .id(current.id)
-                    .padding(.leading, 8)
+                    .padding(.leading, Theme.space(.s8))
                     .background(Theme.terminal)
             }
+            .area(current.title.lowercased(), fill: Theme.terminal)
             .frame(height: height)
             .background(Theme.terminal)
         }
@@ -36,38 +37,36 @@ struct TerminalPanel: View {
             Button {
                 terminals.open(for: row, in: root)
             } label: {
-                Image(systemName: "plus")
-                    .font(.system(size: 11, weight: .medium))
+                Theme.image(.add, size: .caption, weight: .medium)
                     .foregroundStyle(Theme.textTertiary)
-                    .iconLabel(size: 22)
+                    .iconLabel(size: .s22)
             }
-            .buttonStyle(.thalamusGhost(radius: 5))
-            .padding(.leading, 4)
-            .help("Novo Terminal livre")
+            .buttonStyle(.thalamusGhost(radius: .r5))
+            .padding(.leading, Theme.space(.s4))
+            .tip("Novo Terminal livre")
             .accessibilityLabel("Novo Terminal livre")
-            Spacer(minLength: 8)
+            Spacer(minLength: Theme.space(.s8))
             Text(current.isConsole ? "Fechar o Console não para o Serviço"
                 : "Terminais livres se encerram quando o Thalamus fecha")
-                .font(.system(size: 11.5))
+                .font(Theme.font(.captionPlus))
                 .foregroundStyle(Theme.textFaint)
                 .lineLimit(1)
             Button {
                 terminals.isPanelOpen = false
             } label: {
-                Image(systemName: "chevron.down")
-                    .font(.system(size: 10, weight: .semibold))
+                Theme.image(.expanded, size: .label, weight: .semibold)
                     .foregroundStyle(Theme.textTertiary)
-                    .iconLabel(size: 22)
+                    .iconLabel(size: .s22)
             }
-            .buttonStyle(.thalamusGhost(radius: 5))
-            .padding(.horizontal, 6)
-            .help("Ocultar painel")
+            .buttonStyle(.thalamusGhost(radius: .r5))
+            .padding(.horizontal, Theme.space(.s6))
+            .tip("Ocultar painel")
             .accessibilityLabel("Ocultar painel")
         }
-        .padding(.leading, 4)
-        .frame(height: 34)
+        .padding(.leading, Theme.space(.s4))
+        .frame(height: Theme.size(.s34))
         .background(Theme.panel)
-        .overlay(alignment: .bottom) { Rectangle().fill(Theme.border).frame(height: 1) }
+        .overlay(alignment: .bottom) { Rectangle().fill(Theme.border).frame(height: Theme.line(.thin)) }
     }
 
     private func console(of terminal: PanelTerminal) -> NsStatus.Service? {
@@ -84,14 +83,12 @@ struct TerminalToggle: View {
 
     var body: some View {
         Button(action: toggle) {
-            Image(systemName: "rectangle.bottomthird.inset.filled")
-                .font(.system(size: 14))
-                .foregroundStyle(isShown ? Theme.text : Theme.textSecondary)
-                .iconLabel(size: 32)
+            Theme.image(.toggleTerminals, size: .large)
+                .iconLabel(size: .s32)
         }
-        .buttonStyle(ThalamusButtonStyle(kind: .secondary))
+        .buttonStyle(ThalamusButtonStyle(kind: .secondary, tint: isShown ? Theme.text : Theme.textSecondary))
         .disabled(isArchived)
-        .help(help)
+        .tip(help, shortcut: "⌃`")
         .accessibilityLabel(isShown ? "Ocultar Terminais livres" : "Mostrar Terminais livres")
         .accessibilityHint(isArchived ? Self.archivedFolderReason : "")
         .onKeyboardShortcut("`", modifiers: .control) { toggle() }
@@ -124,34 +121,32 @@ private struct TerminalTab: View {
     @State private var hovering = false
 
     var body: some View {
-        HStack(spacing: 7) {
+        HStack(spacing: Theme.space(.s7)) {
             if let console {
                 ServiceIndicator(.service(console.id), state: console.state)
             } else {
-                Image(systemName: "terminal")
-                    .font(.system(size: 11))
+                Theme.image(.terminal, size: .caption)
             }
             Text(title)
                 .lineLimit(1)
             Button(action: close) {
-                Image(systemName: "xmark")
-                    .font(.system(size: 8.5, weight: .bold))
-                    .frame(width: 16, height: 16)
+                Theme.image(.close, size: .tinyPlus, weight: .bold)
+                    .frame(width: Theme.size(.s16), height: Theme.size(.s16))
                     .contentShape(Rectangle())
             }
-            .buttonStyle(.thalamusGhost(radius: 4))
+            .buttonStyle(.thalamusGhost(radius: .r4))
             .opacity(isSelected || hovering ? 1 : 0)
-            .help(console == nil ? "Fechar Terminal livre" : "Fechar Console")
+            .tip(console == nil ? "Fechar Terminal livre" : "Fechar Console")
             .accessibilityLabel("Fechar \(title)")
         }
-        .font(.system(size: 12))
+        .font(Theme.font(.small))
         .foregroundStyle(isSelected ? Theme.text : hovering ? Theme.textSecondary : Theme.textTertiary)
-        .padding(.leading, 10)
-        .padding(.trailing, 8)
+        .padding(.leading, Theme.space(.s10))
+        .padding(.trailing, Theme.space(.s8))
         .frame(maxHeight: .infinity)
         .background(isSelected ? Theme.terminal : .clear)
         .overlay(alignment: .top) {
-            if isSelected { Rectangle().fill(Theme.accent).frame(height: 2) }
+            if isSelected { Rectangle().fill(Theme.accent).frame(height: Theme.size(.s2)) }
         }
         .contentShape(Rectangle())
         .onHover { hovering = $0 }

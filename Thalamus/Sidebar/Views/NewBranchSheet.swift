@@ -9,21 +9,22 @@ struct NewBranchSheet: View {
     @FocusState private var nameFocused: Bool
     @FocusState private var nicknameFocused: Bool
 
-    var body: some View {
+    var body: some View { sheet.dialogBox() }
+
+    private var sheet: some View {
         VStack(alignment: .leading, spacing: 0) {
             if creation.phase == .form { form } else { progress }
         }
         .frame(width: 500)
         .background(Theme.raised)
         .foregroundStyle(Theme.text)
-        .preferredColorScheme(.dark)
     }
 
     private var form: some View {
         Group {
             DialogHeading(title: Text("Nova Branch de workspace"),
                           subtitle: Text("O ns cria a branch em cada Repo e prepara banco, aliases e dependências. Nenhum Serviço é iniciado."))
-            VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: Theme.space(.s14)) {
                 field("Nome da branch") {
                     TextField("", text: $creation.name)
                         .focused($nameFocused)
@@ -33,24 +34,23 @@ struct NewBranchSheet: View {
                 }
                 nicknameField
                 field("Base") {
-                    HStack(spacing: 8) {
-                        Image(systemName: "arrow.triangle.branch")
-                            .font(.system(size: 11))
+                    HStack(spacing: Theme.space(.s8)) {
+                        Theme.image(.branch, size: .caption)
                         Text("master")
-                            .font(.system(size: 12.5, design: .monospaced))
+                            .font(Theme.font(.smallPlus, design: .monospaced))
                         Spacer(minLength: 0)
                         Text("padrão do ns")
-                            .font(.system(size: 12))
+                            .font(Theme.font(.small))
                             .foregroundStyle(Theme.textTertiary)
                     }
                     .foregroundStyle(Theme.textSecondary)
-                    .padding(.horizontal, 11)
-                    .frame(height: 34)
+                    .padding(.horizontal, Theme.space(.s11))
+                    .frame(height: Theme.size(.s34))
                     .background(Theme.card, in: DialogBox.shape)
                     .overlay(DialogBox.shape.strokeBorder(Theme.border))
                 }
                 field("Repos") {
-                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 6), GridItem(.flexible())], spacing: 6) {
+                    LazyVGrid(columns: [GridItem(.flexible(), spacing: Theme.space(.s6)), GridItem(.flexible())], spacing: Theme.space(.s6)) {
                         ForEach(BranchCreation.Repo.fixed, id: \.self) {
                             DialogCheckbox(title: $0, isOn: .constant(true), note: "sempre", isFixed: true)
                         }
@@ -62,7 +62,7 @@ struct NewBranchSheet: View {
                     }
                 }
             }
-            .padding(EdgeInsets(top: 14, leading: 20, bottom: 4, trailing: 20))
+            .dialogBody()
             DialogFooter {
                 Spacer(minLength: 0)
                 DialogCancelButton { creation.isPresented = false }
@@ -78,10 +78,10 @@ struct NewBranchSheet: View {
     @ViewBuilder
     private var progress: some View {
         let wording = Wording(adding: creation.adding)
-        DialogHeading(title: Text("\(wording.heading) \(Text(creation.name).font(.system(size: 14, weight: .semibold, design: .monospaced)))"),
+        DialogHeading(title: Text("\(wording.heading) \(Text(creation.name).font(Theme.font(.large, weight: .semibold, design: .monospaced)))"),
                       subtitle: Text(wording.subtitle))
-            VStack(alignment: .leading, spacing: 14) {
-                VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: Theme.space(.s14)) {
+                VStack(alignment: .leading, spacing: Theme.space(.s2)) {
                     ForEach(creation.steps) { StepRow(step: $0) }
                 }
                 if let question = creation.question {
@@ -111,10 +111,10 @@ struct NewBranchSheet: View {
                     }
                 }
             }
-            .padding(EdgeInsets(top: 14, leading: 20, bottom: 4, trailing: 20))
+            .dialogBody()
             DialogFooter {
                 Text(footerNote(wording))
-                    .font(.system(size: 12))
+                    .font(Theme.font(.small))
                     .foregroundStyle(Theme.textTertiary)
                 Spacer(minLength: 0)
                 Button { creation.isPresented = false } label: { Text("Fechar").pillLabel() }
@@ -174,20 +174,20 @@ struct NewBranchSheet: View {
 
     private func field(_ label: String, note: String? = nil, counter: String? = nil,
                        @ViewBuilder content: () -> some View) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: Theme.space(.s6)) {
             HStack(spacing: 0) {
                 Text(label)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(Theme.font(.small, weight: .medium))
                     .foregroundStyle(Theme.textSecondary)
                 if let note {
                     Text(" · \(note)")
-                        .font(.system(size: 12))
+                        .font(Theme.font(.small))
                         .foregroundStyle(Theme.textTertiary)
                 }
-                Spacer(minLength: 4)
+                Spacer(minLength: Theme.space(.s4))
                 if let counter {
                     Text(counter)
-                        .font(.system(size: 11, design: .monospaced))
+                        .font(Theme.font(.caption, design: .monospaced))
                         .foregroundStyle(Theme.textTertiary)
                         .accessibilityHidden(true)
                 }
@@ -202,20 +202,20 @@ private struct StepRow: View {
     let step: BranchCreation.Step
 
     var body: some View {
-        HStack(spacing: 10) {
-            icon.frame(width: 18, height: 18)
+        HStack(spacing: Theme.space(.s10)) {
+            icon.frame(width: Theme.size(.s18), height: Theme.size(.s18))
             Text(step.title)
-                .font(.system(size: 13))
+                .font(Theme.font(.body))
                 .foregroundStyle(step.state == .waiting ? Theme.textTertiary : Theme.textSecondary)
-            Spacer(minLength: 4)
+            Spacer(minLength: Theme.space(.s4))
             if let detail = step.detail {
                 Text(detail)
-                    .font(.system(size: 11.5, design: .monospaced))
+                    .font(Theme.font(.captionPlus, design: .monospaced))
                     .foregroundStyle(Theme.textTertiary)
                     .lineLimit(1)
             }
         }
-        .frame(height: 30)
+        .frame(height: Theme.size(.s30))
         .accessibilityElement(children: .combine)
     }
 
@@ -223,22 +223,21 @@ private struct StepRow: View {
     private var icon: some View {
         switch step.state {
         case .waiting:
-            Circle().strokeBorder(Theme.textFaint, style: StrokeStyle(lineWidth: 1.5, dash: [2.5, 2.5]))
+            Theme.circle.strokeBorder(Theme.textFaint, style: StrokeStyle(lineWidth: Theme.line(.medium), dash: [2.5, 2.5]))
         case .running:
             ProgressView().controlSize(.mini)
         case .done:
-            symbol("checkmark", Theme.added, on: Theme.addedFill)
+            symbol(.done, Theme.added, on: Theme.addedFill)
         case .failed:
-            symbol("xmark", Theme.removed, on: Theme.removedFill)
+            symbol(.close, Theme.removed, on: Theme.removedFill)
         }
     }
 
-    private func symbol(_ name: String, _ color: Color, on fill: Color) -> some View {
-        Image(systemName: name)
-            .font(.system(size: 9, weight: .bold))
+    private func symbol(_ name: Icon, _ color: Color, on fill: Color) -> some View {
+        Theme.image(name, size: .mini, weight: .bold)
             .foregroundStyle(color)
-            .frame(width: 18, height: 18)
-            .background(fill, in: Circle())
+            .frame(width: Theme.size(.s18), height: Theme.size(.s18))
+            .background(fill, in: Theme.circle)
     }
 }
 
@@ -247,17 +246,17 @@ private struct QuestionBox: View {
     var reply: (Bool) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            VStack(alignment: .leading, spacing: 3) {
+        VStack(alignment: .leading, spacing: Theme.space(.s10)) {
+            VStack(alignment: .leading, spacing: Theme.space(.s3)) {
                 Text("O ns pergunta")
-                    .font(.system(size: 11.5))
+                    .font(Theme.font(.captionPlus))
                     .foregroundStyle(Theme.textTertiary)
                 Text(question.message)
-                    .font(.system(size: 13))
+                    .font(Theme.font(.body))
                     .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            HStack(spacing: 8) {
+            HStack(spacing: Theme.space(.s8)) {
                 Spacer(minLength: 0)
                 Button { reply(false) } label: { Text("Não").pillLabel() }
                     .buttonStyle(ThalamusButtonStyle(kind: question.default ? .secondary : .primary))
@@ -276,15 +275,14 @@ private struct FailureBox<Action: View>: View {
     @ViewBuilder var action: () -> Action
 
     var body: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "exclamationmark.triangle")
-                .font(.system(size: 13))
+        HStack(spacing: Theme.space(.s10)) {
+            Theme.image(.warning, size: .body)
                 .foregroundStyle(Theme.removed)
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: Theme.space(.s2)) {
                 Text("\(Text(title).fontWeight(.semibold).foregroundStyle(Theme.removed))\(detail.map { " \($0)" } ?? "")")
-                    .font(.system(size: 12.5))
+                    .font(Theme.font(.smallPlus))
                 Text(message)
-                    .font(.system(size: 11.5, design: .monospaced))
+                    .font(Theme.font(.captionPlus, design: .monospaced))
                     .foregroundStyle(Theme.removed.opacity(0.8))
                     .fixedSize(horizontal: false, vertical: true)
                     .textSelection(.enabled)
@@ -298,8 +296,8 @@ private struct FailureBox<Action: View>: View {
 
 private extension View {
     func callout(fill: Color, border: Color) -> some View {
-        let shape = RoundedRectangle(cornerRadius: 12, style: .continuous)
-        return padding(EdgeInsets(top: 12, leading: 14, bottom: 12, trailing: 14))
+        let shape = RoundedRectangle(cornerRadius: Theme.radius(.r12), style: .continuous)
+        return padding(EdgeInsets(top: Theme.space(.s12), leading: Theme.space(.s14), bottom: Theme.space(.s12), trailing: Theme.space(.s14)))
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(fill, in: shape)
             .overlay(shape.strokeBorder(border.opacity(0.45)))

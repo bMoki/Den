@@ -45,9 +45,9 @@ private func scratchDefaults() throws -> UserDefaults {
 }
 
 @Test func onlyRealSymbolNamesAreAccepted() {
-    #expect(IndicatorIcon.symbolExists("cylinder"))
-    #expect(!IndicatorIcon.symbolExists("no.such.symbol.anywhere"))
-    #expect(!IndicatorIcon.symbolExists(""))
+    #expect(Style.symbolExists("cylinder"))
+    #expect(!Style.symbolExists("no.such.symbol.anywhere"))
+    #expect(!Style.symbolExists(""))
 }
 
 @Test func everySuggestionCanBeDrawn() {

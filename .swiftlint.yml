@@ -132,5 +132,38 @@ custom_rules:
     regex: '^\s*(@\w+\s+)*import\s+((typealias|struct|class|enum|protocol|let|var|func)\s+)?HarnessCore\b'
     message: "Thalamus/Shared must not depend on HarnessCore."
     severity: error
+  color_outside_palette:
+    name: "Colors come from the Palette"
+    included: ".*/Thalamus/.*\\.swift"
+    excluded: ".*/(Packages|ThalamusTests|ThalamusUITests|ThalamusTestSupport)/.*|.*/Thalamus/Shared/Theme/Palette\\.swift"
+    regex: '(\bColor\(((hex|red|white|nsColor|\.\w+)\b|(?="))|\bCGColor\(|\.init\((red|white|hex|srgbRed)\b|\bNSColor\.(?!clear\b)\w+|[=(\[,:?]\s*\.(label|secondaryLabel|tertiaryLabel|text|controlAccent)Color\b|\bNSColor\((red|white|srgbRed|calibratedRed|deviceRed|calibratedWhite)\b|\bColor\.(accentColor|red|orange|yellow|green|mint|teal|cyan|blue|indigo|purple|pink|brown|white|gray|black)\b|[=(\[,:?]\s*\.(red|orange|yellow|green|mint|teal|cyan|blue|indigo|purple|pink|brown|white|gray|black)\b)'
+    match_kinds: [identifier, keyword, number, typeidentifier]
+    message: "Ask the Palette for the color (Theme or Theme.palette); hierarchical styles like .secondary are fine."
+    severity: error
+  shape_outside_style:
+    name: "Fonts, shapes and spacing come from the Style"
+    included: ".*/Thalamus/.*\\.swift"
+    excluded: ".*/(Packages|ThalamusTests|ThalamusUITests|ThalamusTestSupport)/.*|.*/Thalamus/Shared/Theme/Style\\.swift"
+    regex: '(\.system\(size:|\.(systemFont|boldSystemFont|monospacedSystemFont|monospacedDigitSystemFont)\(ofSize|\bFont\.custom\(|\b(cornerRadius|lineWidth|[sS]pacing|minLength):\s*([^,()]*\?\s*)?-?(0\.\d*[1-9]|[1-9])|(?<![A-Za-z])radius:\s*[0-9]|\b[a-z]+Radius:\s*([^,()]*\?\s*)?[0-9]*[1-9]|\.shadow\(|\b(padding|lineSpacing)\(((\.\w+|\[[^\]]*\]),\s*)?-?(0\.\d*[1-9]|[1-9])|\bEdgeInsets\([^)]*:\s*-?(0\.\d*[1-9]|[1-9]))'
+    match_kinds: [identifier, keyword, number, typeidentifier]
+    message: "Ask the Style for fonts, radii, lines, spacing and shadows (Theme.font, Theme.radius, Theme.line, Theme.space, .elevation)."
+    severity: error
+  icon_outside_style:
+    name: "Icons come from the Style"
+    included: ".*/Thalamus/.*\\.swift"
+    excluded: ".*/(Packages|ThalamusTests|ThalamusUITests|ThalamusTestSupport)/.*|.*/Thalamus/Shared/Theme/Style\\.swift"
+    regex: '(\b(systemName|systemImage|systemSymbolName):|\bImage\((?=")|\bNSImage\(named:)'
+    match_kinds: [identifier, keyword, typeidentifier]
+    message: "Ask the Style for the icon by what it means (Theme.image(.close)); add it to Icon and to docs/specs/estilo-tty-icones.md if it is new."
+    severity: error
+
+  native_outside_style:
+    name: "Dialogs, tips, popovers and forms are Thalamus components"
+    included: ".*/Thalamus/.*\\.swift"
+    excluded: ".*/(Packages|ThalamusTests|ThalamusUITests|ThalamusTestSupport)/.*"
+    regex: '(\.(help|popover|confirmationDialog|alert)\(|\bForm \{|\bTabView\b|\.pickerStyle\(|\bPicker\()'
+    match_kinds: [identifier, keyword, typeidentifier]
+    message: "The macOS draws these and the Style cannot; use .tip, .floating, .confirmation and the Settings parts."
+    severity: error
 
 reporter: xcode

@@ -24,16 +24,16 @@ struct ToolSteps: View {
             }
             .buttonStyle(.plain)
             .onHover { hovering = $0 }
-            .help(isOpen ? "Recolher os passos" : "Ver o que a IA fez")
+            .tip(isOpen ? "Recolher os passos" : "Ver o que a IA fez")
             .accessibilityLabel(isOpen ? "Recolher passos" : "Expandir \(lines.count) passos")
 
             if isOpen {
-                Rectangle().fill(Theme.border).frame(height: 1)
-                VStack(alignment: .leading, spacing: 9) {
+                Rectangle().fill(Theme.border).frame(height: Theme.line(.thin))
+                VStack(alignment: .leading, spacing: Theme.space(.s9)) {
                     ForEach(lines) { line in
                         if line.role == .unknown {
                             Text(line.text)
-                                .font(.system(size: 11, design: .monospaced))
+                                .font(Theme.font(.caption, design: .monospaced))
                                 .foregroundStyle(Theme.textTertiary)
                                 .textSelection(.enabled)
                                 .fixedSize(horizontal: false, vertical: true)
@@ -42,25 +42,23 @@ struct ToolSteps: View {
                         }
                     }
                 }
-                .padding(.leading, 14)
-                .padding(.trailing, 14)
-                .padding(.vertical, 12)
+                .padding(.leading, Theme.space(.s14))
+                .padding(.trailing, Theme.space(.s14))
+                .padding(.vertical, Theme.space(.s12))
             }
         }
-        .background(Theme.card, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-            .strokeBorder(Theme.borderCard, lineWidth: 1))
+        .card(border: Theme.style.boxes == .lines ? .clear : Theme.borderCard)
     }
 
     private func header(isOpen: Bool) -> some View {
-        HStack(spacing: 10) {
+        HStack(spacing: Theme.space(.s10)) {
             ZStack {
-                Circle()
-                    .fill(isLive ? Theme.action : Theme.hoverRaised)
-                    .frame(width: 22, height: 22)
-                Image(systemName: tools.isEmpty ? "brain" : "wrench.and.screwdriver")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(isLive ? Theme.onAction : Theme.textSecondary)
+                Theme.circle
+                    .fill(Theme.style.marks == .characters ? .clear : isLive ? Theme.action : Theme.hoverRaised)
+                    .frame(width: Theme.size(.s22), height: Theme.size(.s22))
+                Theme.image(tools.isEmpty ? .thinking : .tool, size: .label, weight: .semibold)
+                    .foregroundStyle(isLive ? (Theme.style.marks == .characters ? Theme.accent : Theme.onAction)
+                                            : Theme.textSecondary)
             }
             HStack(spacing: 0) {
                 Text(lines.count == 1 ? "1 passo" : "\(lines.count) passos")
@@ -70,29 +68,28 @@ struct ToolSteps: View {
                     Text(" · \(TranscriptRow.verb(for: last.verb)) ")
                         .foregroundStyle(Theme.textTertiary)
                     Text(last.text)
-                        .font(.system(size: 12, design: .monospaced))
+                        .font(Theme.font(.small, design: .monospaced))
                         .foregroundStyle(isLive ? Theme.accentSoft : Theme.textTertiary)
                         .lineLimit(1)
                         .truncationMode(.middle)
                 }
             }
-            .font(.system(size: 13))
+            .font(Theme.font(.body))
             .lineLimit(1)
-            Spacer(minLength: 6)
+            Spacer(minLength: Theme.space(.s6))
             if isLive {
                 LiveDot()
             }
-            Image(systemName: "chevron.down")
-                .font(.system(size: 10, weight: .semibold))
+            Theme.image(.expanded, size: .label, weight: .semibold)
                 .foregroundStyle(Theme.textTertiary)
                 .rotationEffect(.degrees(isOpen ? 180 : 0))
         }
-        .padding(.horizontal, 12)
-        .frame(height: 42)
+        .padding(.horizontal, Theme.space(.s12))
+        .frame(height: Theme.size(.s42))
         .background(hovering ? Theme.hover.opacity(0.6) : .clear,
                     in: UnevenRoundedRectangle(
-                        topLeadingRadius: 12, bottomLeadingRadius: isOpen ? 0 : 12,
-                        bottomTrailingRadius: isOpen ? 0 : 12, topTrailingRadius: 12,
+                        topLeadingRadius: Theme.radius(.r12), bottomLeadingRadius: isOpen ? 0 : Theme.radius(.r12),
+                        bottomTrailingRadius: isOpen ? 0 : Theme.radius(.r12), topTrailingRadius: Theme.radius(.r12),
                         style: .continuous))
         .contentShape(Rectangle())
     }
@@ -102,9 +99,9 @@ struct LiveDot: View {
     @State private var pulsing = false
 
     var body: some View {
-        Circle()
+        Theme.circle
             .fill(Theme.accent)
-            .frame(width: 7, height: 7)
+            .frame(width: Theme.size(.s7), height: Theme.size(.s7))
             .opacity(pulsing ? 0.35 : 1)
             .animation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true), value: pulsing)
             .onAppear { pulsing = true }

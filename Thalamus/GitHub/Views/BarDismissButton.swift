@@ -5,12 +5,11 @@ struct BarDismissButton: View {
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: "xmark")
-                .font(.system(size: 10, weight: .semibold))
+            Theme.image(.close, size: .label, weight: .semibold)
                 .foregroundStyle(Theme.textTertiary)
-                .iconLabel(size: 24)
+                .iconLabel(size: .s24)
         }
-        .buttonStyle(.thalamusGhost(radius: 6))
+        .buttonStyle(.thalamusGhost(radius: .r6))
         .accessibilityLabel("Dispensar")
     }
 }

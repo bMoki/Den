@@ -11,6 +11,7 @@ struct ThalamusApp: App {
     init() {
         let environment = resolveEnvironment(ProcessInfo.processInfo.environment)
         migrateFromDen(environment, ProcessInfo.processInfo.environment)
+        ThemeStore.shared.restore(from: environment.defaults)
         self.environment = environment
         NsConfigFolder.export(environment.nsConfigDirectory)
         _ns = State(initialValue: NsWorkspace.live(environment))
@@ -39,6 +40,7 @@ struct ThalamusApp: App {
 
         Settings {
             SettingsView(defaults: environment.defaults)
+                .tint(Theme.accent)
                 .environment(monitor)
                 .defaultAppStorage(environment.defaults)
         }
@@ -53,6 +55,13 @@ struct ThalamusApp: App {
 }
 
 final class ThalamusAppDelegate: NSObject, NSApplicationDelegate {
+    func applicationWillFinishLaunching(_ notification: Notification) {
+        Theme.follow(NSApp) { app in
+            app.appearance = NSAppearance(named: Theme.palette.appearance)
+            app.applicationIconImage = DockIcon.image(style: Theme.style, palette: Theme.palette, dev: isDebugBuild)
+        }
+    }
+
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         let leaves = UnsavedAlert.confirm("Salvar as alterações antes de sair?", unsaved: EditorWindows.shared.unsaved()) {
             EditorWindows.shared.settle($0)

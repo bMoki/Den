@@ -15,7 +15,7 @@ struct HarnessCommands: Commands {
                     Task { await chat?.switchHarness(to: candidate) }
                 } label: {
                     if chat?.harness == candidate {
-                        Label("\(HarnessBadge.name(for: candidate))", systemImage: "checkmark")
+                        Label(HarnessBadge.name(for: candidate), icon: .done)
                     } else {
                         Text(HarnessBadge.name(for: candidate))
                     }

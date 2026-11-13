@@ -27,7 +27,7 @@ struct ComposerField: View {
                         .transition(.opacity)
                 } else if chat.prompt.isEmpty {
                     Text(placeholder)
-                        .font(.system(size: 14))
+                        .font(Theme.font(.large))
                         .foregroundStyle(Theme.textTertiary)
                         .allowsHitTesting(false)
                 }
@@ -47,15 +47,14 @@ struct ComposerField: View {
             .accessibilityIdentifier("suggested-reply")
             .overlay(alignment: .topTrailing) {
                 Button(action: acceptSuggestion) {
-                    Image(systemName: "arrow.right")
-                        .font(.system(size: 10, weight: .semibold))
+                    Theme.image(.submit, size: .label, weight: .semibold)
                         .foregroundStyle(Theme.textSecondary)
-                        .iconLabel(size: 20)
-                        .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous)
-                            .strokeBorder(Theme.borderStrong, lineWidth: 1))
+                        .iconLabel(size: .s20)
+                        .overlay(RoundedRectangle(cornerRadius: Theme.radius(.r5), style: .continuous)
+                            .strokeBorder(Theme.borderStrong, lineWidth: Theme.line(.thin)))
                 }
-                .buttonStyle(.thalamusGhost(radius: 5))
-                .help("Enviar resposta sugerida (→)")
+                .buttonStyle(.thalamusGhost(radius: .r5))
+                .tip("Enviar resposta sugerida", shortcut: "→")
                 .accessibilityLabel("Enviar resposta sugerida")
             }
     }

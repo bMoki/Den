@@ -13,17 +13,17 @@ enum SlashGroup: String, Identifiable {
         }
     }
 
-    var icon: String {
+    var icon: Icon {
         switch self {
-        case .skills: "sparkles"
-        case .mcp: "powerplug"
+        case .skills: .skills
+        case .mcp: .mcpServer
         }
     }
 
     var tint: Color {
         switch self {
-        case .skills: .purple
-        case .mcp: .teal
+        case .skills: Theme.palette.slashCommands.skills
+        case .mcp: Theme.palette.slashCommands.mcp
         }
     }
 }
@@ -55,23 +55,24 @@ struct SlashCommand: Identifiable {
         return nil
     }
 
-    var icon: String {
+    var icon: Icon {
         switch kind {
-        case .compact: "arrow.down.right.and.arrow.up.left"
+        case .compact: .compact
         case .group(let group, _): group.icon
-        case .skill: "sparkles"
-        case .mcpPrompt: "bolt.horizontal"
-        case .mcpServer(let status): status == .connected ? "powerplug" : "exclamationmark.triangle"
+        case .skill: .skills
+        case .mcpPrompt: .mcpPrompt
+        case .mcpServer(let status): status == .connected ? .mcpServer : .warning
         }
     }
 
     var tint: Color {
         switch kind {
-        case .compact: .blue
+        case .compact: Theme.palette.slashCommands.compact
         case .group(let group, _): group.tint
-        case .skill: .purple
-        case .mcpPrompt: .teal
-        case .mcpServer(let status): status == .connected ? .green : .orange
+        case .skill: Theme.palette.slashCommands.skills
+        case .mcpPrompt: Theme.palette.slashCommands.mcp
+        case .mcpServer(let status):
+            status == .connected ? Theme.palette.slashCommands.mcpConnected : Theme.palette.slashCommands.mcpUnavailable
         }
     }
 }

@@ -7,25 +7,25 @@ struct LocationChip: View {
 
     var body: some View {
         Button(action: chooseSessionFolder) {
-            HStack(spacing: 6) {
-                Image(systemName: "folder")
-                    .font(.system(size: 12))
+            HStack(spacing: Theme.space(.s6)) {
+                Theme.image(.folder, size: .small)
                 if !compact {
                     Text(chat.workingDirectory.lastPathComponent)
                         .lineLimit(1)
                         .truncationMode(.middle)
                         .frame(maxWidth: 160)
                 }
-                Chevron(size: 8)
+                Chevron(size: .tiny)
             }
-            .foregroundStyle(Theme.textSecondary)
             .chipLabel()
-            .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .strokeBorder(Theme.borderStrong, lineWidth: 1))
+            .bracketed()
+            .foregroundStyle(Theme.textSecondary)
+            .overlay(RoundedRectangle(cornerRadius: Theme.radius(.r8), style: .continuous)
+                .strokeBorder(Theme.style.marks == .characters ? .clear : Theme.borderStrong, lineWidth: Theme.line(.thin)))
         }
         .buttonStyle(.thalamusGhost)
         .fixedSize()
-        .help(chat.workingDirectory.path)
+        .tip(chat.workingDirectory.path)
         .accessibilityLabel("Pasta da sessão: \(chat.workingDirectory.lastPathComponent)")
     }
 

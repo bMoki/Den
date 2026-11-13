@@ -1,12 +1,20 @@
 import SwiftUI
 
 extension View {
-    func aboveComposer(fade: CGFloat) -> some View {
-        padding(.horizontal, 32)
+    func composerColumn() -> some View {
+        padding(.horizontal, Theme.space(.s32))
+            .padding(.top, Theme.space(.s6))
+            .padding(.bottom, Theme.space(.s20))
             .frame(maxWidth: 784)
             .frame(maxWidth: .infinity)
-            .padding(.top, 12)
-            .padding(.bottom, 4)
+    }
+
+    func aboveComposer(fade: CGFloat) -> some View {
+        padding(.horizontal, Theme.space(.s32))
+            .frame(maxWidth: 784)
+            .frame(maxWidth: .infinity)
+            .padding(.top, Theme.space(.s12))
+            .padding(.bottom, Theme.space(.s4))
             .background {
                 LinearGradient(colors: [Theme.canvas.opacity(0), Theme.canvas],
                                startPoint: .top, endPoint: .init(x: 0.5, y: fade))

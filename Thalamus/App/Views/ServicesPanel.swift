@@ -14,7 +14,7 @@ struct ServicesPanel: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: Theme.space(.s12)) {
                 if let status = ns.branch(named: branch) {
                     branchCard(status)
                     if !status.services.isEmpty {
@@ -36,15 +36,15 @@ struct ServicesPanel: View {
                         card {
                             row(name: "postgres", detail: status.databasePort.map { ":\($0)" },
                                 state: status.database, indicator: .database, isFirst: true) {
-                                iconAction("arrow.up.forward.app", title: BranchActionTitle.openDatabase, perform: openDatabase)
+                                iconAction(.openInApp, title: BranchActionTitle.openDatabase, perform: openDatabase)
                                     .disabled(ns.activity[branch] != nil)
-                                ThalamusMenuChip(sections: databaseMenu, radius: 6, arrowEdge: .leading, opened: { Task { await ns.loadSnapshots() } }, label: {
-                                    Image(systemName: "cylinder.split.1x2")
-                                        .font(.system(size: 11, weight: .medium))
+                                ThalamusMenuChip(sections: databaseMenu, radius: .r6, arrowEdge: .leading,
+                                                 opened: { Task { await ns.loadSnapshots() } }, label: {
+                                    Theme.image(.databaseSection, size: .caption, weight: .medium)
                                         .foregroundStyle(Theme.textSecondary)
-                                        .iconLabel(size: 26)
+                                        .iconLabel(size: .s26)
                                 })
-                                .help("Snapshots")
+                                .tip("Snapshots")
                                 .accessibilityLabel("Snapshots")
                             }
                             .thalamusContextMenu(databaseMenu)
@@ -61,13 +61,13 @@ struct ServicesPanel: View {
                     }
                 } else {
                     Text("O ns não informou esta branch.")
-                        .font(.system(size: 12.5))
+                        .font(Theme.font(.smallPlus))
                         .foregroundStyle(Theme.textTertiary)
                         .frame(maxWidth: .infinity)
-                        .padding(.top, 30)
+                        .padding(.top, Theme.space(.s30))
                 }
             }
-            .padding(12)
+            .padding(Theme.space(.s12))
         }
         .scrollIndicators(.never)
         .task(id: branch) {
@@ -90,18 +90,14 @@ struct ServicesPanel: View {
                                      Task { await ns.restore(branch, from: ref) }
                                  })
         }
-        .confirmationDialog("Remover \(removing?.ref ?? "")?", isPresented: Binding(
+        .confirmation("Remover \(removing?.ref ?? "")?", isPresented: Binding(
             get: { removing != nil },
             set: { if !$0 { removing = nil } }
-        ), titleVisibility: .visible) {
-            Button("Remover", role: .destructive) {
+        ), message: "Apaga o Snapshot e o volume dele. Não dá para desfazer.", choices: [
+            ConfirmationChoice(title: "Remover", isDestructive: true) {
                 if let snapshot = removing { Task { await ns.removeSnapshot(snapshot) } }
-                removing = nil
-            }
-            Button("Cancelar", role: .cancel) { removing = nil }
-        } message: {
-            Text("Apaga o Snapshot e o volume dele. Não dá para desfazer.")
-        }
+            },
+        ])
     }
 
     private var runningServices: [String] {
@@ -141,62 +137,61 @@ struct ServicesPanel: View {
     private func branchCard(_ status: NsStatus.Branch) -> some View {
         let activity = ns.activity[branch]
         let running = status.services.filter { $0.state == .rodando }.count
-        return VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 8) {
-                Image(systemName: "arrow.triangle.branch")
-                    .font(.system(size: 12, weight: .semibold))
+        return VStack(alignment: .leading, spacing: Theme.space(.s10)) {
+            HStack(spacing: Theme.space(.s8)) {
+                Theme.image(.branch, size: .small, weight: .semibold)
                     .foregroundStyle(Theme.accent)
                 Text(branch)
-                    .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                    .font(Theme.font(.body, weight: .semibold, design: .monospaced))
                     .lineLimit(1)
                     .truncationMode(.middle)
             }
             if let activity {
-                HStack(spacing: 7) {
+                HStack(spacing: Theme.space(.s7)) {
                     ProgressView().controlSize(.mini)
                     Text(activity.label)
                 }
-                .font(.system(size: 11.5))
+                .font(Theme.font(.captionPlus))
                 .foregroundStyle(Theme.accentSoft)
             } else if let problem = ns.actionProblems[branch] {
                 Text(problem)
-                    .font(.system(size: 11.5))
+                    .font(Theme.font(.captionPlus))
                     .foregroundStyle(Theme.removed)
                     .fixedSize(horizontal: false, vertical: true)
             } else if !status.services.isEmpty {
                 Text("\(running) de \(status.services.count) Rodando")
-                    .font(.system(size: 11.5))
+                    .font(Theme.font(.captionPlus))
                     .foregroundStyle(Theme.textTertiary)
             }
-            HStack(spacing: 6) {
-                action("Iniciar", help: BranchActionTitle.start, symbol: "play.fill") { await ns.start(branch) }
-                action("Parar", help: BranchActionTitle.stop, symbol: "stop.fill") { await ns.stop(branch) }
-                action("Atualizar", help: BranchActionTitle.update, symbol: "arrow.down.to.line") { await ns.update(branch) }
+            HStack(spacing: Theme.space(.s6)) {
+                action("Iniciar", help: BranchActionTitle.start, symbol: .start) { await ns.start(branch) }
+                action("Parar", help: BranchActionTitle.stop, symbol: .stop) { await ns.stop(branch) }
+                action("Atualizar", help: BranchActionTitle.update, symbol: .updateBranch) { await ns.update(branch) }
             }
             .disabled(activity != nil || ns.dependencies.isInstalling(in: branch))
         }
-        .padding(12)
+        .padding(Theme.space(.s12))
         .modifier(CardBackground())
     }
 
-    private func action(_ title: String, help: String, symbol: String,
+    private func action(_ title: String, help: String, symbol: Icon,
                         perform: @escaping () async -> Void) -> some View {
         Button { Task { await perform() } } label: {
-            Label(title, systemImage: symbol)
+            Label(title, icon: symbol)
                 .labelStyle(.titleAndIcon)
-                .font(.system(size: 12.5))
+                .font(Theme.font(.smallPlus))
                 .frame(maxWidth: .infinity)
-                .frame(height: 28)
+                .frame(height: Theme.size(.s28))
         }
         .buttonStyle(.thalamusSecondary)
-        .help(help)
+        .tip(help)
     }
 
     private func sectionTitle(_ title: String) -> some View {
         Text(title)
-            .font(.system(size: 11.5, weight: .semibold))
+            .font(Theme.font(.captionPlus, weight: .semibold))
             .foregroundStyle(Theme.textTertiary)
-            .padding(.horizontal, 2)
+            .padding(.horizontal, Theme.space(.s2))
     }
 
     private func card(@ViewBuilder content: () -> some View) -> some View {
@@ -207,93 +202,91 @@ struct ServicesPanel: View {
     private func row(name: String, detail: String?, state: ServiceState,
                      indicator: IndicatorTarget, isFirst: Bool,
                      @ViewBuilder actions: () -> some View = { EmptyView() }) -> some View {
-        HStack(spacing: 10) {
-            ServiceIndicator(indicator, state: state, iconSize: 14)
-            VStack(alignment: .leading, spacing: 1) {
+        HStack(spacing: Theme.space(.s10)) {
+            ServiceIndicator(indicator, state: state, iconSize: .s14)
+            VStack(alignment: .leading, spacing: Theme.space(.s1)) {
                 Text(name)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(Theme.font(.body, weight: .medium))
                 if let detail {
                     Text(detail)
-                        .font(.system(size: 11, design: .monospaced))
+                        .font(Theme.font(.caption, design: .monospaced))
                         .foregroundStyle(Theme.textTertiary)
                 }
             }
-            Spacer(minLength: 8)
+            Spacer(minLength: Theme.space(.s8))
             Text(state.label)
-                .font(.system(size: 11.5))
-                .foregroundStyle(state == .parado ? Theme.textTertiary : ServiceDot.color(state))
-                .frame(width: 62, alignment: .leading)
+                .font(Theme.font(.captionPlus))
+                .foregroundStyle(ServiceDot.color(state))
+                .frame(width: Theme.size(.s62), alignment: .leading)
             actions()
         }
-        .padding(.leading, 12)
-        .padding(.trailing, 8)
-        .padding(.vertical, 9)
+        .padding(.leading, Theme.space(.s12))
+        .padding(.trailing, Theme.space(.s8))
+        .padding(.vertical, Theme.space(.s9))
         .background {
             if state == .falhou {
                 LinearGradient(colors: [Theme.removed.opacity(0.07), .clear], startPoint: .leading, endPoint: .trailing)
             }
         }
         .overlay(alignment: .top) {
-            if !isFirst { Rectangle().fill(Theme.border).frame(height: 1) }
+            if !isFirst { Rectangle().fill(Theme.border).frame(height: Theme.line(.thin)) }
         }
         .accessibilityElement(children: .contain)
     }
 
     private func serviceActions(_ service: NsStatus.Service) -> some View {
         let isUp = service.state == .rodando || service.state == .iniciando
-        return HStack(spacing: 1) {
+        return HStack(spacing: Theme.space(.s1)) {
             if isUp {
-                iconAction("stop.fill", title: "Parar \(service.id)") { await ns.stop(branch, service: service.id) }
+                iconAction(.stop, title: "Parar \(service.id)") { await ns.stop(branch, service: service.id) }
             } else {
-                iconAction("play.fill", title: "Iniciar \(service.id)") { await ns.start(branch, service: service.id) }
+                iconAction(.start, title: "Iniciar \(service.id)") { await ns.start(branch, service: service.id) }
             }
-            iconAction("arrow.clockwise", title: "Reiniciar \(service.id)") {
+            iconAction(.restart, title: "Reiniciar \(service.id)") {
                 await ns.restart(branch, service: service.id)
             }
             .disabled(service.state == .parado)
-            iconAction("terminal", title: "Abrir console de \(service.id)") { await openConsole(service) }
+            iconAction(.terminal, title: "Abrir console de \(service.id)") { await openConsole(service) }
                 .disabled(service.session == nil || service.state == .parado)
         }
         .disabled(ns.activity[branch] != nil || ns.dependencies.isInstalling(in: branch))
     }
 
-    private func iconAction(_ symbol: String, title: String, perform: @escaping () async -> Void) -> some View {
+    private func iconAction(_ symbol: Icon, title: String, perform: @escaping () async -> Void) -> some View {
         Button { Task { await perform() } } label: {
-            Image(systemName: symbol)
-                .font(.system(size: 11, weight: .medium))
+            Theme.image(symbol, size: .caption, weight: .medium)
                 .foregroundStyle(Theme.textSecondary)
-                .iconLabel(size: 26)
+                .iconLabel(size: .s26)
         }
-        .buttonStyle(.thalamusGhost(radius: 6))
-        .help(title)
+        .buttonStyle(.thalamusGhost(radius: .r6))
+        .tip(title)
         .accessibilityLabel(title)
     }
 
     private func errorLine(_ service: NsStatus.Service) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: "exclamationmark.triangle")
-                .font(.system(size: 10.5))
+        HStack(spacing: Theme.space(.s8)) {
+            Theme.image(.warning, size: .labelPlus)
             Text(service.error ?? "O processo terminou com erro")
-                .font(.system(size: 11, design: .monospaced))
+                .font(Theme.font(.caption, design: .monospaced))
                 .lineLimit(1)
                 .truncationMode(.tail)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .help(service.error ?? "")
+                .tip(service.error ?? "")
             if service.session != nil {
                 Button("Ver no Console") { Task { await openConsole(service) } }
                     .buttonStyle(.plain)
-                    .font(.system(size: 11.5, weight: .medium))
+                    .font(Theme.font(.captionPlus, weight: .medium))
                     .foregroundStyle(Theme.text)
                     .underline()
             }
         }
         .foregroundStyle(Theme.removed)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 6)
-        .background(Theme.removedFill, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
-        .padding(.leading, 29)
-        .padding(.trailing, 8)
-        .padding(.bottom, 8)
+        .padding(.horizontal, Theme.space(.s8))
+        .padding(.vertical, Theme.space(.s6))
+        .background(Theme.removedFill, in: RoundedRectangle(cornerRadius: Theme.radius(.r7), style: .continuous))
+        .padding(.leading, Theme.space(.s29))
+        .padding(.trailing, Theme.space(.s8))
+        .padding(.bottom, Theme.space(.s8))
     }
 
     private func openDatabase() async {
@@ -314,9 +307,9 @@ private struct RestoreRequest: Identifiable {
 
 private struct CardBackground: ViewModifier {
     func body(content: Content) -> some View {
-        let shape = RoundedRectangle(cornerRadius: 12, style: .continuous)
+        let shape = RoundedRectangle(cornerRadius: Theme.radius(.r12), style: .continuous)
         content
             .background(Theme.card, in: shape)
-            .overlay(shape.strokeBorder(Theme.borderCard, lineWidth: 1))
+            .overlay(shape.strokeBorder(Theme.borderCard, lineWidth: Theme.line(.thin)))
     }
 }

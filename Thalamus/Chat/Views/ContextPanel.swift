@@ -7,16 +7,16 @@ struct ContextPanel: View {
     private static let maxListHeight: CGFloat = 440
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: Theme.space(.s12)) {
             header
             if let usage = chat.contextUsage {
                 ContextBar(usage: usage)
                 FittedScroll(maxHeight: Self.maxListHeight) {
-                    VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: Theme.space(.s12)) {
                         categories(of: usage)
                         if !usage.details.isEmpty {
-                            Rectangle().fill(Theme.border).frame(height: 1)
-                            VStack(alignment: .leading, spacing: 2) {
+                            Rectangle().fill(Theme.border).frame(height: Theme.line(.thin))
+                            VStack(alignment: .leading, spacing: Theme.space(.s2)) {
                                 ForEach(usage.details, id: \.category) { detail in
                                     DetailGroup(detail: detail)
                                 }
@@ -34,11 +34,11 @@ struct ContextPanel: View {
                 Text(chat.isLive
                      ? "O \(chat.harnessName) ainda não informou o uso do contexto."
                      : "O detalhamento aparece depois da próxima mensagem desta sessão.")
-                    .font(.system(size: 12))
+                    .font(Theme.font(.small))
                     .foregroundStyle(Theme.textMuted)
             }
         }
-        .padding(16)
+        .padding(Theme.space(.s16))
         .frame(width: 340)
         .foregroundStyle(Theme.text)
         .background(Theme.raised)
@@ -46,7 +46,7 @@ struct ContextPanel: View {
 
     private func footnote(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 11))
+            .font(Theme.font(.caption))
             .foregroundStyle(Theme.textTertiary)
             .fixedSize(horizontal: false, vertical: true)
     }
@@ -54,12 +54,12 @@ struct ContextPanel: View {
     private var header: some View {
         HStack(alignment: .firstTextBaseline) {
             Text("Janela de contexto")
-                .font(.system(size: 13, weight: .semibold))
+                .font(Theme.font(.body, weight: .semibold))
             Spacer()
             if let window = chat.contextUsage?.windowTokens ?? chat.contextWindow {
                 Text(ContextFormat.summary(used: chat.contextUsage?.usedTokens ?? chat.contextTokens,
                                            window: window))
-                    .font(.system(size: 11.5, design: .monospaced))
+                    .font(Theme.font(.captionPlus, design: .monospaced))
                     .foregroundStyle(Theme.textSecondary)
             }
         }
@@ -68,15 +68,15 @@ struct ContextPanel: View {
     private func categories(of usage: ContextUsage) -> some View {
         let ordered = Self.ordered(usage.slices)
         let deferred = ordered.filter(\.isDeferred)
-        return VStack(alignment: .leading, spacing: 7) {
+        return VStack(alignment: .leading, spacing: Theme.space(.s7)) {
             ForEach(Array(ordered.filter { !$0.isDeferred }.enumerated()), id: \.offset) { _, slice in
                 CategoryRow(slice: slice, window: usage.windowTokens)
             }
             if !deferred.isEmpty {
                 Text("Carregadas sob demanda, fora da janela até serem usadas")
-                    .font(.system(size: 11))
+                    .font(Theme.font(.caption))
                     .foregroundStyle(Theme.textTertiary)
-                    .padding(.top, 4)
+                    .padding(.top, Theme.space(.s4))
                 ForEach(Array(deferred.enumerated()), id: \.offset) { _, slice in
                     CategoryRow(slice: slice, window: usage.windowTokens)
                 }
@@ -104,18 +104,18 @@ private struct ContextBar: View {
         let total = max(usage.windowTokens, filled.reduce(0) { $0 + $1.tokens }, 1)
 
         GeometryReader { proxy in
-            HStack(spacing: 2) {
+            HStack(spacing: Theme.space(.s2)) {
                 ForEach(Array(filled.enumerated()), id: \.offset) { _, slice in
                     Rectangle()
                         .fill(slice.category.color)
-                        .frame(width: max(2, proxy.size.width * CGFloat(slice.tokens) / CGFloat(total)))
+                        .frame(width: max(Theme.size(.s2), proxy.size.width * CGFloat(slice.tokens) / CGFloat(total)))
                 }
                 Spacer(minLength: 0)
             }
         }
-        .frame(height: 8)
+        .frame(height: Theme.size(.s8))
         .background(Theme.borderStrong)
-        .clipShape(Capsule())
+        .clipShape(Theme.capsule)
     }
 }
 
@@ -124,42 +124,24 @@ private struct CategoryRow: View {
     let window: Int
 
     var body: some View {
-        HStack(spacing: 8) {
-            Swatch(category: slice.category, isDeferred: slice.isDeferred)
+        HStack(spacing: Theme.space(.s8)) {
+            Swatch(color: slice.category == .freeSpace ? nil
+                   : slice.isDeferred ? Theme.borderControl : slice.category.color)
             Text(slice.category.label)
                 .foregroundStyle(slice.isDeferred ? Theme.textTertiary : Theme.text)
                 .lineLimit(1)
-            Spacer(minLength: 8)
+            Spacer(minLength: Theme.space(.s8))
             Text(ContextFormat.tokens(slice.tokens))
-                .font(.system(size: 11.5, design: .monospaced))
+                .font(Theme.font(.captionPlus, design: .monospaced))
                 .foregroundStyle(Theme.textSecondary)
             Text(slice.isDeferred || window == 0
                  ? "—"
                  : ContextFormat.percent(Double(slice.tokens) / Double(window)))
-                .font(.system(size: 11.5, design: .monospaced))
+                .font(Theme.font(.captionPlus, design: .monospaced))
                 .foregroundStyle(Theme.textTertiary)
-                .frame(width: 48, alignment: .trailing)
+                .frame(width: Theme.size(.s48), alignment: .trailing)
         }
-        .font(.system(size: 12.5))
-    }
-}
-
-private struct Swatch: View {
-    let category: ContextCategory
-    let isDeferred: Bool
-
-    var body: some View {
-        RoundedRectangle(cornerRadius: 3, style: .continuous)
-            .fill(isDeferred ? Theme.borderControl
-                  : category == .freeSpace ? .clear
-                  : category.color)
-            .overlay {
-                if category == .freeSpace {
-                    RoundedRectangle(cornerRadius: 3, style: .continuous)
-                        .strokeBorder(Theme.textFaint, lineWidth: 1)
-                }
-            }
-            .frame(width: 10, height: 10)
+        .font(Theme.font(.smallPlus))
     }
 }
 
@@ -171,30 +153,29 @@ private struct Disclosure<Label: View, Content: View>: View {
     @State private var hovering = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: Theme.space(.s2)) {
             Button {
                 withAnimation(.easeOut(duration: 0.15)) { isOpen.toggle() }
             } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 9, weight: .bold))
+                HStack(spacing: Theme.space(.s6)) {
+                    Theme.image(.next, size: .mini, weight: .bold)
                         .foregroundStyle(Theme.textTertiary)
                         .rotationEffect(.degrees(isOpen ? 90 : 0))
-                        .frame(width: 10)
+                        .frame(width: Theme.size(.s10))
                     label()
                 }
-                .padding(.horizontal, 6)
-                .frame(height: 26)
-                .hoverFill(hovering, radius: 6)
+                .padding(.horizontal, Theme.space(.s6))
+                .frame(height: Theme.size(.s26))
+                .hoverFill(hovering, radius: .r6)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .onHover { hovering = $0 }
             if isOpen {
                 content()
-                    .padding(.leading, 22)
-                    .padding(.trailing, 6)
-                    .padding(.bottom, 4)
+                    .padding(.leading, Theme.space(.s22))
+                    .padding(.trailing, Theme.space(.s6))
+                    .padding(.bottom, Theme.space(.s4))
             }
         }
     }
@@ -207,9 +188,9 @@ private struct DetailGroup: View {
         Disclosure {
             ItemRow(name: detail.category.label, tokens: detail.tokens,
                     count: detail.items.count)
-                .font(.system(size: 12.5, weight: .medium))
+                .font(Theme.font(.smallPlus, weight: .medium))
         } content: {
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: Theme.space(.s3)) {
                 if detail.category == .mcpTools {
                     ForEach(servers, id: \.name) { server in
                         Disclosure {
@@ -224,15 +205,15 @@ private struct DetailGroup: View {
                 }
             }
         }
-        .font(.system(size: 12))
+        .font(Theme.font(.small))
     }
 
     private func items(_ list: [ContextItem]) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: Theme.space(.s4)) {
             ForEach(Array(list.sorted { $0.tokens > $1.tokens }.enumerated()), id: \.offset) { _, item in
                 ItemRow(name: displayName(of: item), tokens: item.tokens,
                         isDeferred: item.isDeferred)
-                    .help(item.isDeferred ? "\(item.name) · carregada sob demanda" : item.name)
+                    .tip(item.isDeferred ? "\(item.name) · carregada sob demanda" : item.name)
             }
         }
     }
@@ -257,20 +238,20 @@ private struct ItemRow: View {
     var isDeferred = false
 
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: Theme.space(.s8)) {
             Text(name)
                 .foregroundStyle(isDeferred ? Theme.textTertiary : Theme.text)
                 .lineLimit(1)
                 .truncationMode(.middle)
-            Spacer(minLength: 8)
+            Spacer(minLength: Theme.space(.s8))
             Text(ContextFormat.tokens(tokens))
-                .font(.system(size: 11.5, design: .monospaced))
+                .font(Theme.font(.captionPlus, design: .monospaced))
                 .foregroundStyle(Theme.textSecondary)
             if let count {
                 Text(String(count))
-                    .font(.system(size: 11.5, design: .monospaced))
+                    .font(Theme.font(.captionPlus, design: .monospaced))
                     .foregroundStyle(Theme.textTertiary)
-                    .frame(width: 28, alignment: .trailing)
+                    .frame(width: Theme.size(.s28), alignment: .trailing)
             }
         }
     }
@@ -296,15 +277,15 @@ extension ContextCategory {
 
     var color: Color {
         switch self {
-        case .messages: Color(hex: 0x93AEE8)
-        case .mcpTools, .toolActivity: Color(hex: 0xE8906F)
-        case .systemTools, .systemAndTools: Color(hex: 0x7FCB92)
-        case .skills: Color(hex: 0xE0B45F)
-        case .customAgents: Color(hex: 0xC3AEF0)
-        case .memoryFiles: Color(hex: 0x8FC7C0)
-        case .autocompactBuffer: Color(hex: 0x5E5A52)
+        case .messages: Theme.palette.contextCategories.messages
+        case .mcpTools, .toolActivity: Theme.palette.contextCategories.tools
+        case .systemTools, .systemAndTools: Theme.palette.contextCategories.system
+        case .skills: Theme.palette.contextCategories.skills
+        case .customAgents: Theme.palette.contextCategories.agents
+        case .memoryFiles: Theme.palette.contextCategories.memory
+        case .autocompactBuffer: Theme.palette.contextCategories.autocompactBuffer
         case .freeSpace: .clear
-        case .systemPrompt, .other: Color(hex: 0xA8A398)
+        case .systemPrompt, .other: Theme.palette.contextCategories.systemPrompt
         }
     }
 }

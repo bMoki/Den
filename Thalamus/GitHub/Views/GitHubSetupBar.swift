@@ -8,13 +8,11 @@ struct GitHubSetupBar: View {
     var dismiss: () -> Void
 
     var body: some View {
-        let shape = RoundedRectangle(cornerRadius: 12, style: .continuous)
-        HStack(spacing: 10) {
-            Image(systemName: "terminal")
-                .font(.system(size: 12, weight: .semibold))
+        HStack(spacing: Theme.space(.s10)) {
+            Theme.image(.terminal, size: .small, weight: .semibold)
                 .foregroundStyle(Theme.textTertiary)
             Text(message)
-                .font(.system(size: 12.5))
+                .font(Theme.font(.smallPlus))
                 .foregroundStyle(Theme.textSecondary)
                 .lineLimit(1)
                 .truncationMode(.tail)
@@ -23,46 +21,37 @@ struct GitHubSetupBar: View {
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString(command, forType: .string)
             } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "doc.on.doc").font(.system(size: 10))
+                HStack(spacing: Theme.space(.s6)) {
+                    Theme.image(.copy, size: .label)
                     Text("Copiar")
                     Text(command)
-                        .font(.system(size: 11.5, design: .monospaced))
+                        .font(Theme.font(.captionPlus, design: .monospaced))
                         .foregroundStyle(Theme.accentSoft)
                 }
-                .font(.system(size: 12))
-                .padding(.horizontal, 10)
-                .frame(height: 26)
+                .barButtonLabel()
             }
-            .buttonStyle(ThalamusButtonStyle(kind: .secondary, radius: 7))
+            .buttonStyle(ThalamusButtonStyle(kind: .secondary, radius: .r7))
             .fixedSize()
             if case .missing = state {
                 Button(action: choose) {
                     Text("Já tenho, escolher…")
-                        .font(.system(size: 12))
-                        .padding(.horizontal, 10)
-                        .frame(height: 26)
+                        .barButtonLabel()
                 }
-                .buttonStyle(ThalamusButtonStyle(kind: .secondary, radius: 7))
+                .buttonStyle(ThalamusButtonStyle(kind: .secondary, radius: .r7))
                 .fixedSize()
             }
             Button(action: retry) {
                 Text("Tentar de novo")
-                    .font(.system(size: 12, weight: .medium))
+                    .font(Theme.font(.small, weight: .medium))
                     .foregroundStyle(Theme.accentSoft)
-                    .padding(.horizontal, 8)
-                    .frame(height: 26)
+                    .padding(.horizontal, Theme.space(.s8))
+                    .frame(height: Theme.size(.s26))
             }
-            .buttonStyle(.thalamusGhost(radius: 7))
+            .buttonStyle(.thalamusGhost(radius: .r7))
             .fixedSize()
             BarDismissButton(action: dismiss)
         }
-        .padding(.leading, 12)
-        .padding(.trailing, 6)
-        .frame(height: 36)
-        .foregroundStyle(Theme.text)
-        .background(Theme.card, in: shape)
-        .overlay(shape.strokeBorder(Theme.borderCard, lineWidth: 1).allowsHitTesting(false))
+        .barSurface(fill: Theme.card, stroke: Theme.borderCard)
     }
 
     private var message: String {

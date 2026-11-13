@@ -1,8 +1,83 @@
 import SwiftUI
 
-struct SessionStateDot: View {
-    static let box: CGFloat = 8
-    static let diameter: CGFloat = 6
+struct SessionStateMark: View {
+    let state: SessionState
+    var showsWord = true
+
+    var body: some View {
+        switch Theme.style.sessionStates {
+        case .animatedDot: SessionStateDot(state: state)
+        case .glyphWord: SessionStateGlyph(state: state, showsWord: showsWord)
+        }
+    }
+}
+
+private struct SessionStateGlyph: View {
+    private static let blinkPeriod = 1.2
+
+    let state: SessionState
+    let showsWord: Bool
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        HStack(spacing: Theme.space(.s8)) {
+            Group {
+                if reduceMotion || !state.moves {
+                    glyph(frame: 0)
+                } else {
+                    TimelineView(.animation(minimumInterval: 0.1)) { context in
+                        glyph(frame: Self.frame(at: context.date, state: state))
+                    }
+                }
+            }
+            if showsWord {
+                Text(state.word).foregroundStyle(state.color)
+            }
+        }
+        .font(Theme.font(.body))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(state.name)
+    }
+
+    @ViewBuilder
+    private func glyph(frame: Int) -> some View {
+        switch state {
+        case .awaitingDecision:
+            Text("!")
+                .foregroundStyle(frame == 1 ? Theme.canvas : state.color)
+                .background(frame == 1 ? state.color : .clear)
+        case .outOfTokens: Text("×").foregroundStyle(state.color)
+        case .newReply: Text("●").foregroundStyle(state.color)
+        case .thinking: Text(GlyphSpinner.frames[frame]).foregroundStyle(state.color)
+        }
+    }
+
+    private static func frame(at date: Date, state: SessionState) -> Int {
+        let time = date.timeIntervalSinceReferenceDate
+        switch state {
+        case .thinking: return GlyphSpinner.frame(at: date)
+        default: return Int(time / (blinkPeriod / 2)) % 2
+        }
+    }
+}
+
+private extension SessionState {
+    var moves: Bool { self == .thinking || self == .awaitingDecision }
+
+    var word: String {
+        switch self {
+        case .awaitingDecision: "aguardando"
+        case .outOfTokens: "sem tokens"
+        case .newReply: "nova"
+        case .thinking: "pensando"
+        }
+    }
+}
+
+private struct SessionStateDot: View {
+    private static let box: CGFloat = 8
+    private static let diameter: CGFloat = 6
 
     private static let ripplePeriod = 1.8
     private static let rippleGrowth: CGFloat = 1.6
@@ -37,7 +112,7 @@ struct SessionStateDot: View {
             let eased = UnitCurve.easeOut.value(at: Self.progress(at: context.date, period: Self.ripplePeriod))
             dot.overlay(
                 Circle()
-                    .strokeBorder(state.color, lineWidth: 1)
+                    .strokeBorder(state.color, lineWidth: Theme.line(.thin))
                     .scaleEffect(1 + Self.rippleGrowth * eased)
                     .opacity(Self.rippleOpacity * (1 - eased))
             )
@@ -66,7 +141,7 @@ struct SessionStateDot: View {
 
 extension View {
     func describedAs(_ label: String) -> some View {
-        help(label)
+        tip(label)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(label)
     }

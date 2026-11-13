@@ -32,9 +32,9 @@ struct InspectorSplit<Main: View, Inspector: View>: View {
                         .frame(width: min(max(inspectorWidth, Self.minimumInspectorWidth),
                                           Double(geometry.size.width) - 56))
                         .overlay(alignment: .leading) {
-                            Rectangle().fill(Theme.borderStrong).frame(width: 1)
+                            Rectangle().fill(Theme.borderStrong).frame(width: Theme.line(.thin))
                         }
-                        .shadow(color: .black.opacity(0.5), radius: 28, x: -8)
+                        .elevation(.inspector)
                         .transition(.move(edge: .trailing).combined(with: .opacity))
                 }
             }

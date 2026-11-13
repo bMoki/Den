@@ -9,30 +9,28 @@ struct ContextRing: View {
 
     var body: some View {
         Button { showsDetails.toggle() } label: {
-            HStack(spacing: 7) {
+            HStack(spacing: Theme.space(.s7)) {
                 ring
-                    .frame(width: 16, height: 16)
+                    .frame(width: Theme.size(.s16), height: Theme.size(.s16))
                 if showsLabel {
                     Text(shortLabel)
-                        .font(.system(size: 12))
+                        .font(Theme.font(.small))
                         .monospacedDigit()
                         .foregroundStyle(level == .calm ? Theme.textTertiary : level.color)
                         .lineLimit(1)
                         .fixedSize()
                 }
             }
-            .chipLabel(horizontalPadding: 8)
+            .chipLabel(horizontalPadding: .s8)
             .hoverFill(hovering, selected: showsDetails)
         }
         .buttonStyle(.plain)
         .onHover { hovering = $0 }
-        .help(tooltip)
+        .tip(tooltip)
         .accessibilityLabel("Janela de contexto")
         .accessibilityValue(chat.contextFraction.map(ContextFormat.percent) ?? "sem dados")
-        .popover(isPresented: $showsDetails, arrowEdge: .top) {
+        .floating(isPresented: $showsDetails, edge: .top) {
             ContextPanel(chat: chat)
-                .presentationBackground(Theme.raised)
-                .environment(\.colorScheme, .dark)
         }
         .onChange(of: showsDetails) { _, shown in
             if shown { Task { await chat.refreshContextUsage() } }
@@ -41,14 +39,22 @@ struct ContextRing: View {
 
     private var level: ContextLevel { ContextLevel(fraction: chat.contextFraction ?? 0) }
 
+    @ViewBuilder
     private var ring: some View {
+        switch Theme.style.marks {
+        case .graphic: circle
+        case .characters: Text("●").font(Theme.font(.body)).foregroundStyle(level.color)
+        }
+    }
+
+    private var circle: some View {
         let fraction = chat.contextFraction ?? 0
         return ZStack {
             Circle()
-                .stroke(Theme.borderControl, lineWidth: 2.5)
+                .stroke(Theme.borderControl, lineWidth: Theme.line(.ring))
             Circle()
                 .trim(from: 0, to: max(fraction, chat.contextTokens > 0 ? 0.02 : 0))
-                .stroke(level.color, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                .stroke(level.color, style: StrokeStyle(lineWidth: Theme.line(.ring), lineCap: .round))
                 .rotationEffect(.degrees(-90))
         }
         .animation(.easeInOut(duration: 0.4), value: fraction)
@@ -70,9 +76,9 @@ struct ContextRing: View {
 extension ContextLevel {
     var color: Color {
         switch self {
-        case .calm: Color(hex: 0x93AEE8)
-        case .warning: Color(hex: 0xE0B45F)
-        case .critical: Color(hex: 0xF08C7E)
+        case .calm: Theme.palette.contextLevels.calm
+        case .warning: Theme.palette.contextLevels.warning
+        case .critical: Theme.palette.contextLevels.critical
         }
     }
 }

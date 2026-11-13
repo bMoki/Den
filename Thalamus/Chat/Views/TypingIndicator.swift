@@ -6,11 +6,18 @@ struct TypingIndicator: View {
     private static let step: Double = 0.28
 
     var body: some View {
-        HStack(spacing: 5) {
+        switch Theme.style.marks {
+        case .graphic: dots
+        case .characters: GlyphSpinner(color: Theme.accent).accessibilityLabel("Pensando")
+        }
+    }
+
+    private var dots: some View {
+        HStack(spacing: Theme.space(.s5)) {
             ForEach(0..<3, id: \.self) { index in
                 Circle()
                     .fill(Theme.accent)
-                    .frame(width: 6, height: 6)
+                    .frame(width: Theme.size(.s6), height: Theme.size(.s6))
                     .opacity(lit == index ? 1 : 0.28)
                     .scaleEffect(lit == index ? 1.15 : 1)
             }
@@ -32,11 +39,11 @@ struct ThinkingRow: View {
     let chat: ChatModel
 
     var body: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: Theme.space(.s10)) {
             TypingIndicator()
             TimelineView(.periodic(from: .now, by: 1)) { context in
                 Text(Self.label(for: chat, at: context.date))
-                    .font(.system(size: 12.5))
+                    .font(Theme.font(.smallPlus))
                     .monospacedDigit()
                     .foregroundStyle(Theme.textTertiary)
             }

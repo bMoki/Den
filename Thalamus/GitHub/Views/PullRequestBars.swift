@@ -10,7 +10,7 @@ struct PullRequestBars: View {
         let bars = monitor.bars(for: branch)
         let setup = monitor.setupNeeded(for: branch)
         if setup != nil || !bars.isEmpty {
-            VStack(spacing: 6) {
+            VStack(spacing: Theme.space(.s6)) {
                 if let setup {
                     GitHubSetupBar(state: setup, choose: chooseGh,
                                    retry: { Task { await monitor.reconfigure(path: ghPath.isEmpty ? nil : ghPath) } },

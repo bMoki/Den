@@ -3,28 +3,28 @@ import SwiftUI
 struct ServiceDot: View {
     let state: ServiceState
     var isDatabase = false
-    var size: CGFloat = 7
+    var size: Style.Size = .s7
 
     var body: some View {
-        let shape = RoundedRectangle(cornerRadius: isDatabase ? 2 : size / 2, style: .continuous)
+        let shape = RoundedRectangle(cornerRadius: isDatabase ? Theme.radius(.r2) : Theme.size(size) / 2, style: .continuous)
         Group {
             if state == .parado {
-                shape.strokeBorder(Theme.textFaint, lineWidth: 1.5)
+                shape.strokeBorder(Theme.palette.serviceStates.stoppedMark, lineWidth: Theme.line(.medium))
             } else {
                 shape.fill(Self.color(state))
             }
         }
-        .frame(width: size, height: size)
+        .frame(width: Theme.size(size), height: Theme.size(size))
         .pulsing(state == .iniciando)
         .accessibilityHidden(true)
     }
 
     static func color(_ state: ServiceState) -> Color {
         switch state {
-        case .parado: Theme.textTertiary
-        case .iniciando: Theme.accent
-        case .rodando: Theme.added
-        case .falhou: Theme.removed
+        case .parado: Theme.palette.serviceStates.stoppedText
+        case .iniciando: Theme.palette.serviceStates.starting
+        case .rodando: Theme.palette.serviceStates.running
+        case .falhou: Theme.palette.serviceStates.failed
         }
     }
 }

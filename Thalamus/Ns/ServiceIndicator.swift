@@ -34,7 +34,19 @@ enum TechLogo: String, CaseIterable {
         }
     }
 
-    var assetName: String { "logo-\(rawValue)" }
+    var icon: Icon {
+        switch self {
+        case .quarkus: .quarkusLogo
+        case .java: .javaLogo
+        case .vite: .viteLogo
+        case .chakra: .chakraLogo
+        case .react: .reactLogo
+        case .tailwind: .tailwindLogo
+        case .bun: .bunLogo
+        case .typescript: .typeScriptLogo
+        case .expo: .expoLogo
+        }
+    }
 }
 
 enum IndicatorIcon: Hashable, Identifiable {
@@ -73,19 +85,15 @@ enum IndicatorIcon: Hashable, Identifiable {
     var isAvailable: Bool {
         switch self {
         case .logo: true
-        case .symbol(let name): Self.symbolExists(name)
+        case .symbol(let name): Style.symbolExists(name)
         }
     }
 
     var image: Image {
         switch self {
-        case .logo(let logo): Image(logo.assetName).renderingMode(.template)
-        case .symbol(let name): Image(systemName: name)
+        case .logo(let logo): Theme.image(logo.icon).renderingMode(.template)
+        case .symbol(let name): Theme.style.image(symbolNamed: name)
         }
-    }
-
-    static func symbolExists(_ name: String) -> Bool {
-        !name.isEmpty && NSImage(systemSymbolName: name, accessibilityDescription: nil) != nil
     }
 
     static var catalog: [IndicatorIcon] {
@@ -103,26 +111,26 @@ enum IndicatorTarget: Hashable, Identifiable {
 
     private struct Icons {
         var standard: IndicatorIcon?
-        var symbols: [String]
+        var symbols: [Icon]
         var logos: [TechLogo]
     }
 
     private static let serviceIcons: [String: Icons] = [
         "backend": Icons(standard: .logo(.quarkus),
-                         symbols: ["server.rack", "curlybraces", "cpu", "cup.and.saucer", "gearshape.2"],
+                         symbols: [.services, .curlyBraces, .cpu, .coffee, .gears],
                          logos: [.quarkus, .java]),
         "frontend": Icons(standard: .logo(.vite),
-                          symbols: ["macwindow", "desktopcomputer", "globe", "rectangle.3.group", "cursorarrow"],
+                          symbols: [.window, .desktop, .fetch, .layout, .cursor],
                           logos: [.vite, .chakra, .react]),
         "manager": Icons(standard: .logo(.tailwind),
-                         symbols: ["slider.horizontal.3", "checkmark.shield", "key", "building.2", "person.badge.key"],
+                         symbols: [.sliders, .shieldCheck, .key, .building, .personKey],
                          logos: [.vite, .tailwind, .react]),
         "report-server": Icons(standard: .logo(.bun),
-                               symbols: ["doc.text", "chart.bar", "chart.bar.doc.horizontal", "printer", "scroll"],
+                               symbols: [.read, .chart, .report, .printer, .scroll],
                                logos: [.bun, .typescript]),
     ]
 
-    private static let databaseIcons = Icons(standard: .symbol("cylinder"), symbols: ["cylinder"], logos: [])
+    private static let databaseIcons = Icons(standard: .symbol(Icon.database.rawValue), symbols: [.database], logos: [])
 
     static var services: [IndicatorTarget] { NsStatus.Branch.serviceIDs.map(IndicatorTarget.service) }
     static var all: [IndicatorTarget] { services + [.database] }
@@ -147,7 +155,7 @@ enum IndicatorTarget: Hashable, Identifiable {
 
     var suggestions: [IndicatorIcon] {
         guard let icons else { return [] }
-        return icons.logos.map(IndicatorIcon.logo) + icons.symbols.map(IndicatorIcon.symbol)
+        return icons.logos.map(IndicatorIcon.logo) + icons.symbols.map { .symbol($0.rawValue) }
     }
 
     func icon(encoded: String?) -> IndicatorIcon? {
@@ -172,12 +180,12 @@ enum IndicatorPreferences {
 struct ServiceIndicator: View {
     let target: IndicatorTarget
     let state: ServiceState
-    let iconSize: CGFloat
+    let iconSize: Style.Size
 
     @AppStorage(IndicatorStyle.storageKey) private var style: IndicatorStyle?
     @AppStorage private var encodedIcon: String?
 
-    init(_ target: IndicatorTarget, state: ServiceState, iconSize: CGFloat = 12) {
+    init(_ target: IndicatorTarget, state: ServiceState, iconSize: Style.Size = .s12) {
         self.target = target
         self.state = state
         self.iconSize = iconSize
@@ -195,20 +203,20 @@ struct ServiceIndicator: View {
     }
 
     static func color(_ state: ServiceState) -> Color {
-        state == .parado ? Theme.textFaint : ServiceDot.color(state)
+        state == .parado ? Theme.palette.serviceStates.stoppedMark : ServiceDot.color(state)
     }
 }
 
 struct IndicatorGlyph: View {
     let icon: IndicatorIcon
     let color: Color
-    var size: CGFloat = 12
+    var size: Style.Size = .s12
 
     var body: some View {
         icon.image
             .resizable()
             .scaledToFit()
-            .frame(width: size, height: size)
+            .frame(width: Theme.size(size), height: Theme.size(size))
             .foregroundStyle(color)
     }
 }

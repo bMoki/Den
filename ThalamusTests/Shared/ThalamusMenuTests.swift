@@ -15,7 +15,7 @@ import SwiftUI
     let sections = [
         ThalamusMenuSection(id: "plain", items: [ThalamusMenuItem(id: "a", title: "A")]),
         ThalamusMenuSection(id: "iconed", items: [
-            ThalamusMenuItem(id: "b", title: "B", icon: .symbol("hammer", Theme.added)),
+            ThalamusMenuItem(id: "b", title: "B", icon: .symbol(.agentBuild, Theme.added)),
         ]),
     ]
 

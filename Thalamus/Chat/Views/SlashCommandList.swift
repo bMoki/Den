@@ -7,8 +7,8 @@ struct SlashCommandList: View {
     var choose: (SlashCommand) -> Void
     var back: () -> Void
 
-    private static let rowHeight: CGFloat = 28
-    private static let rowSpacing: CGFloat = 1
+    private static var rowHeight: CGFloat { Theme.size(.s28) }
+    private static var rowSpacing: CGFloat { Theme.space(.s1) }
     private static let visibleRows = 8
 
     private var listHeight: CGFloat {
@@ -17,10 +17,10 @@ struct SlashCommandList: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 1) {
+        VStack(alignment: .leading, spacing: Theme.space(.s1)) {
             if let group {
                 BackButton(title: group.title, back: back)
-                    .help("Voltar (Esc)")
+                    .tip("Voltar", shortcut: "esc")
             }
 
             ScrollViewReader { proxy in
@@ -45,30 +45,28 @@ struct SlashCommandList: View {
     private var rows: some View {
         ForEach(Array(commands.enumerated()), id: \.element.id) { index, command in
             let isSelected = index == selection
-            HStack(spacing: 7) {
-                Image(systemName: command.icon)
-                    .font(.system(size: 11))
-                    .frame(width: 16)
+            HStack(spacing: Theme.space(.s7)) {
+                Theme.image(command.icon, size: .caption)
+                    .frame(width: Theme.size(.s16))
                     .foregroundStyle(isSelected ? AnyShapeStyle(Theme.accent)
                                                 : AnyShapeStyle(command.tint))
                 Text(command.title)
-                    .font(.system(size: 12.5, weight: .medium, design: .monospaced))
+                    .font(Theme.font(.smallPlus, weight: .medium, design: .monospaced))
                     .lineLimit(1)
                 Text(command.detail)
-                    .font(.system(size: 12))
+                    .font(Theme.font(.small))
                     .foregroundStyle(isSelected ? Theme.textSecondary : Theme.textTertiary)
                     .lineLimit(1)
                 Spacer(minLength: 0)
                 if command.group != nil {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 9, weight: .semibold))
+                    Theme.image(.next, size: .mini, weight: .semibold)
                         .foregroundStyle(Theme.textTertiary)
                 }
             }
-            .padding(.horizontal, 10)
+            .padding(.horizontal, Theme.space(.s10))
             .frame(height: Self.rowHeight)
             .background(isSelected ? Theme.hoverRaised : .clear,
-                        in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                        in: RoundedRectangle(cornerRadius: Theme.radius(.r7), style: .continuous))
             .foregroundStyle(isSelected ? Theme.text : Theme.textSecondary)
             .contentShape(Rectangle())
             .onTapGesture { choose(command) }

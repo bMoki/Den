@@ -17,19 +17,21 @@ struct FileNameSheet: View {
         _name = State(initialValue: request.initialName)
     }
 
-    var body: some View {
+    var body: some View { sheet.dialogBox() }
+
+    private var sheet: some View {
         VStack(alignment: .leading, spacing: 0) {
             DialogHeading(title: Text(request.title),
-                          subtitle: Text("Em \(Text(place).font(.system(size: 12.5, design: .monospaced)))."))
-            VStack(alignment: .leading, spacing: 8) {
+                          subtitle: Text("Em \(Text(place).font(Theme.font(.smallPlus, design: .monospaced)))."))
+            VStack(alignment: .leading, spacing: Theme.space(.s8)) {
                 DialogNameField(name: $name, accessibilityLabel: "Nome", submit: confirm)
                 if let note {
                     Text(note)
-                        .font(.system(size: 12))
+                        .font(Theme.font(.small))
                         .foregroundStyle(Theme.alertText)
                 }
             }
-            .padding(EdgeInsets(top: 14, leading: 20, bottom: 4, trailing: 20))
+            .dialogBody()
             DialogFooter {
                 Spacer(minLength: 0)
                 DialogCancelButton(action: cancel)
@@ -42,7 +44,6 @@ struct FileNameSheet: View {
         .frame(width: 420)
         .background(Theme.raised)
         .foregroundStyle(Theme.text)
-        .preferredColorScheme(.dark)
         .onChange(of: name) { failure = nil }
     }
 

@@ -11,16 +11,16 @@ struct EditorView: View {
             bar
             if let problem = document.problem {
                 DialogWarning(title: "Não consegui salvar.", detail: problem)
-                    .padding(EdgeInsets(top: 10, leading: 14, bottom: 0, trailing: 14))
+                    .padding(EdgeInsets(top: Theme.space(.s10), leading: Theme.space(.s14), bottom: 0, trailing: Theme.space(.s14)))
                     .onTapGesture { document.problem = nil }
             }
             if let loss = document.lostOnDisk {
                 lostBanner(loss)
-                    .padding(EdgeInsets(top: 10, leading: 14, bottom: 0, trailing: 14))
+                    .padding(EdgeInsets(top: Theme.space(.s10), leading: Theme.space(.s14), bottom: 0, trailing: Theme.space(.s14)))
             }
             if document.changedOnDisk != nil {
                 changedBanner
-                    .padding(EdgeInsets(top: 10, leading: 14, bottom: 0, trailing: 14))
+                    .padding(EdgeInsets(top: Theme.space(.s10), leading: Theme.space(.s14), bottom: 0, trailing: Theme.space(.s14)))
             }
             content
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -31,7 +31,7 @@ struct EditorView: View {
 
     private var changedBanner: some View {
         DialogWarning(title: "Este arquivo mudou no disco.", detail: "Você tem alterações não salvas aqui.") {
-            HStack(spacing: 6) {
+            HStack(spacing: Theme.space(.s6)) {
                 secondaryButton(perform: document.reloadFromDisk) { Text("Recarregar") }
                 secondaryButton(perform: document.compareWithDisk) { Text("Comparar") }
                     .accessibilityAddTraits(document.mode == .compare ? .isSelected : [])
@@ -47,7 +47,7 @@ struct EditorView: View {
         case .unreadable(let reason): ("O arquivo no disco não abre mais aqui.", "\(reason) \(unsaved)")
         }
         return DialogWarning(title: title, detail: detail) {
-            HStack(spacing: 6) {
+            HStack(spacing: Theme.space(.s6)) {
                 secondaryButton(perform: close) { Text("Fechar") }
                 secondaryButton(perform: document.saveAnyway) { Text("Salvar mesmo assim") }
             }
@@ -57,48 +57,48 @@ struct EditorView: View {
     private func secondaryButton(perform: @escaping () -> Void, @ViewBuilder label: () -> some View) -> some View {
         Button(action: perform) {
             label()
-                .font(.system(size: 12.5))
+                .font(Theme.font(.smallPlus))
                 .fixedSize()
-                .padding(.horizontal, 10)
-                .frame(height: 28)
+                .padding(.horizontal, Theme.space(.s10))
+                .frame(height: Theme.size(.s28))
         }
         .buttonStyle(.thalamusSecondary)
     }
 
     private var bar: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: Theme.space(.s6)) {
             path
-            Spacer(minLength: 8)
+            Spacer(minLength: Theme.space(.s8))
             if document.kind == .text {
                 if document.isMarkdown {
-                    barButton("Visualizar", symbol: "eye", isOn: document.mode == .preview) { document.toggle(.preview) }
+                    barButton("Visualizar", symbol: .show, isOn: document.mode == .preview) { document.toggle(.preview) }
                 }
-                barButton("Buscar", symbol: "magnifyingglass", hint: "⌘F", isOn: document.editorState.findPanelVisible == true && document.mode == .code,
+                barButton("Buscar", symbol: .search, hint: "⌘F", isOn: document.editorState.findPanelVisible == true && document.mode == .code,
                           perform: document.toggleFind)
                     .onKeyboardShortcut("f", modifiers: .command, perform: document.showFind)
-                barButton("Diff com o git", symbol: "plus.forwardslash.minus", isOn: document.mode == .diff) { document.toggle(.diff) }
+                barButton("Diff com o git", symbol: .diff, isOn: document.mode == .diff) { document.toggle(.diff) }
                 secondaryButton(perform: document.save) {
-                    HStack(spacing: 6) {
+                    HStack(spacing: Theme.space(.s6)) {
                         Text("Salvar")
-                        Text("⌘S").font(.system(size: 11, design: .monospaced)).foregroundStyle(Theme.textTertiary)
+                        Text("⌘S").font(Theme.font(.caption, design: .monospaced)).foregroundStyle(Theme.textTertiary)
                     }
                 }
                 .keyboardShortcut("s", modifiers: .command)
                 .disabled(!document.isDirty || document.lostOnDisk != nil)
             }
         }
-        .padding(.leading, 14)
-        .padding(.trailing, 10)
-        .frame(height: 38)
-        .overlay(alignment: .bottom) { Rectangle().fill(Theme.border).frame(height: 1) }
+        .padding(.leading, Theme.space(.s14))
+        .padding(.trailing, Theme.space(.s10))
+        .frame(height: Theme.size(.s38))
+        .overlay(alignment: .bottom) { Rectangle().fill(Theme.border).frame(height: Theme.line(.thin)) }
     }
 
     private var path: some View {
         Text(crumbs)
-            .font(.system(size: 12, design: .monospaced))
+            .font(Theme.font(.small, design: .monospaced))
             .lineLimit(1)
             .truncationMode(.head)
-            .help(document.url.path)
+            .tip(document.url.path)
     }
 
     private var crumbs: AttributedString {
@@ -112,7 +112,7 @@ struct EditorView: View {
         }
         var name = AttributedString(document.name)
         name.foregroundColor = Theme.textSecondary
-        name.font = .system(size: 12, weight: .medium, design: .monospaced)
+        name.font = Theme.font(.small, weight: .medium, design: .monospaced)
         return line + name
     }
 
@@ -123,21 +123,21 @@ struct EditorView: View {
         return [folder.lastPathComponent] + parent.dropFirst(base.count).split(separator: "/").map(String.init)
     }
 
-    private func barButton(_ title: String, symbol: String, hint: String? = nil, isOn: Bool, perform: @escaping () -> Void) -> some View {
+    private func barButton(_ title: String, symbol: Icon, hint: String? = nil, isOn: Bool, perform: @escaping () -> Void) -> some View {
         Button(action: perform) {
-            HStack(spacing: 6) {
-                Image(systemName: symbol).font(.system(size: 11.5, weight: .medium))
+            HStack(spacing: Theme.space(.s6)) {
+                Theme.image(symbol, size: .captionPlus, weight: .medium)
                 Text(title)
                 if let hint {
-                    Text(hint).font(.system(size: 11, design: .monospaced)).foregroundStyle(Theme.textTertiary)
+                    Text(hint).font(Theme.font(.caption, design: .monospaced)).foregroundStyle(Theme.textTertiary)
                 }
             }
-            .font(.system(size: 12.5))
+            .font(Theme.font(.smallPlus))
             .fixedSize()
             .foregroundStyle(isOn ? Theme.accentSoft : Theme.text)
-            .padding(.horizontal, 10)
-            .frame(height: 28)
-            .background(isOn ? Theme.accentFill : .clear, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .padding(.horizontal, Theme.space(.s10))
+            .frame(height: Theme.size(.s28))
+            .background(isOn ? Theme.accentFill : .clear, in: RoundedRectangle(cornerRadius: Theme.radius(.r8), style: .continuous))
         }
         .buttonStyle(.thalamusGhost)
         .accessibilityAddTraits(isOn ? .isSelected : [])
@@ -149,16 +149,16 @@ struct EditorView: View {
         case .loading:
             ProgressView().controlSize(.small)
         case .unreadable(let reason):
-            notice(reason, symbol: "doc")
+            notice(reason, symbol: .file)
         case .image(let data):
             if let image = NSImage(data: data) {
                 ScrollView([.horizontal, .vertical]) {
                     Image(nsImage: image)
-                        .padding(24)
+                        .padding(Theme.space(.s24))
                 }
                 .defaultScrollAnchor(.center)
             } else {
-                notice("Não consegui abrir esta imagem.", symbol: "photo")
+                notice("Não consegui abrir esta imagem.", symbol: .image)
             }
         case .text:
             switch document.mode {
@@ -170,8 +170,8 @@ struct EditorView: View {
                 ScrollView {
                     MarkdownText(text: document.text)
                         .frame(maxWidth: 720, alignment: .leading)
-                        .padding(.horizontal, 36)
-                        .padding(.vertical, 28)
+                        .padding(.horizontal, Theme.space(.s36))
+                        .padding(.vertical, Theme.space(.s28))
                         .frame(maxWidth: .infinity)
                 }
             case .diff:
@@ -188,11 +188,11 @@ struct EditorView: View {
         case nil:
             ProgressView().controlSize(.small)
         case .failed:
-            notice("Não consegui calcular o diff com o git.", symbol: "exclamationmark.triangle")
+            notice("Não consegui calcular o diff com o git.", symbol: .warning)
         case .outsideGit:
-            notice("Este arquivo não está num repositório git.", symbol: "plus.forwardslash.minus")
+            notice("Este arquivo não está num repositório git.", symbol: .diff)
         case .unchanged:
-            notice("Sem diferenças com o último commit.", symbol: "checkmark")
+            notice("Sem diferenças com o último commit.", symbol: .done)
         case .lines(let lines):
             GeometryReader { proxy in
                 ScrollView([.horizontal, .vertical]) {
@@ -202,7 +202,7 @@ struct EditorView: View {
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         }
                     }
-                    .padding(.vertical, 4)
+                    .padding(.vertical, Theme.space(.s4))
                     .frame(minWidth: proxy.size.width, minHeight: proxy.size.height, alignment: .topLeading)
                     .textSelection(.enabled)
                 }
@@ -213,7 +213,7 @@ struct EditorView: View {
     private var comparison: some View {
         HStack(spacing: 0) {
             compareColumn("No editor (não salvo)", text: document.text)
-            Rectangle().fill(Theme.border).frame(width: 1)
+            Rectangle().fill(Theme.border).frame(width: Theme.line(.thin))
             compareColumn("No disco", text: document.changedOnDisk ?? "")
         }
     }
@@ -221,11 +221,11 @@ struct EditorView: View {
     private func compareColumn(_ title: String, text: String) -> some View {
         VStack(spacing: 0) {
             Text(title)
-                .font(.system(size: 11.5, weight: .semibold))
+                .font(Theme.font(.captionPlus, weight: .semibold))
                 .foregroundStyle(Theme.textTertiary)
-                .padding(.horizontal, 14)
-                .frame(maxWidth: .infinity, minHeight: 32, alignment: .leading)
-                .overlay(alignment: .bottom) { Rectangle().fill(Theme.border).frame(height: 1) }
+                .padding(.horizontal, Theme.space(.s14))
+                .frame(maxWidth: .infinity, minHeight: Theme.size(.s32), alignment: .leading)
+                .overlay(alignment: .bottom) { Rectangle().fill(Theme.border).frame(height: Theme.line(.thin)) }
             SourceEditor(.constant(text), language: document.language, configuration: .thalamusReadOnly, state: .constant(SourceEditorState()),
                          coordinators: [EditorClipping.shared])
                 .id("\(title)#\(text.hashValue)")
@@ -233,17 +233,16 @@ struct EditorView: View {
         .frame(maxWidth: .infinity)
     }
 
-    private func notice(_ text: String, symbol: String) -> some View {
-        VStack(spacing: 8) {
-            Image(systemName: symbol)
-                .font(.system(size: 22))
+    private func notice(_ text: String, symbol: Icon) -> some View {
+        VStack(spacing: Theme.space(.s8)) {
+            Theme.image(symbol, size: .title)
                 .foregroundStyle(Theme.textFaint)
             Text(text)
-                .font(.system(size: 13))
+                .font(Theme.font(.body))
                 .foregroundStyle(Theme.textTertiary)
         }
         .multilineTextAlignment(.center)
-        .padding(30)
+        .padding(Theme.space(.s30))
         .accessibilityElement(children: .combine)
     }
 }

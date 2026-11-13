@@ -27,49 +27,49 @@ private func kerns(_ text: AttributedString) -> [CGFloat?] {
 }
 
 @Test func textWithoutCodeStaysASingleSegment() throws {
-    let segments = InlineCode.segments(of: try paragraph("plain **bold** text"), size: 13)
+    let segments = InlineCode.segments(of: try paragraph("plain **bold** text"), size: .body)
     #expect(segments.map { String($0.content.characters) } == ["plain bold text"])
     #expect(segments.map(\.isCode) == [false])
 }
 
 @Test func codeSpansBecomeTheirOwnSegments() throws {
-    let segments = InlineCode.segments(of: try paragraph("Use `foo` and `bar`."), size: 13)
+    let segments = InlineCode.segments(of: try paragraph("Use `foo` and `bar`."), size: .body)
     #expect(segments.map { String($0.content.characters) } == ["Use ", "foo", " and ", "bar", "."])
     #expect(segments.map(\.isCode) == [false, true, false, true, false])
 }
 
 @Test func codeSpansAreMonospacedOnePointSmaller() throws {
-    let segments = InlineCode.segments(of: try paragraph("Use `foo`"), size: 13)
+    let segments = InlineCode.segments(of: try paragraph("Use `foo`"), size: .body)
     let code = try #require(segments.last)
     #expect(fonts(code.content) == [.system(size: 12, weight: .regular, design: .monospaced)])
     #expect(colors(code.content) == [InlineCode.color])
 }
 
 @Test func boldCodeSpansStayBold() throws {
-    let segments = InlineCode.segments(of: try paragraph("Use **`foo`**"), size: 13)
+    let segments = InlineCode.segments(of: try paragraph("Use **`foo`**"), size: .body)
     let code = try #require(segments.last)
     #expect(fonts(code.content) == [.system(size: 12, weight: .semibold, design: .monospaced)])
 }
 
 @Test func codeSpansKeepTheWeightOfTheirSurroundings() throws {
-    let segments = InlineCode.segments(of: try paragraph("Use `foo`"), size: 17, weight: .semibold)
+    let segments = InlineCode.segments(of: try paragraph("Use `foo`"), size: .title3, weight: .semibold)
     #expect(fonts(segments[1].content) == [.system(size: 16, weight: .semibold, design: .monospaced)])
 }
 
 @Test func italicCodeSpansStayItalic() throws {
-    let segments = InlineCode.segments(of: try paragraph("Use *`foo`*"), size: 13)
+    let segments = InlineCode.segments(of: try paragraph("Use *`foo`*"), size: .body)
     #expect(fonts(segments[1].content)
             == [.system(size: 12, weight: .regular, design: .monospaced).italic()])
 }
 
 @Test func touchingCodeSpansArePaddedOnlyAtTheEnd() throws {
-    let segments = InlineCode.segments(of: try paragraph("Use `a`*`b`*"), size: 13)
+    let segments = InlineCode.segments(of: try paragraph("Use `a`*`b`*"), size: .body)
     #expect(segments.map { String($0.content.characters) } == ["Use ", "ab"])
     #expect(kerns(segments[1].content) == [nil, InlineCode.padding])
 }
 
 @Test func codeSpansMakeRoomForThePillOnBothSides() throws {
-    let segments = InlineCode.segments(of: try paragraph("Use `foo` now"), size: 13)
+    let segments = InlineCode.segments(of: try paragraph("Use `foo` now"), size: .body)
     let pad = InlineCode.padding
     #expect(kerns(segments[0].content) == [nil, nil, nil, pad])
     #expect(kerns(segments[1].content) == [nil, nil, pad])

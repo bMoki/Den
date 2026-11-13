@@ -8,19 +8,19 @@ struct GitDiffRow: View {
         HStack(alignment: .firstTextBaseline, spacing: 0) {
             Text(line.kind == .hunk ? "⋯" : line.number.map(String.init) ?? "")
                 .foregroundStyle(Theme.textFaint)
-                .frame(width: 40, alignment: .trailing)
-                .padding(.trailing, 8)
+                .frame(width: Theme.size(.s40), alignment: .trailing)
+                .padding(.trailing, Theme.space(.s8))
             Text(sign)
                 .foregroundStyle(signColor)
-                .frame(width: 14, alignment: .leading)
+                .frame(width: Theme.size(.s14), alignment: .leading)
             Text(line.text)
                 .italic(line.kind == .hunk)
                 .foregroundStyle(line.kind == .hunk ? Theme.hunk : Theme.text)
                 .fixedSize(horizontal: !wraps, vertical: true)
-            Spacer(minLength: 8)
+            Spacer(minLength: Theme.space(.s8))
         }
-        .font(.system(size: 12, design: .monospaced))
-        .padding(.vertical, 1.5)
+        .font(Theme.font(.small, design: .monospaced))
+        .padding(.vertical, Theme.space(.s1Half))
         .background(background)
     }
 

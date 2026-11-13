@@ -15,38 +15,38 @@ struct SessionRow: View {
     @State private var hovering = false
 
     var body: some View {
-        HStack(spacing: 8) {
-            HarnessBadge(harness: summary.harnesses.last, size: 18)
+        HStack(spacing: Theme.space(.s8)) {
+            HarnessBadge(harness: summary.harnesses.last, size: .s18)
 
             if isEditing {
                 InlineRenameField(initial: summary.title, commit: rename) {
                     isEditing = false
                 }
-                .font(.system(size: 13))
+                .font(Theme.font(.body))
             } else {
                 Text(summary.title)
-                    .font(.system(size: 13, weight: isSelected ? .medium : .regular))
+                    .font(Theme.font(.body, weight: isSelected ? .medium : .regular))
                     .foregroundStyle(isSelected ? Theme.text : Theme.text.opacity(0.88))
                     .lineLimit(1)
                     .truncationMode(.tail)
             }
 
-            Spacer(minLength: 4)
+            Spacer(minLength: Theme.space(.s4))
 
             if showsActivity {
                 Text(summary.updatedAt.formatted(.relative(presentation: .named).locale(Locale(identifier: "pt_BR"))))
-                    .font(.system(size: 11.5))
+                    .font(Theme.font(.captionPlus))
                     .foregroundStyle(Theme.textTertiary)
                     .lineLimit(1)
             }
 
             if let state {
-                SessionStateDot(state: state)
+                SessionStateMark(state: state)
                     .describedAs(state.name)
             }
         }
-        .padding(.horizontal, 10)
-        .frame(height: 32)
+        .padding(.horizontal, Theme.space(.s10))
+        .frame(height: Theme.size(.s32))
         .hoverFill(hovering, selected: isSelected)
         .contentShape(Rectangle())
         .onHover { hovering = $0 }

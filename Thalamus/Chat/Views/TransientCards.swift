@@ -7,7 +7,7 @@ struct TransientCards: View {
 
     var body: some View {
         if chat.pending != nil || chat.pendingQuestion != nil {
-            VStack(spacing: 8) {
+            VStack(spacing: Theme.space(.s8)) {
                 if let pending = chat.pending {
                     PermissionCard(request: pending,
                                    harnessName: chat.harnessName) { option in

@@ -19,14 +19,13 @@ struct TranscriptRow: View {
                           style: .assistant, markdown: true)
 
         case .thinking:
-            HStack(alignment: .top, spacing: 8) {
-                Image(systemName: "brain")
-                    .font(.system(size: 11))
+            HStack(alignment: .top, spacing: Theme.space(.s8)) {
+                Theme.image(.thinking, size: .caption)
                     .foregroundStyle(Theme.textTertiary)
-                    .frame(width: 14)
-                    .padding(.top, 2)
+                    .frame(width: Theme.size(.s14))
+                    .padding(.top, Theme.space(.s2))
                 Text(MessageBubble.clipped(line.text))
-                    .font(.system(size: 13))
+                    .font(Theme.font(.body))
                     .italic()
                     .foregroundStyle(Theme.textMuted)
                     .textSelection(.enabled)
@@ -37,14 +36,13 @@ struct TranscriptRow: View {
             step(line)
 
         case .toolResult:
-            HStack(alignment: .top, spacing: 8) {
-                Image(systemName: "arrow.turn.down.right")
-                    .font(.system(size: 10, weight: .medium))
+            HStack(alignment: .top, spacing: Theme.space(.s8)) {
+                Theme.image(.reply, size: .label, weight: .medium)
                     .foregroundStyle(Theme.textFaint)
-                    .frame(width: 14)
-                    .padding(.top, 2)
+                    .frame(width: Theme.size(.s14))
+                    .padding(.top, Theme.space(.s2))
                 Text(MessageBubble.clipped(line.text))
-                    .font(.system(size: 11.5, design: .monospaced))
+                    .font(Theme.font(.captionPlus, design: .monospaced))
                     .foregroundStyle(line.text.hasPrefix("falhou")
                                      ? Theme.removed : Theme.textTertiary)
                     .textSelection(.enabled)
@@ -53,13 +51,12 @@ struct TranscriptRow: View {
             }
 
         case .notice:
-            HStack(alignment: .top, spacing: 8) {
-                Image(systemName: "info.circle")
-                    .font(.system(size: 11))
-                    .frame(width: 14)
-                    .padding(.top, 1)
+            HStack(alignment: .top, spacing: Theme.space(.s8)) {
+                Theme.image(.info, size: .caption)
+                    .frame(width: Theme.size(.s14))
+                    .padding(.top, Theme.space(.s1))
                 Text(MessageBubble.clipped(line.text))
-                    .font(.system(size: 12.5))
+                    .font(Theme.font(.smallPlus))
                     .textSelection(.enabled)
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 0)
@@ -81,9 +78,9 @@ struct TranscriptRow: View {
     }
 
     private func userBubble(_ line: ChatLine) -> some View {
-        VStack(alignment: .trailing, spacing: 4) {
+        VStack(alignment: .trailing, spacing: Theme.space(.s4)) {
             HStack(spacing: 0) {
-                Spacer(minLength: 96)
+                Spacer(minLength: Theme.style.boxes == .lines ? 0 : Theme.space(.s96))
                 MessageBubble(text: line.text, moment: line.timestamp,
                               style: .user,
                               images: line.images, files: line.files, onZoom: onZoom,
@@ -92,8 +89,8 @@ struct TranscriptRow: View {
                     .opacity(line.isQueued ? 0.6 : 1)
             }
             if line.isQueued {
-                Label("Na fila · ↑ para editar", systemImage: "clock")
-                    .font(.system(size: 11))
+                Label("Na fila · ↑ para editar", icon: .queued)
+                    .font(Theme.font(.caption))
                     .foregroundStyle(Theme.textTertiary)
                     .accessibilityIdentifier("queued-message")
             }
@@ -111,28 +108,31 @@ struct TranscriptRow: View {
     }
 
     private func step(_ line: ChatLine) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
-            Image(systemName: Self.icon(for: line.verb))
-                .font(.system(size: 11, weight: .medium))
+        HStack(alignment: .firstTextBaseline, spacing: Theme.space(.s8)) {
+            Theme.image(Self.icon(for: line.verb), size: .caption, weight: .medium)
                 .foregroundStyle(Theme.textMuted)
-                .frame(width: 14)
-            Text("\(Text(Self.verb(for: line.verb)).foregroundStyle(Theme.textMuted)) \(Text(MessageBubble.clipped(line.text)).font(.system(size: 12, design: .monospaced)).foregroundStyle(Theme.text))")
-                .font(.system(size: 13))
+                .frame(width: Theme.size(.s14))
+            let verb = Text(Self.verb(for: line.verb)).foregroundStyle(Theme.textMuted)
+            let detail = Text(MessageBubble.clipped(line.text))
+                .font(Theme.font(.small, design: .monospaced))
+                .foregroundStyle(Theme.text)
+            Text("\(verb) \(detail)")
+                .font(Theme.font(.body))
                 .textSelection(.enabled)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
         }
     }
 
-    static func icon(for verb: CanonicalTool?) -> String {
+    static func icon(for verb: CanonicalTool?) -> Icon {
         switch verb {
-        case .read: "doc.text"
-        case .write: "plus.square"
-        case .edit: "pencil"
-        case .execute: "terminal"
-        case .search: "magnifyingglass"
-        case .fetch: "globe"
-        case nil: "wrench.and.screwdriver"
+        case .read: .read
+        case .write: .write
+        case .edit: .edit
+        case .execute: .terminal
+        case .search: .search
+        case .fetch: .fetch
+        case nil: .tool
         }
     }
 

@@ -71,6 +71,16 @@ Uma Branch de workspace, Repo base ou pasta de Outras pastas que o desenvolvedor
 Um grupo da sidebar (Favoritos, Branches de workspace, Repos base ou Outras pastas) que mostra só o título e, se for dele, a linha em foco. Continua encolhido até ser expandido, inclusive entre aberturas do Thalamus; a busca mostra as linhas encontradas sem expandi-lo. É uma preferência de quem usa o Thalamus.
 _Evitar:_ "grupo fechado", "recolhido", "colapsado".
 
+### Tema
+O par de Estilo e Paleta com que o Thalamus aparece para quem usa, como "TTY com Brasa". Os dois se escolhem separadamente, e qualquer Estilo combina com qualquer Paleta. Um Tema muda como as coisas aparecem, nunca o que aparece: as mesmas áreas, ações, atalhos e informações valem em todo Tema. É uma preferência de quem usa o Thalamus. O Tema padrão é Padrão com Índigo.
+_Evitar:_ "skin" e "layout". Também evitar "Tema" para só uma das metades: "o Tema TTY" é o Estilo TTY.
+
+### Estilo
+Como o Thalamus desenha as coisas, sem nenhuma cor: a tipografia, as formas (cantos, bordas, sombras, caixas), os ícones da interface, os glifos e ornamentos (como cada Estado aparece, o prompt do composer, as marcas de seleção), a densidade e o desenho do ícone no Dock. Os Estilos são o **Padrão**, o de sempre, e o **TTY**, que desenha tudo em caracteres, como um terminal.
+
+### Paleta
+Todas as cores do Thalamus, sem nada de forma: superfícies, textos, acento, as cores que sinalizam algo (Estado de Sessão, Estado de Serviço, mudanças de um diff, alertas), o código no editor, as cores do Terminal e as cores do ícone no Dock. Dentro de uma Paleta, os quatro Estados de Sessão se distinguem entre si (um deles pode ser a cor do acento, como Pensando na Índigo), e adicionado, removido e modificado se distinguem entre si. Toda Paleta funciona com todo Estilo. As Paletas têm os nomes das paletas da marca: **Índigo**, a padrão, e **Brasa**.
+
 ### Página da linha
 O que o centro mostra para uma linha da sidebar (uma Branch de workspace, um Repo base ou uma pasta de Outras pastas): as Sessões dela e a ação de começar outra, junto com o que é da linha e não de uma Sessão (abas de arquivo, Consoles, Terminais livres). Clicar na linha abre a Sessão aberta por último ali; clicar de novo, a página.
 _Evitar:_ "pasta expandida", "árvore de Sessões".

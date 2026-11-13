@@ -8,18 +8,18 @@ struct JumpToEndButton: View {
         Group {
             if isVisible {
                 Button(action: action) {
-                    Image(systemName: "arrow.down")
-                        .font(.system(size: 13, weight: .semibold))
+                    Theme.image(.jumpToEnd, size: .body, weight: .semibold)
+                        .bracketed()
                         .foregroundStyle(Theme.text)
-                        .frame(width: 34, height: 34)
-                        .background(Theme.raised, in: Circle())
-                        .overlay(Circle().strokeBorder(Theme.borderControl, lineWidth: 1))
-                        .shadow(color: .black.opacity(0.35), radius: 10, y: 3)
+                        .frame(width: Theme.size(.s34), height: Theme.size(.s34))
+                        .background(Theme.raised, in: Theme.circle)
+                        .overlay(Theme.circle.strokeBorder(Theme.borderControl, lineWidth: Theme.line(.thin)))
+                        .elevation(.floatingButton)
                 }
                 .buttonStyle(.plain)
-                .padding(.bottom, 14)
+                .padding(.bottom, Theme.space(.s14))
                 .transition(.opacity.combined(with: .scale(scale: 0.8)))
-                .help("Ir para o final")
+                .tip("Ir para o final")
                 .accessibilityLabel("Ir para o final")
             }
         }

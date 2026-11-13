@@ -15,7 +15,7 @@ struct ChatHeader: View {
                 breadcrumb(branch: true)
                 breadcrumb(branch: false)
             }
-            Spacer(minLength: 12)
+            Spacer(minLength: Theme.space(.s12))
             HarnessSwitcher(chat: chat)
             TerminalToggle(row: ns.row(of: chat.workingDirectory), root: ns.rowRoot(of: chat.workingDirectory))
             InspectorToggle(isOpen: pane != .closed, action: toggle)
@@ -26,7 +26,7 @@ struct ChatHeader: View {
     private var removedBranch: String? { ns.removedBranch(of: chat.workingDirectory) }
 
     private func breadcrumb(branch: Bool) -> some View {
-        HStack(spacing: 8) {
+        HStack(spacing: Theme.space(.s8)) {
             let place = ns.row(of: chat.workingDirectory)
             let title = ns.title(of: place)
             Button { openPage(place) } label: {
@@ -37,7 +37,7 @@ struct ChatHeader: View {
             }
             .buttonStyle(.plain)
             .layoutPriority(-1)
-            .help("Abrir a página de \(title)")
+            .tip("Abrir a página de \(title)")
             Text("›")
                 .foregroundStyle(Theme.textFaint)
             Text(chat.title)
@@ -50,7 +50,7 @@ struct ChatHeader: View {
                 BranchPill(branch: name)
             }
         }
-        .font(.system(size: 14))
+        .font(Theme.font(.large))
     }
 
     private func toggle() {
@@ -66,13 +66,11 @@ struct InspectorToggle: View {
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: "sidebar.right")
-                .font(.system(size: 14))
-                .foregroundStyle(isOpen ? Theme.text : Theme.textSecondary)
-                .iconLabel(size: 32)
+            Theme.image(.toggleInspector, size: .large)
+                .iconLabel(size: .s32)
         }
-        .buttonStyle(ThalamusButtonStyle(kind: .secondary))
-        .help(isOpen ? "Ocultar painel" : "Mostrar painel (⌥⌘0)")
+        .buttonStyle(ThalamusButtonStyle(kind: .secondary, tint: isOpen ? Theme.text : Theme.textSecondary))
+        .tip(isOpen ? "Ocultar painel" : "Mostrar painel", shortcut: "⌥⌘0")
         .accessibilityLabel(isOpen ? "Ocultar painel" : "Mostrar painel")
     }
 }
@@ -82,22 +80,21 @@ struct BranchPill: View {
     var isRemoved = false
 
     var body: some View {
-        HStack(spacing: 5) {
-            Image(systemName: "arrow.triangle.branch")
-                .font(.system(size: 10, weight: .semibold))
+        HStack(spacing: Theme.space(.s5)) {
+            Theme.image(.branch, size: .label, weight: .semibold)
             Text(branch)
                 .strikethrough(isRemoved)
                 .lineLimit(1)
                 .truncationMode(.middle)
         }
-        .font(.system(size: 11.5, design: .monospaced))
+        .font(Theme.font(.captionPlus, design: .monospaced))
         .foregroundStyle(isRemoved ? Theme.textTertiary : Theme.textSecondary)
-        .padding(.horizontal, 8)
-        .frame(height: 22)
+        .padding(.horizontal, Theme.space(.s8))
+        .frame(height: Theme.size(.s22))
         .frame(minWidth: isRemoved ? 96 : nil, maxWidth: 220)
-        .background(Theme.field, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+        .background(Theme.field, in: RoundedRectangle(cornerRadius: Theme.radius(.r6), style: .continuous))
         .fixedSize(horizontal: !isRemoved, vertical: true)
-        .help(isRemoved ? "Branch de workspace removida" : branch)
+        .tip(isRemoved ? "Branch de workspace removida" : branch)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(isRemoved ? "Branch \(branch), removida" : branch)
     }

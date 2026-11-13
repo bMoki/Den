@@ -27,6 +27,7 @@ struct WindowChrome: NSViewRepresentable {
         private var observers: [NSObjectProtocol] = []
         private var titleObservation: NSKeyValueObservation?
         private var placing = false
+        private weak var themedWindow: NSWindow?
 
         static let lightsLeading: CGFloat = 20
 
@@ -40,7 +41,10 @@ struct WindowChrome: NSViewRepresentable {
             window.titlebarAppearsTransparent = true
             window.titleVisibility = .hidden
             window.styleMask.insert(.fullSizeContentView)
-            window.backgroundColor = NSColor(Theme.canvas)
+            if themedWindow !== window {
+                themedWindow = window
+                Theme.follow(window) { $0.backgroundColor = NSColor(Theme.canvas) }
+            }
 
             let relayout: [NSNotification.Name] = [
                 NSWindow.didResizeNotification,
@@ -163,18 +167,18 @@ struct ResizeHandle: View {
 }
 
 struct TopBar<Content: View>: View {
-    var leadingInset: CGFloat = 16
+    var leadingInset = Theme.space(.s16)
     @ViewBuilder var content: () -> Content
 
     var body: some View {
-        HStack(spacing: 10) { content() }
+        HStack(spacing: Theme.space(.s10)) { content() }
             .padding(.leading, leadingInset)
-            .padding(.trailing, 14)
+            .padding(.trailing, Theme.space(.s14))
             .frame(height: Theme.headerHeight)
             .frame(maxWidth: .infinity)
             .windowDragArea()
             .overlay(alignment: .bottom) {
-                Rectangle().fill(Theme.border).frame(height: 1)
+                Rectangle().fill(Theme.border).frame(height: Theme.line(.thin))
             }
     }
 }

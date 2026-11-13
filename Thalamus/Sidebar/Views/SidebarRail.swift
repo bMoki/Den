@@ -25,60 +25,59 @@ struct PaneTip: Equatable {
 
 struct PaneHoverCard: View {
     static let maxWidth: CGFloat = 240
-    static let margin: CGFloat = 12
+    static var margin: CGFloat { Theme.space(.s12) }
 
     let tip: PaneTip
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 3) {
+        VStack(alignment: .leading, spacing: Theme.space(.s3)) {
             Text(tip.title)
-                .font(.system(size: 12, weight: .semibold))
+                .font(Theme.font(.small, weight: .semibold))
                 .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
             if let caption = tip.caption {
                 Text(caption)
-                    .font(.system(size: 10.5, design: .monospaced))
+                    .font(Theme.font(.labelPlus, design: .monospaced))
                     .foregroundStyle(Theme.textTertiary)
                     .lineLimit(1)
             }
             if let detail = tip.detail {
                 Text(detail)
-                    .font(.system(size: 10.5))
+                    .font(Theme.font(.labelPlus))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
             ForEach(Array(tip.lines.enumerated()), id: \.offset) { _, line in
-                HStack(spacing: 5) {
+                HStack(spacing: Theme.space(.s5)) {
                     if let color = line.color {
-                        Circle().fill(color).frame(width: 6, height: 6)
+                        Theme.circle.fill(color).frame(width: Theme.size(.s6), height: Theme.size(.s6))
                     }
                     Text(line.text)
-                        .font(.system(size: 10.5))
+                        .font(Theme.font(.labelPlus))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
             }
             if let state = tip.state {
-                HStack(spacing: 5) {
-                    Circle()
+                HStack(spacing: Theme.space(.s5)) {
+                    Theme.circle
                         .fill(state.color)
-                        .frame(width: 6, height: 6)
+                        .frame(width: Theme.size(.s6), height: Theme.size(.s6))
                     Text(state.name)
-                        .font(.system(size: 10.5))
+                        .font(Theme.font(.labelPlus))
                         .foregroundStyle(.secondary)
                 }
-                .padding(.top, 1)
+                .padding(.top, Theme.space(.s1))
             }
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
+        .padding(.horizontal, Theme.space(.s12))
+        .padding(.vertical, Theme.space(.s10))
         .frame(minWidth: 120, alignment: .leading)
         .foregroundStyle(Theme.text)
-        .background(Color(hex: 0x1E222B), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
-            .strokeBorder(Theme.borderControl, lineWidth: 1))
-        .shadow(color: .black.opacity(0.45), radius: 12, y: 4)
-        .environment(\.colorScheme, .dark)
+        .background(Theme.tip, in: RoundedRectangle(cornerRadius: Theme.radius(.r10), style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: Theme.radius(.r10), style: .continuous)
+            .strokeBorder(Theme.borderControl, lineWidth: Theme.line(.thin)))
+        .elevation(.tip)
         .padding(Self.margin)
     }
 }
@@ -119,8 +118,8 @@ final class HoverTipPanel {
     }
 
     static func size(of tip: PaneTip) -> NSSize {
-        NSHostingController(rootView: PaneHoverCard(tip: tip)).sizeThatFits(
-            in: NSSize(width: PaneHoverCard.maxWidth + 2 * PaneHoverCard.margin, height: 10_000))
+        NSHostingController.fittingSize(of: PaneHoverCard(tip: tip),
+                                        maxWidth: PaneHoverCard.maxWidth + 2 * PaneHoverCard.margin)
     }
 
     func hide() {
@@ -129,15 +128,8 @@ final class HoverTipPanel {
     }
 
     private func makePanel() -> NSPanel {
-        let panel = NSPanel(contentRect: .zero,
-                            styleMask: [.borderless, .nonactivatingPanel],
-                            backing: .buffered, defer: true)
-        panel.backgroundColor = .clear
-        panel.isOpaque = false
-        panel.hasShadow = false
+        let panel = NSPanel.hoverPanel()
         panel.level = .floating
-        panel.ignoresMouseEvents = true
-        panel.collectionBehavior = [.transient, .ignoresCycle]
         self.panel = panel
         return panel
     }

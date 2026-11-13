@@ -1,45 +1,58 @@
 import SwiftUI
 import HarnessCore
+import ClaudeHarness
+import OpenCodeHarness
 
 struct HarnessBadge: View {
 
     let harness: HarnessID?
-    var size: CGFloat = 15
+    var size: Style.Size = .s15
 
     var body: some View {
+        let side = Theme.size(size)
         Group {
-            if let harness, let asset = Self.asset(for: harness) {
-                Image(asset)
+            if let harness, let icon = Self.icon(for: harness) {
+                Theme.image(icon)
                     .resizable()
                     .interpolation(.high)
+                    .scaledToFit()
             } else {
 
                 Text(harness.map { Self.name(for: $0).prefix(1) } ?? "?")
-                    .font(.system(size: size * 0.6, weight: .bold))
-                    .foregroundStyle(.white)
-                    .frame(width: size, height: size)
+                    .font(Theme.font(fitting: side, weight: .bold))
+                    .foregroundStyle(Theme.onBadge)
+                    .frame(width: side, height: side)
                     .background(.secondary)
             }
         }
-        .frame(width: size, height: size)
-        .clipShape(RoundedRectangle(cornerRadius: size * 0.27, style: .continuous))
+        .frame(width: side, height: side)
+        .clipShape(RoundedRectangle(cornerRadius: Theme.radius(fitting: side), style: .continuous))
     }
 
-    static func menuIcon(for harness: HarnessID, size: CGFloat = 16) -> Image {
-        guard let asset = asset(for: harness), let source = NSImage(named: asset) else {
-            return Image(systemName: "circle.fill")
+    static func menuIcon(for harness: HarnessID, size: Style.Size = .s16) -> Image {
+        guard let icon = icon(for: harness), let source = Theme.nsImage(icon) else {
+            return Theme.image(.harnessDot)
         }
-        let icon = NSImage(size: NSSize(width: size, height: size), flipped: false) { rect in
-            NSBezierPath(roundedRect: rect, xRadius: size * 0.27, yRadius: size * 0.27).addClip()
-            source.draw(in: rect, from: .zero, operation: .sourceOver, fraction: 1)
+        let side = Theme.size(size)
+        let radius = Theme.radius(fitting: side)
+        let image = NSImage(size: NSSize(width: side, height: side), flipped: false) { rect in
+            NSBezierPath(roundedRect: rect, xRadius: radius, yRadius: radius).addClip()
+            let scale = min(rect.width / source.size.width, rect.height / source.size.height)
+            let fitted = NSSize(width: source.size.width * scale, height: source.size.height * scale)
+            source.draw(in: NSRect(x: rect.midX - fitted.width / 2, y: rect.midY - fitted.height / 2,
+                                   width: fitted.width, height: fitted.height),
+                        from: .zero, operation: .sourceOver, fraction: 1)
             return true
         }
-        return Image(nsImage: icon)
+        return Image(nsImage: image)
     }
 
-    nonisolated static func asset(for harness: HarnessID) -> String? {
-        let name = "Harness" + name(for: harness).replacingOccurrences(of: " ", with: "")
-        return NSImage(named: name) == nil ? nil : name
+    nonisolated static func icon(for harness: HarnessID) -> Icon? {
+        switch harness {
+        case .claudeCode: .claudeCode
+        case .openCode: .openCode
+        default: nil
+        }
     }
 
     nonisolated static func name(for harness: HarnessID) -> String {

@@ -3,7 +3,7 @@ import SwiftUI
 struct ThalamusMenuChip<Label: View>: View {
     var sections: [ThalamusMenuSection]
     var bordered = false
-    var radius: CGFloat = 8
+    var radius: Style.Radius = .r8
     var arrowEdge = Edge.top
     var opened: () -> Void = {}
     @ViewBuilder var label: () -> Label
@@ -21,10 +21,8 @@ struct ThalamusMenuChip<Label: View>: View {
             .onHover { hovering = isEnabled && $0 }
             .animation(.easeOut(duration: 0.12), value: hovering)
             .onChange(of: isOpen) { if isOpen { opened() } }
-            .popover(isPresented: $isOpen, arrowEdge: arrowEdge) {
+            .floating(isPresented: $isOpen, edge: arrowEdge) {
                 ThalamusMenuList(sections: sections) { isOpen = false }
-                    .presentationBackground(Theme.raised)
-                    .environment(\.colorScheme, .dark)
             }
     }
 }
@@ -34,6 +32,8 @@ struct ThalamusMenuList: View {
     var dismiss: () -> Void = {}
 
     @State private var path: [ThalamusMenuItem] = []
+    @State private var highlighted: String?
+    @FocusState private var focused: Bool
 
     private static let maxHeight: CGFloat = 360
 
@@ -41,31 +41,35 @@ struct ThalamusMenuList: View {
 
     private var showsIcons: Bool { ThalamusMenuSection.showsIcons(in: shown) }
 
+    private var choosable: [ThalamusMenuItem] { shown.flatMap(\.items).filter(\.isEnabled) }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: Theme.space(.s2)) {
             if let parent = path.last {
                 back(to: parent)
             }
             ScrollView {
-                VStack(alignment: .leading, spacing: 1) {
+                VStack(alignment: .leading, spacing: Theme.space(.s1)) {
                     ForEach(Array(shown.enumerated()), id: \.element.id) { index, section in
                         if index > 0, section.header == nil {
                             Rectangle()
                                 .fill(Theme.border)
-                                .frame(height: 1)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 4)
+                                .frame(height: Theme.line(.thin))
+                                .padding(.horizontal, Theme.space(.s8))
+                                .padding(.vertical, Theme.space(.s4))
                         }
                         if let header = section.header {
                             Text(header)
-                                .font(.system(size: 10, weight: .semibold))
+                                .font(Theme.font(.label, weight: .semibold))
                                 .foregroundStyle(Theme.textTertiary)
-                                .padding(.horizontal, 10)
-                                .padding(.top, index == 0 ? 2 : 7)
-                                .padding(.bottom, 2)
+                                .padding(.horizontal, Theme.space(.s10))
+                                .padding(.top, Theme.space(index == 0 ? .s2 : .s7))
+                                .padding(.bottom, Theme.space(.s2))
                         }
                         ForEach(section.items) { item in
-                            ThalamusMenuRow(item: item, showsIcon: showsIcons) { choose(item) }
+                            ThalamusMenuRow(item: item, showsIcon: showsIcons,
+                                            isHighlighted: highlighted == item.id) { choose(item) }
+                                .onHover { if $0, item.isEnabled { highlighted = item.id } }
                         }
                     }
                 }
@@ -73,22 +77,51 @@ struct ThalamusMenuList: View {
             .frame(maxHeight: Self.maxHeight)
             .scrollBounceBehavior(.basedOnSize)
         }
-        .padding(6)
+        .padding(Theme.space(.s6))
         .frame(minWidth: 190, alignment: .leading)
         .accessibilityIdentifier("thalamus-menu")
+        .focusable()
+        .focusEffectDisabled()
+        .focused($focused)
+        .onAppear { focused = true }
+        .onKeyPress(.downArrow) { move(by: 1); return .handled }
+        .onKeyPress(.upArrow) { move(by: -1); return .handled }
+        .onKeyPress(.rightArrow) { enter(); return .handled }
+        .onKeyPress(.leftArrow) { leave(); return .handled }
+        .onKeyPress(.return) { enter(); return .handled }
+        .onKeyPress(.space) { enter(); return .handled }
         .onDisappear { path = [] }
     }
 
+    private func move(by offset: Int) {
+        let items = choosable
+        guard !items.isEmpty else { return }
+        let current = items.firstIndex { $0.id == highlighted }
+        let next = current.map { ($0 + offset + items.count) % items.count } ?? (offset > 0 ? 0 : items.count - 1)
+        highlighted = items[next].id
+    }
+
+    private func enter() {
+        guard let item = choosable.first(where: { $0.id == highlighted }) else { return }
+        choose(item)
+    }
+
+    private func leave() {
+        guard !path.isEmpty else { return }
+        withAnimation(.easeOut(duration: 0.12)) { highlighted = path.popLast()?.id }
+    }
+
     private func back(to parent: ThalamusMenuItem) -> some View {
-        BackButton(title: parent.title) {
-            withAnimation(.easeOut(duration: 0.12)) { _ = path.popLast() }
-        }
-        .help("Voltar")
+        BackButton(title: parent.title, back: leave)
+            .tip("Voltar", shortcut: "←")
     }
 
     private func choose(_ item: ThalamusMenuItem) {
         guard item.children.isEmpty else {
-            withAnimation(.easeOut(duration: 0.12)) { path.append(item) }
+            withAnimation(.easeOut(duration: 0.12)) {
+                path.append(item)
+                highlighted = nil
+            }
             return
         }
         item.action()
@@ -99,26 +132,25 @@ struct ThalamusMenuList: View {
 private struct ThalamusMenuRow: View {
     let item: ThalamusMenuItem
     var showsIcon: Bool
+    var isHighlighted: Bool
     var choose: () -> Void
-
-    @State private var hovering = false
 
     var body: some View {
         Button(action: choose) {
-            HStack(spacing: 7) {
+            HStack(spacing: Theme.space(.s7)) {
                 if showsIcon {
-                    icon.frame(width: 16, height: 16)
+                    icon.frame(width: Theme.size(.s16), height: Theme.size(.s16))
                 }
                 Text(item.title)
-                    .font(.system(size: 12.5))
+                    .font(Theme.font(.smallPlus))
                     .lineLimit(1)
-                Spacer(minLength: 12)
+                Spacer(minLength: Theme.space(.s12))
                 trailing
             }
-            .padding(.horizontal, 10)
-            .frame(height: 28)
-            .background(hovering ? Theme.hoverRaised : .clear,
-                        in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+            .padding(.horizontal, Theme.space(.s10))
+            .frame(height: Theme.size(.s28))
+            .background(isHighlighted ? Theme.hoverRaised : .clear,
+                        in: RoundedRectangle(cornerRadius: Theme.radius(.r7), style: .continuous))
             .foregroundStyle(item.isDestructive ? Theme.removed
                              : item.isSelected ? Theme.text : Theme.textSecondary)
             .opacity(item.isEnabled ? 1 : 0.45)
@@ -126,18 +158,16 @@ private struct ThalamusMenuRow: View {
         }
         .buttonStyle(.plain)
         .disabled(!item.isEnabled)
-        .onHover { hovering = item.isEnabled && $0 }
     }
 
     @ViewBuilder
     private var icon: some View {
         switch item.icon {
         case .symbol(let name, let color):
-            Image(systemName: name)
-                .font(.system(size: 11, weight: .medium))
+            Theme.image(name, size: .caption, weight: .medium)
                 .foregroundStyle(color)
         case .image(let image):
-            image.resizable().frame(width: 16, height: 16)
+            image.resizable().frame(width: Theme.size(.s16), height: Theme.size(.s16))
         case nil:
             Color.clear
         }
@@ -146,16 +176,14 @@ private struct ThalamusMenuRow: View {
     @ViewBuilder
     private var trailing: some View {
         if !item.children.isEmpty {
-            Image(systemName: "chevron.right")
-                .font(.system(size: 9, weight: .semibold))
+            Theme.image(.next, size: .mini, weight: .semibold)
                 .foregroundStyle(Theme.textTertiary)
         } else if item.isSelected {
-            Image(systemName: "checkmark")
-                .font(.system(size: 10, weight: .semibold))
+            Theme.image(.done, size: .label, weight: .semibold)
                 .foregroundStyle(Theme.accent)
         } else if let shortcut = item.shortcut {
             Text(shortcut)
-                .font(.system(size: 11, design: .monospaced))
+                .font(Theme.font(.caption, design: .monospaced))
                 .foregroundStyle(Theme.textTertiary)
         }
     }

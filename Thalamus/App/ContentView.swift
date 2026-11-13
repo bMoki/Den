@@ -43,7 +43,6 @@ struct ContentView: View {
         .background(WindowCloseGuard {
             UnsavedAlert.confirm("Salvar as alterações antes de fechar a janela?", unsaved: editors.unsaved()) { editors.settle($0) }
         })
-        .preferredColorScheme(.dark)
         .frame(minWidth: 860, minHeight: 560)
         .task { await workspace.refresh() }
         .onChange(of: workspace.summaries) { closeVanishedPage() }
@@ -112,29 +111,28 @@ struct ContentView: View {
     private var empty: some View {
         VStack(spacing: 0) {
             EmptyHeader()
-            VStack(spacing: 14) {
-                Image(systemName: "bubble.left.and.bubble.right")
-                    .font(.system(size: 26, weight: .light))
+            VStack(spacing: Theme.space(.s14)) {
+                Theme.image(.noSessions, size: .display, weight: .light)
                     .foregroundStyle(Theme.accent)
-                    .frame(width: 68, height: 68)
-                    .background(Theme.raised, in: RoundedRectangle(cornerRadius: 16,
+                    .frame(width: Theme.size(.s68), height: Theme.size(.s68))
+                    .background(Theme.raised, in: RoundedRectangle(cornerRadius: Theme.radius(.r16),
                                                                    style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .strokeBorder(Theme.borderStrong, lineWidth: 1))
-                VStack(spacing: 4) {
+                    .overlay(RoundedRectangle(cornerRadius: Theme.radius(.r16), style: .continuous)
+                        .strokeBorder(Theme.borderStrong, lineWidth: Theme.line(.thin)))
+                VStack(spacing: Theme.space(.s4)) {
                     Text("Nenhuma conversa aberta")
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(Theme.font(.headline, weight: .semibold))
                     Text("Comece uma sessão nova ou abra uma branch ou pasta na barra lateral.")
-                        .font(.system(size: 13))
+                        .font(Theme.font(.body))
                         .foregroundStyle(Theme.textTertiary)
                 }
                 Button { startFirstConversation() } label: {
-                    Label("Nova conversa", systemImage: "plus")
+                    Label("Nova conversa", icon: .add)
                         .labelStyle(.titleAndIcon)
                         .pillLabel()
                 }
                 .buttonStyle(.thalamusPrimary)
-                .padding(.top, 4)
+                .padding(.top, Theme.space(.s4))
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
@@ -147,7 +145,7 @@ struct Chrome {
     var sidebarHidden = false
     var showSidebar: () -> Void = {}
 
-    var headerInset: CGFloat { leadingInset + (sidebarHidden ? 8 : 20) }
+    var headerInset: CGFloat { leadingInset + Theme.space(sidebarHidden ? .s8 : .s20) }
 }
 
 extension EnvironmentValues {
@@ -170,13 +168,12 @@ struct SidebarButton: View {
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: "sidebar.left")
-                .font(.system(size: 14))
+            Theme.image(.toggleSidebar, size: .large)
                 .foregroundStyle(Theme.textMuted)
                 .iconLabel()
         }
         .buttonStyle(.thalamusGhost)
-        .help(title)
+        .tip(title)
         .accessibilityLabel(title)
     }
 }
@@ -185,7 +182,7 @@ private struct EmptyHeader: View {
     @Environment(\.chrome) private var chrome
 
     var body: some View {
-        TopBar(leadingInset: chrome.leadingInset + 12) {
+        TopBar(leadingInset: chrome.leadingInset + Theme.space(.s12)) {
             SidebarToggle()
             Spacer()
         }

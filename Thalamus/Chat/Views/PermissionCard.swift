@@ -7,31 +7,30 @@ struct PermissionCard: View {
     var resolve: (PermissionOption) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 8) {
-                Image(systemName: "exclamationmark.shield")
-                    .font(.system(size: 14, weight: .medium))
+        VStack(alignment: .leading, spacing: Theme.space(.s10)) {
+            HStack(spacing: Theme.space(.s8)) {
+                Theme.image(.modeBypass, size: .large, weight: .medium)
                 Text("\(harnessName) pede permissão para usar \(request.displayName ?? request.toolName)")
-                    .font(.system(size: 13, weight: .medium))
+                    .font(Theme.font(.body, weight: .medium))
                     .fixedSize(horizontal: false, vertical: true)
             }
             .foregroundStyle(Theme.alertText)
 
             if let detail = detail(of: request) {
                 Text(detail)
-                    .font(.system(size: 12.5, design: .monospaced))
+                    .font(Theme.font(.smallPlus, design: .monospaced))
                     .foregroundStyle(Theme.text)
                     .textSelection(.enabled)
                     .lineLimit(4)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 10)
+                    .padding(.horizontal, Theme.space(.s12))
+                    .padding(.vertical, Theme.space(.s10))
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Theme.terminal, in: RoundedRectangle(cornerRadius: 8))
-                    .overlay(RoundedRectangle(cornerRadius: 8)
-                        .strokeBorder(Theme.border, lineWidth: 1))
+                    .background(Theme.terminal, in: RoundedRectangle(cornerRadius: Theme.radius(.r8)))
+                    .overlay(RoundedRectangle(cornerRadius: Theme.radius(.r8))
+                        .strokeBorder(Theme.border, lineWidth: Theme.line(.thin)))
             }
 
-            HStack(spacing: 8) {
+            HStack(spacing: Theme.space(.s8)) {
                 ForEach(request.options, id: \.id) { option in
                     let button = Button {
                         resolve(option)
@@ -50,10 +49,10 @@ struct PermissionCard: View {
                 Spacer(minLength: 0)
             }
         }
-        .padding(14)
-        .background(Theme.alertFill, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-            .strokeBorder(Theme.alertBorder, lineWidth: 1))
+        .padding(Theme.space(.s14))
+        .background(Theme.alertFill, in: RoundedRectangle(cornerRadius: Theme.radius(.r12), style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: Theme.radius(.r12), style: .continuous)
+            .strokeBorder(Theme.alertBorder, lineWidth: Theme.line(.thin)))
     }
 
     private func detail(of request: PermissionRequest) -> String? {

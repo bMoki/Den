@@ -6,20 +6,20 @@ struct Lightbox: View {
     var body: some View {
         if let zoomed, let image = ImageCache.decodedImage(zoomed.data) {
             ZStack {
-                Color.black.opacity(0.7)
+                Theme.scrim.opacity(0.7)
                     .ignoresSafeArea()
                     .transition(.opacity)
                 Image(nsImage: image)
                     .resizable()
                     .scaledToFit()
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .shadow(radius: 24)
-                    .padding(36)
+                    .clipShape(RoundedRectangle(cornerRadius: Theme.radius(.r12)))
+                    .elevation(.lightbox)
+                    .padding(Theme.space(.s36))
                     .transition(.scale(scale: 0.55).combined(with: .opacity))
             }
             .contentShape(Rectangle())
             .onTapGesture { close() }
-            .help("Clique ou Esc para fechar")
+            .tip("Clique ou Esc para fechar")
         }
     }
 

@@ -3,7 +3,7 @@
 **Data:** 2026-11-04
 **Status:** decidido, aguardando plano de implementação
 
-Decisões de produto: [ADR-0001](../adr/0001-thalamus-ide-do-ns.md), [ADR-0002](../adr/0002-thalamus-adapter-do-nucleo-ns.md), [ADR-0003](../adr/0003-dependencias-de-terceiros-terminal-e-editor.md), [ADR-0004](../adr/0004-terminais-e-abas-pertencem-a-linha.md).
+Decisões de produto: [ADR-0001](../adr/0001-thalamus-ide-do-ns.md), [ADR-0002](../adr/0002-thalamus-adapter-do-nucleo-ns.md), [ADR-0003](../adr/0003-dependencias-de-terceiros-terminal-e-editor.md), [ADR-0004](../adr/0004-terminais-e-abas-pertencem-a-linha.md), [ADR-0005](../adr/0005-estilo-e-paleta-separados.md), [ADR-0006](../adr/0006-fonte-e-icones-do-tty.md).
 Linguagem: [CONTEXT.md](../../CONTEXT.md). Dependências do `ns` ainda não resolvidas: [pendencias.md](../pendencias.md).
 
 Escrito em linguagem de negócio. As regras são numeradas e estáveis: uma regra que muda ganha número novo, não é reescrita.
@@ -177,3 +177,22 @@ Regras do `ns`: valem no terminal e no Thalamus.
 - **T-15.7** O `ns` instala as dependências de um Repo isolado de uma Branch de workspace, com o comando daquele Repo, também quando elas vieram da `master` e divergem (o que Preparar não faz, por T-15.5). Vale no terminal e no Thalamus.
 - **T-15.8** A aba Serviços da Branch de workspace tem a seção **Dependências**, com uma linha por Repo e o estado de T-15.6. Em "Da master, divergentes" e "Faltando", a linha diz o motivo e oferece **Instalar** (T-15.7), com o progresso, e o comando para rodar à mão, que dá para copiar. Se a instalação falhar, a linha mostra o erro e oferece repetir.
 - **T-15.9** O estado é conferido quando a aba Serviços abre e depois de Preparar, Iniciar ou Instalar naquela branch. A sidebar não mostra o estado das dependências, e a criação não termina com um aviso delas: durante a criação, valem as perguntas do `ns` (T-15.3).
+
+## 16. Aparência
+
+Decisões: [ADR-0005](../adr/0005-estilo-e-paleta-separados.md) e [ADR-0006](../adr/0006-fonte-e-icones-do-tty.md). Ícones do TTY: [estilo-tty-icones.md](estilo-tty-icones.md). Ícone do Dock: [marca/README.md](../marca/README.md).
+
+- **T-16.1** O Tema é o par de um Estilo e uma Paleta, escolhidos separadamente na aba **Aparência** dos Ajustes. Qualquer Estilo combina com qualquer Paleta. O Tema padrão é Padrão com Índigo, a aparência de antes da escolha existir.
+- **T-16.2** Cada opção da aba Aparência mostra uma prévia: a de cada Estilo, na Paleta escolhida; a de cada Paleta, no Estilo escolhido.
+- **T-16.3** Trocar o Estilo ou a Paleta vale na hora, sem reabrir o Thalamus: em todas as janelas, nas Sessões, nos Terminais livres e Consoles abertos, no editor e no ícone do Dock. A escolha continua ao reabrir o Thalamus.
+- **T-16.4** O Tema muda como as coisas aparecem, nunca o que aparece: as áreas, as ações, os atalhos e as informações são os mesmos em todo Tema.
+- **T-16.5** Em toda Paleta, os quatro Estados de Sessão se distinguem entre si (um deles pode ser a cor do acento), e adicionado, removido e modificado se distinguem entre si.
+- **T-16.6** Os Estilos são o **Padrão**, a aparência de sempre, e o **TTY**. As Paletas são a **Índigo**; a Brasa fica para depois (ver [pendencias.md](../pendencias.md)).
+- **T-16.7** No TTY, todo o texto usa a fonte do TTY, num tamanho só; a hierarquia vem do peso e da cor. As áreas são caixas de linha com o título na borda, sem cantos arredondados nem sombras.
+- **T-16.8** No TTY, cada ícone é o da tabela de [estilo-tty-icones.md](estilo-tty-icones.md), e os colchetes fazem o papel da moldura: aparecem só nos botões que têm borda ou fundo no Padrão (primário, secundário, destrutivo e chip com borda), na mesma cor do que está dentro, como `[Responder]`. Botão sem moldura no Padrão, de ícone ou de texto, fica sem colchete e só mostra o fundo de seleção no hover. Tipos de arquivo e logos de tecnologia também vêm da tabela, na cor da Paleta.
+- **T-16.9** No TTY, cada Estado de Sessão aparece como glifo, palavra e cor: `!` aguardando, `×` sem tokens, `●` nova e o spinner do Nerd Fonts (os seis quadros `extra-progress_spinner`) para pensando. Os dois animados de T-1.6 continuam animados: Pensando gira o spinner, e Aguardando decisão alterna o `!` com vídeo invertido. Com "Reduzir movimento" ligado, ficam parados.
+- **T-16.10** No TTY, o composer começa com `›`, as opções da Pergunta do agente aparecem como `❯ 1.` (a escolhida fica com o fundo de seleção, como no protótipo A1; só a de várias escolhas leva `[ ]` e `[x]`), e o rodapé de cada caixa pode mostrar atalhos de teclado, só os que existem em todo Tema.
+- **T-16.11** O diálogo de confirmação, a dica ao passar o mouse, a moldura dos popovers e a janela de Ajustes são desenhados pelo Thalamus em todo Estilo; no Padrão, como antes. O seletor de arquivo e a barra de menus continuam os do macOS em todo Estilo.
+- **T-16.12** O conteúdo dos Terminais livres e Consoles não muda com o Tema. As 16 cores do Terminal vêm da Paleta, e no TTY o Terminal usa a fonte do TTY.
+- **T-16.13** O ícone do Dock acompanha o Tema: o desenho vem do Estilo (o B2 no Padrão, a arte A6 no TTY) e as cores da Paleta. O ícone do Finder continua o do app, Padrão com Índigo. No Thalamus Dev, o ícone do Dock mantém a faixa "DEV" em todo Tema.
+- **T-16.14** A Paleta não acompanha a aparência clara ou escura do macOS.

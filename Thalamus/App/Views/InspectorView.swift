@@ -13,35 +13,34 @@ struct InspectorView: View {
     var body: some View {
         let shown = pane.shown(inBranch: branch != nil)
         VStack(spacing: 0) {
-            TopBar(leadingInset: 12) {
-                HStack(spacing: 2) {
+            TopBar(leadingInset: Theme.space(.s12)) {
+                HStack(spacing: Theme.space(.s2)) {
                     if branch != nil {
-                        tab(.services, title: "Serviços", symbol: "server.rack", shown: shown)
+                        tab(.services, title: "Serviços", symbol: .services, shown: shown)
                     }
-                    tab(.files, title: "Arquivos", symbol: "folder", shown: shown)
-                        tab(.changes, title: "Alterações", symbol: "plus.forwardslash.minus", shown: shown) {
+                    tab(.files, title: "Arquivos", symbol: .folder, shown: shown)
+                        tab(.changes, title: "Alterações", symbol: .diff, shown: shown) {
                             if gitChanges.changeCount > 0 {
                                 Text("\(gitChanges.changeCount)")
-                                    .font(.system(size: 11, weight: .medium))
+                                    .font(Theme.font(.caption, weight: .medium))
                                     .monospacedDigit()
                                     .foregroundStyle(Theme.textSecondary)
-                                    .padding(.horizontal, 6)
-                                    .padding(.vertical, 1)
-                                    .background(Theme.hoverRaised, in: Capsule())
+                                    .padding(.horizontal, Theme.space(.s6))
+                                    .padding(.vertical, Theme.space(.s1))
+                                    .background(Theme.hoverRaised, in: Theme.capsule)
                             }
                         }
                 }
-                Spacer(minLength: 4)
+                Spacer(minLength: Theme.space(.s4))
                 Button {
                     withAnimation(.easeInOut(duration: 0.2)) { pane = .closed }
                 } label: {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 12, weight: .semibold))
+                    Theme.image(.close, size: .small, weight: .semibold)
                         .foregroundStyle(Theme.textTertiary)
                         .iconLabel()
                 }
                 .buttonStyle(.thalamusGhost)
-                .help("Recolher painel (⌥⌘0)")
+                .tip("Recolher painel", shortcut: "⌥⌘0")
                 .accessibilityLabel("Fechar painel")
             }
 
@@ -56,8 +55,9 @@ struct InspectorView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        .area("inspector", fill: Theme.panel)
         .background(Theme.panel)
-        .task(id: "\(shown == .changes)|\(directory.path)") {
+        .task(id: "\(shown == .changes)|\(directory.path)|\(Theme.palette.id)") {
             guard shown == .changes else { return }
             await gitChanges.load(directory: directory)
             while !Task.isCancelled {
@@ -68,24 +68,23 @@ struct InspectorView: View {
         }
     }
 
-    private func tab(_ target: InspectorPane, title: String, symbol: String, shown: InspectorPane,
+    private func tab(_ target: InspectorPane, title: String, symbol: Icon, shown: InspectorPane,
                      @ViewBuilder trailing: () -> some View = { EmptyView() }) -> some View {
         let isOn = shown == target
         return Button {
             pane = target
         } label: {
-            HStack(spacing: 7) {
-                Image(systemName: symbol)
-                    .font(.system(size: 12, weight: .medium))
+            HStack(spacing: Theme.space(.s7)) {
+                Theme.image(symbol, size: .small, weight: .medium)
                 Text(title)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(Theme.font(.body, weight: .medium))
                 trailing()
             }
             .foregroundStyle(isOn ? Theme.text : Theme.textTertiary)
-            .padding(.horizontal, 12)
-            .frame(height: 32)
+            .padding(.horizontal, Theme.space(.s12))
+            .frame(height: Theme.size(.s32))
             .background(isOn ? Theme.hoverRaised : .clear,
-                        in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        in: RoundedRectangle(cornerRadius: Theme.radius(.r8), style: .continuous))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

@@ -8,27 +8,27 @@ struct ComposerStatusChip: View {
         let waiting = chat.pending != nil || chat.pendingQuestion != nil
         let interrupting = chat.isBusy && keys.escArmed
         if !waiting, interrupting || (!chat.isBusy && visibleStatus != nil) {
-            HStack(spacing: 7) {
+            HStack(spacing: Theme.space(.s7)) {
                 if interrupting {
-                    Image(systemName: "escape")
+                    Theme.image(.escape, size: .captionPlus, weight: .medium)
                         .foregroundStyle(Theme.accentSoft)
                     Text("Esc de novo interrompe")
                 } else if let status = visibleStatus {
-                    Image(systemName: "exclamationmark.triangle.fill")
+                    Theme.image(.strongWarning, size: .captionPlus, weight: .medium)
                         .foregroundStyle(Theme.modified)
                     Text(status)
                         .lineLimit(1)
                 }
             }
             .transition(.opacity)
-            .font(.system(size: 11.5, weight: .medium))
+            .font(Theme.font(.captionPlus, weight: .medium))
             .foregroundStyle(Theme.textSecondary)
-            .padding(.horizontal, 10)
-            .frame(height: 24)
-            .background(Theme.canvas.opacity(0.92), in: Capsule())
-            .overlay(Capsule().strokeBorder(Theme.borderStrong, lineWidth: 1))
+            .padding(.horizontal, Theme.space(.s10))
+            .frame(height: Theme.size(.s24))
+            .background(Theme.canvas.opacity(0.92), in: Theme.capsule)
+            .overlay(Theme.capsule.strokeBorder(Theme.borderStrong, lineWidth: Theme.line(.thin)))
             .fixedSize()
-            .offset(x: 10, y: -30)
+            .offset(x: Theme.space(.s10), y: -Theme.space(.s30))
             .allowsHitTesting(false)
         }
     }
