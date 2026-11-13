@@ -37,6 +37,12 @@ nonisolated enum DockIcon {
         var dotCenter: CGPoint
         var dotSize: CGFloat
         var ringWidth: CGFloat
+
+        var width: CGFloat {
+            let tilt = self.tilt * .pi / 180
+            let reach = hypot(halfSize.width / 2 * cos(tilt), halfSize.height / 2 * sin(tilt))
+            return 100 - 2 * (halfCenterX - reach)
+        }
     }
 
     private static let mark = Mark(halfCenterX: 36, halfSize: CGSize(width: 26, height: 44), tilt: 14,
@@ -81,9 +87,10 @@ nonisolated enum DockIcon {
         if style.appIcon == .characters, small { context.shouldAntialias = false }
         NSColor(colors.body).setFill()
         bodyPath().fill()
+        let shape = size == 16 ? markOnPixelGrid : mark
         switch style.appIcon {
-        case .shapes: draw(size == 16 ? markOnPixelGrid : mark, colors: colors)
-        case .characters: small ? draw(markOnPixelGrid, colors: colors) : drawArt(colors: colors)
+        case .shapes: draw(shape, colors: colors)
+        case .characters: small ? draw(shape, colors: colors) : drawArt(colors: colors)
         }
         if dev { drawBand(colors: colors) }
         NSGraphicsContext.restoreGraphicsState()
@@ -122,8 +129,7 @@ nonisolated enum DockIcon {
 
     private static func drawArt(colors: Palette.AppIcon) {
         let advance = ("@" as NSString).size(withAttributes: [.font: Style.ttyBoldFont(ofSize: 1)]).width
-        let points = min(body.width * 0.8 / (CGFloat(artColumns) * advance),
-                         body.height * 0.8 / (CGFloat(ttyArt.count) * 1.2))
+        let points = body.width * mark.width / 100 / (CGFloat(artColumns) * advance)
         let font = Style.ttyBoldFont(ofSize: points)
         let lineHeight = points * 1.2
         let left = canvas / 2 - CGFloat(artColumns) * advance * points / 2

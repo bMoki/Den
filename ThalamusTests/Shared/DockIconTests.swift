@@ -76,6 +76,21 @@ func padraoWithIndigoIsTheAppIcon(dev: Bool) throws {
     }
 }
 
+private func drawingWidth(_ image: NSImage, _ size: Int) throws -> Int {
+    let drawn = pixels(try #require(rep(image, size)))
+    let columns = (0..<size).filter { column in
+        (0..<size).contains { row in drawn[(row * size + column) * 4 + 2] > 0x80 }
+    }
+    return (columns.last ?? 0) - (columns.first ?? 0) + 1
+}
+
+@Test(arguments: [32, 128, 1024])
+func ttyDrawsTheMarkAsWideAsPadrao(size: Int) throws {
+    let padrao = try drawingWidth(DockIcon.image(style: .padrao, palette: .indigo, dev: false), size)
+    let tty = try drawingWidth(DockIcon.image(style: .tty, palette: .indigo, dev: false), size)
+    #expect(abs(tty - padrao) <= max(2, padrao / 25), "tty is \(tty) px wide, padrao \(padrao) px")
+}
+
 @Test func ttyIsNotThePadraoIcon() throws {
     let image = DockIcon.image(style: .tty, palette: .indigo, dev: false)
     #expect(try averageDifference(image, from: "AppIcon", size: 1024) > 5)
